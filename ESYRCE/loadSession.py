@@ -4,11 +4,14 @@ Created on Wed Mar 11 14:08:26 2020
 
 @author: angel.gimenez
 """
+import dill   
+       
+# file                 
+filename = '.\\Documents\\REPOSITORIES\\Python\\ESYRCE\\gdbLayerZ30_LoadedSession.pkl'
 
-import dill                            #pip install dill --user
-filename = 'globalsave.pkl'
+# save session 
 dill.dump_session(filename)
 
-# and to load the session again:
+# load session
 dill.load_session(filename)
 
