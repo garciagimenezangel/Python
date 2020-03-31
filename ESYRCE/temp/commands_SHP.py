@@ -8,7 +8,9 @@ This is a temporary script file.
 import geopandas as gpd
 
 # file from local path
-mallard = gpd.read_file('.\\Google Drive\\PROJECTS\\OBSERV\\Data\\Land cover\\ESYRCE\\Esyrce2001_2016.gdb', layer="z30")
+clean01 = gpd.read_file('.\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\Shapefiles\\Splitted\\Clean\\01\\esyrceVal.shp')
+clean01_repr = clean01.to_crs("EPSG:4326")
+
 rtogt0 = mallard["D9_RTO"] > 0
 data_with_RTO = mallard[rtogt0]
 
