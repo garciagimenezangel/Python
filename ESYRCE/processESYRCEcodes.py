@@ -13,29 +13,23 @@ INPUT
 The input of the script is:
     1) a shapefile with a column D5_CUL (among others) associated with areas 
     surveyed in ESYRCE, where land cover type is stored using the ESYRCE encoding
-    2) a CSV lookup table with an associated value of demand [0-1] for every crop
 
 OUTPUT
-The original dataset + 3 new columns with the following information: 
+The original dataset + 2 new columns with the following information: 
     1) simple land cover codes, named 'processed_code'
     2) complementary codes, named 'complementary_code'
-    3) pollinators' demand, named 'pollinators_demand'
 
 PROCESSING
 When reading the ESYRCE codes in D5_CUL, these are the following possibilities:
     1) Simple codes (e.g. "TD"). They are saved in the column 'processed_code' 
-    as they are. 'complementary_code' remains empty. 'pollinators_demand' is 
-    filled using the CSV lookup table.
+    as they are. 'complementary_code' remains empty. 
     2) Strings with simple and complementary codes (e.g. "BTI": "BT" + "I"). The
     first two characters are saved in 'processed_code' and the 3rd is saved in 
-    'complementary_code'. 'pollinators_demand' is filled using the CSV lookup table
-    for the extracted simple code.
+    'complementary_code'. 
     3) Combination of codes (e.g. "MN-LI" or "MN1-LI1"). In 'processed_code',
-    it is saved "C" + number of cultivars involved ("C2" in the previous examples).
+    it is saved the first cultivar involved ("MN" in the previous examples).
     If every individual code includes the same complementary code (e.g. "1" in 
-    "MN1-LI1"), it is saved in the column 'complementary_code'. For the pollinators'
-    demand, the average demand for all the cultivars involved is calculated using
-    the lookup table, and the result is saved in 'pollinators_demand'.
+    "MN1-LI1"), it is saved in the column 'complementary_code'. 
 """
 
 import geopandas as gpd
@@ -46,7 +40,6 @@ home = expanduser("~")
 
 # INPUT
 inputESYRCE = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\validData.shp'
-inputDemand = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\Cultivar-Demand.csv'
 
 # OUTPUT
 processedFile = home+'\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\processedData.shp'
@@ -57,7 +50,6 @@ data = gpd.read_file(inputESYRCE)
 # 3 new columns
 data['processed_code'] = ""
 data['complementary_code'] = ""
-data['pollinators_demand'] = np.NAN
 
 for index in data.index:
     code = data.loc[index].D5_CUL
@@ -66,7 +58,7 @@ for index in data.index:
         lenElts = [len(elt) for elt in assocElts]
         
         # Save with the CODE: C + #ELEMENTS
-        data.at[index, 'processed_code'] = "C"+str(len(assocElts))
+        data.at[index, 'processed_code'] = assocElts[0]
                 
         # Check if the elements have a complementary code == 3 characters
         if all(np.isclose(lenElts,3)):
