@@ -41,19 +41,23 @@ When reading the ESYRCE codes in D5_CUL, these are the following possibilities:
 import geopandas as gpd
 import numpy as np
 
+from os.path import expanduser
+home = expanduser("~")
+
 # INPUT
-inputESYRCE = '..\\..\\..\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\validData.shp'
-#inputDemand = 
+inputESYRCE = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\validData.shp'
+inputDemand = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\Cultivar-Demand.csv'
 
 # OUTPUT
-processedFile = '..\\..\\..\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\processedData.shp'
+processedFile = home+'\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\processedData.shp'
 
 # load file from local path
 data = gpd.read_file(inputESYRCE)
 
-# Two new columns
-data['code'] = ""
+# 3 new columns
+data['processed_code'] = ""
 data['complementary_code'] = ""
+data['pollinators_demand'] = np.NAN
 
 for index in data.index:
     code = data.loc[index].D5_CUL
@@ -62,7 +66,7 @@ for index in data.index:
         lenElts = [len(elt) for elt in assocElts]
         
         # Save with the CODE: C + #ELEMENTS
-        data.at[index, 'code'] = "C"+str(len(assocElts))
+        data.at[index, 'processed_code'] = "C"+str(len(assocElts))
                 
         # Check if the elements have a complementary code == 3 characters
         if all(np.isclose(lenElts,3)):
@@ -71,7 +75,7 @@ for index in data.index:
                 # Save the complementary code
                 data.at[index, 'complementary_code'] = thirdElts[0]
     else:
-        data.at[index, 'code'] = code[0:2]
+        data.at[index, 'processed_code'] = code[0:2]
         if len(code) == 3: # check whether it has a complementary code
             data.at[index, 'complementary_code'] = code[2]
                 

@@ -8,10 +8,12 @@ This is a temporary script file.
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+from os.path import expanduser
+home = expanduser("~")
 
 # load file from local path
 layer = "z28"
-data = gpd.read_file('..\\..\\..\\DATA\\Observ\\LandCover\\ESYRCE\\Esyrce2001_2016.gdb', layer=layer)
+data = gpd.read_file(home+'\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\Esyrce2001_2016.gdb', layer=layer)
 
 if layer == "z28":
     crs = "EPSG:32628"
@@ -73,5 +75,5 @@ for plotNr in plotNrs:
         print("Processing data...", np.floor(times*100), "percent completed...")
 
 # To file
-validData.to_file(filename="..\\..\\..\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\validData.shp", driver="ESRI Shapefile")
+validData.to_file(filename=home+'\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\validData.shp", driver="ESRI Shapefile")
 
