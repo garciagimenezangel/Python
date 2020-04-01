@@ -34,19 +34,25 @@ When reading the ESYRCE codes in D5_CUL, these are the following possibilities:
 
 import geopandas as gpd
 import numpy as np
-
 from os.path import expanduser
 home = expanduser("~")
 
 # INPUT
-inputESYRCE = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\validData.shp'
+layer = 'z28'
+inputESYRCE = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_' + layer + '.shp'
 
 # OUTPUT
-processedFile = home+'\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\processedData.shp'
+processedFile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceProcessed_' + layer + '.shp'
 
 # load file from local path
 data = gpd.read_file(inputESYRCE)
 
+if layer == 'z28':
+    crs = "EPSG:32628"
+
+if layer == 'z30':
+    crs = "EPSG:32630"
+    
 # 3 new columns
 data['processed_code'] = ""
 data['complementary_code'] = ""
@@ -70,7 +76,8 @@ for index in data.index:
         data.at[index, 'processed_code'] = code[0:2]
         if len(code) == 3: # check whether it has a complementary code
             data.at[index, 'complementary_code'] = code[2]
-                
+
+data.crs = crs
 data.to_file(filename=processedFile, driver="ESRI Shapefile")
 
 

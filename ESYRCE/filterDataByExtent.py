@@ -11,14 +11,21 @@ import pandas as pd
 from os.path import expanduser
 home = expanduser("~")
 
-# load file from local path
-layer = "z28"
-data = gpd.read_file(home+'\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\Esyrce2001_2016.gdb', layer=layer)
 
-if layer == "z28":
+# INPUT
+inputESYRCE = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\Esyrce2001_2016.gdb'
+layer = 'z28'
+
+# OUTPUT
+processedFile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_' + layer + '.shp'
+
+# load file from local path
+data = gpd.read_file(inputESYRCE, layer=layer)
+
+if layer == 'z28':
     crs = "EPSG:32628"
 
-if layer == "z30":
+if layer == 'z30':
     crs = "EPSG:32630"
 
 ##################
@@ -75,5 +82,5 @@ for plotNr in plotNrs:
         print("Processing data...", np.floor(times*100), "percent completed...")
 
 # To file
-validData.to_file(filename=home+'\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\validData.shp", driver="ESRI Shapefile")
+validData.to_file(filename = processedFile, driver="ESRI Shapefile")
 
