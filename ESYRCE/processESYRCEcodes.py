@@ -34,18 +34,25 @@ When reading the ESYRCE codes in D5_CUL, these are the following possibilities:
 
 import geopandas as gpd
 import numpy as np
+import csv
 from os.path import expanduser
 home = expanduser("~")
 
 # INPUT
 layer = 'z28'
 inputESYRCE = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_' + layer + '.shp'
-
+cropCODES   = home + '\\Documents\\REPOSITORIES\\Python\\ESYRCE\\cropCODES.csv'
+        
 # OUTPUT
 processedFile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceProcessed_' + layer + '.shp'
 
 # load file from local path
 data = gpd.read_file(inputESYRCE)
+
+# Read crop codes
+with open(cropCODES, mode='r') as infile:
+    reader    = csv.reader(infile)
+    dictCodes = {rows[0]:rows[1] for rows in reader}
 
 if layer == 'z28':
     crs = "EPSG:32628"
@@ -54,8 +61,8 @@ if layer == 'z30':
     crs = "EPSG:32630"
     
 # 3 new columns
-data['processedCode'] = ""
-data['complementaryCode'] = ""
+data['finecode'] = np.NaN
+data['compcode'] = ""
 
 for index in data.index:
     code = data.loc[index].D5_CUL
@@ -63,19 +70,27 @@ for index in data.index:
         assocElts = code.split("-")
         lenElts = [len(elt) for elt in assocElts]
         
-        # Save with the CODE: C + #ELEMENTS
-        data.at[index, 'processedCode'] = assocElts[0]
+        # Save first element
+        try:
+            dictCode = dictCodes[assocElts[0]]
+        except:
+            dictCode = 999
+        data.at[index, 'finecode'] = dictCode
                 
         # Check if the elements have a complementary code == 3 characters
         if all(np.isclose(lenElts,3)):
             thirdElts = [i[2] for i in assocElts] # Get third character
             if all(x==thirdElts[0] for x in thirdElts): # make sure that the complementary code is the same in every element
                 # Save the complementary code
-                data.at[index, 'complementaryCode'] = thirdElts[0]
+                data.at[index, 'compcode'] = thirdElts[0]
     else:
-        data.at[index, 'processedCode'] = code[0:2]
+        try:
+            dictCode = dictCodes[code[0:2]]
+        except:
+            dictCode = 999
+        data.at[index, 'finecode'] = dictCode
         if len(code) == 3: # check whether it has a complementary code
-            data.at[index, 'complementaryCode'] = code[2]
+            data.at[index, 'compcode'] = code[2]
 
 data.crs = crs
 data.to_file(filename=processedFile, driver="ESRI Shapefile")
