@@ -16,43 +16,36 @@ The input of the script is:
 
 OUTPUT
 The original dataset + 2 new columns with the following information: 
-    1) simple land cover codes, named 'processed_code'
-    2) complementary codes, named 'complementary_code'
+    1) simple land cover codes, named 'finecode'
+    2) complementary codes, named 'compcode'
 
 PROCESSING
 When reading the ESYRCE codes in D5_CUL, these are the following possibilities:
-    1) Simple codes (e.g. "TD"). They are saved in the column 'processed_code' 
-    as they are. 'complementary_code' remains empty. 
+    1) Simple codes (e.g. "TD"). They are saved in the column 'finecode' 
+    as they are. 'compcode' remains empty. 
     2) Strings with simple and complementary codes (e.g. "BTI": "BT" + "I"). The
     first two characters are saved in 'processed_code' and the 3rd is saved in 
-    'complementary_code'. 
-    3) Combination of codes (e.g. "MN-LI" or "MN1-LI1"). In 'processed_code',
+    'compcode'. 
+    3) Combination of codes (e.g. "MN-LI" or "MN1-LI1"). In 'finecode',
     it is saved the first cultivar involved ("MN" in the previous examples).
     If every individual code includes the same complementary code (e.g. "1" in 
-    "MN1-LI1"), it is saved in the column 'complementary_code'. 
+    "MN1-LI1"), it is saved in the column 'compcode'. 
 """
 
 import geopandas as gpd
 import numpy as np
-import csv
 from os.path import expanduser
 home = expanduser("~")
 
 # INPUT
 layer = 'z28'
 inputESYRCE = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_' + layer + '.shp'
-cropCODES   = home + '\\Documents\\REPOSITORIES\\Python\\ESYRCE\\cropCODES.csv'
         
 # OUTPUT
 processedFile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceProcessed_' + layer + '.shp'
 
 # load file from local path
 data = gpd.read_file(inputESYRCE)
-
-# Read crop codes
-with open(cropCODES, mode='r') as infile:
-    reader    = csv.reader(infile)
-    dictCodes = {rows[0]:rows[1] for rows in reader}
 
 if layer == 'z28':
     crs = "EPSG:32628"
@@ -61,7 +54,7 @@ if layer == 'z30':
     crs = "EPSG:32630"
     
 # 3 new columns
-data['finecode'] = np.NaN
+data['finecode'] = "" 
 data['compcode'] = ""
 
 for index in data.index:
@@ -71,11 +64,7 @@ for index in data.index:
         lenElts = [len(elt) for elt in assocElts]
         
         # Save first element
-        try:
-            dictCode = dictCodes[assocElts[0]]
-        except:
-            dictCode = 999
-        data.at[index, 'finecode'] = dictCode
+        data.at[index, 'finecode'] = assocElts[0]
                 
         # Check if the elements have a complementary code == 3 characters
         if all(np.isclose(lenElts,3)):
@@ -84,11 +73,7 @@ for index in data.index:
                 # Save the complementary code
                 data.at[index, 'compcode'] = thirdElts[0]
     else:
-        try:
-            dictCode = dictCodes[code[0:2]]
-        except:
-            dictCode = 999
-        data.at[index, 'finecode'] = dictCode
+        data.at[index, 'finecode'] = code[0:2]
         if len(code) == 3: # check whether it has a complementary code
             data.at[index, 'compcode'] = code[2]
 
