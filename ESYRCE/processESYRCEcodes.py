@@ -95,7 +95,7 @@ for index in data.index:
         try:
             dictCode = dictCodes[code[0:2]]
         except:
-            dictCode = 999
+            dictCode = 0
         data.at[index, 'detailcode'] = dictCode
         if len(code) == 3: # check whether it has a complementary code
             data.at[index, 'compcode'] = code[2]
