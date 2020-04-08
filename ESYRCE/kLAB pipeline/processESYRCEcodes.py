@@ -49,7 +49,7 @@ home = expanduser("~")
 # INPUT
 layer = 'z28'
 inputESYRCE = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_' + layer + '.shp'
-cropCODES   = home + '\\Documents\\REPOSITORIES\\Python\\ESYRCE\\cropCODES.csv'
+cropCODES   = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\cropCODES.csv'
         
 # OUTPUT
 processedFile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceProcessed_' + layer + '.shp'

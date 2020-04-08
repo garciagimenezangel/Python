@@ -8,7 +8,7 @@ import gdal
 import ogr
 import osr
 
-def rasterize(shapefile, epsg, rasterfile, field):
+def rasterize(shapefile, epsg, rasterfile, field, resolution):
 
     #making the shapefile as an object.
     input_shp = ogr.Open(shapefile)
@@ -16,16 +16,12 @@ def rasterize(shapefile, epsg, rasterfile, field):
     #getting layer information of shapefile.
     shp_layer = input_shp.GetLayer()
 
-    #pixel_size determines the size of the new raster.
-    #pixel_size is proportional to size of shapefile.
-    pixel_size = 10
-
     #get extent values to set size of output raster.
     x_min, x_max, y_min, y_max = shp_layer.GetExtent()
 
     #calculate size/resolution of the raster.
-    x_res = int((x_max - x_min) / pixel_size)
-    y_res = int((y_max - y_min) / pixel_size)
+    x_res = int((x_max - x_min) / resolution)
+    y_res = int((y_max - y_min) / resolution)
 
     #get GeoTiff driver by 
     image_type = 'GTiff'
@@ -35,7 +31,7 @@ def rasterize(shapefile, epsg, rasterfile, field):
     new_raster = driver.Create(rasterfile, x_res, y_res, 1, gdal.GDT_Byte)
 
     #transforms between pixel raster space to projection coordinate space.
-    new_raster.SetGeoTransform((x_min, pixel_size, 0, y_min, 0, pixel_size))
+    new_raster.SetGeoTransform((x_min, resolution, 0, y_min, 0, resolution))
 
     #get required raster band.
     band = new_raster.GetRasterBand(1)

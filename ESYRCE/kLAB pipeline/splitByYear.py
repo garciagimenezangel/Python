@@ -12,6 +12,7 @@ from os.path import expanduser
 home = expanduser("~")
 
 # INPUT
+resolution = 100
 layer = "z28"
 inputFile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceProcessed_' + layer + '.shp'
 
@@ -39,4 +40,4 @@ for year in years:
     # Rasterize
     rasterfile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\detailCode_'+layer+'_'+str(year)+".tiff"
     field = 'detailcode'
-    rasterize.rasterize(shapefile, epsg, rasterfile, field)
+    rasterize.rasterize(shapefile, epsg, rasterfile, field, resolution)
