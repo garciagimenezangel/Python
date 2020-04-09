@@ -3,6 +3,12 @@
 Created on Mon Apr  6 16:37:49 2020
 
 @author: angel.gimenez
+
+Calculate the evolution of the following variables using ESYRCE data
+# INTENSIFICATION METRICS: 
+# - Percentage of semi-natural cover
+# - Average of cropfield size
+# - Heterogeneity of crops
 """
 import geopandas as gpd
 import pandas as pd
@@ -14,14 +20,28 @@ home = expanduser("~")
 # INPUT
 layer = 'z28'
 inputESYRCE = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_' + layer + '.shp'
-    
-# load file from local path
-data = gpd.read_file(inputESYRCE)
 
+# INTENSIFICATION METRICS: 
+# Percentage of semi-natural cover
 colsSeminatuByYear =  ['blockNr', 'year', 'seminaturalPercentage']
 colsSeminatuDiff   =  ['blockNr', 'seminaturalPercentage']
 DfSeminatuByYear   = pd.DataFrame(columns = colsSeminatuByYear)
 DfSeminatuDiff     = pd.DataFrame(columns = colsSeminatuDiff)
+
+# Average of cropfield size
+colsCropSizeByYear =  ['blockNr', 'year', 'avCropfieldSize']
+colsCropSizeDiff   =  ['blockNr', 'avCropfieldSize']
+DfCropSizeByYear   = pd.DataFrame(columns = colsCropSizeByYear)
+DfCropSizeDiff     = pd.DataFrame(columns = colsCropSizeDiff)
+
+# Heterogeneity of crops
+colsHeterogByYear =  ['blockNr', 'year', 'heterogeneity']
+colsHeterogDiff   =  ['blockNr', 'heterogeneity']
+DfHeterogByYear   = pd.DataFrame(columns = colsHeterogByYear)
+DfHeterogDiff     = pd.DataFrame(columns = colsHeterogDiff)
+
+# load file from local path
+data = gpd.read_file(inputESYRCE)
 
 # Loop plot numbers
 blockNrs = np.unique(data.D2_NUM)
@@ -47,13 +67,31 @@ for blockNr in blockNrs:
     intensParamsIni = bc.calculateIntensificationParameters(dataBlockIni)
     intensParamsEnd = bc.calculateIntensificationParameters(dataBlockEnd)
     
+    # SAVE DATAFRAMES
+    # Percentage of semi-natural cover
     seminatuPercIni = intensParamsIni['seminaturalPercentage']
     seminatuPercEnd = intensParamsEnd['seminaturalPercentage']
-    seminatuDiff   = (seminatuPercEnd - seminatuPercIni) / (yearEnd - yearIni)
-    
-    # Save data in dataframes
+    seminatuDiff    = (seminatuPercEnd - seminatuPercIni) / (yearEnd - yearIni)
     DfSeminatuByYear.loc[len(DfSeminatuByYear)] = [blockNr, yearIni, seminatuPercIni]
     DfSeminatuByYear.loc[len(DfSeminatuByYear)] = [blockNr, yearEnd, seminatuPercEnd]
     DfSeminatuDiff.loc[len(DfSeminatuDiff)]     = [blockNr, seminatuDiff]
+
+    # Average of cropfield size
+    avCropfieldSizeIni  = intensParamsIni['avCropfieldSize']
+    avCropfieldSizeEnd  = intensParamsEnd['avCropfieldSize']
+    avCropfieldSizeDiff = (avCropfieldSizeEnd - avCropfieldSizeIni) / (yearEnd - yearIni)
+    DfCropSizeByYear.loc[len(DfCropSizeByYear)] = [blockNr, yearIni, avCropfieldSizeIni]
+    DfCropSizeByYear.loc[len(DfCropSizeByYear)] = [blockNr, yearEnd, avCropfieldSizeEnd]
+    DfCropSizeDiff.loc[len(DfCropSizeDiff)]     = [blockNr, avCropfieldSizeDiff]
+
+    # Heterogeneity of crops
+    heterogeneityIni  = intensParamsIni['heterogeneity']
+    heterogeneityEnd  = intensParamsEnd['heterogeneity']
+    heterogeneityDiff = (heterogeneityEnd - heterogeneityIni) / (yearEnd - yearIni)
+    DfHeterogByYear.loc[len(DfHeterogByYear)] = [blockNr, yearIni, heterogeneityIni]
+    DfHeterogByYear.loc[len(DfHeterogByYear)] = [blockNr, yearEnd, heterogeneityEnd]
+    DfHeterogDiff.loc[len(DfHeterogDiff)]     = [blockNr, heterogeneityDiff]
+
+
     
     
