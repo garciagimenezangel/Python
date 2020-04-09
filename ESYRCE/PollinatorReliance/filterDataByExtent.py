@@ -17,7 +17,7 @@ inputESYRCE = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\Esyrce2001_2
 layer = 'z30'
 
 # OUTPUT
-processedFile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_' + layer + '.shp'
+rootFilename = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_' + layer
 
 # load file from local path
 data = gpd.read_file(inputESYRCE, layer=layer)
@@ -37,6 +37,7 @@ plotNrs = np.unique(data.D2_NUM)
 totalNr = len(plotNrs) 
 contNr  = 0
 emptyDF = True
+contSavedFiles = 0
 for plotNr in plotNrs:
     
     selectedInd = data.D2_NUM == plotNr
@@ -80,7 +81,16 @@ for plotNr in plotNrs:
     if np.mod(contNr, 10) == 0:
         times = contNr / totalNr 
         print("Processing data...", np.floor(times*100), "percent completed...")
+        
+    # If input data is very large, save file every certain number of blocks processed, e.g. 1000
+    if np.mod(contNr, 1000) == 0:
+        processedFilename = rootFilename + str(contSavedFiles) + '.shp'
+        validData.to_file(filename = processedFilename, driver="ESRI Shapefile")
+        validData = None
+        emptyDF = True
+        contSavedFiles = contSavedFiles + 1
 
-# To file
-validData.to_file(filename = processedFile, driver="ESRI Shapefile")
+# To file 
+processedFilename = rootFilename + str(contSavedFiles) + '.shp'
+validData.to_file(filename = processedFilename, driver="ESRI Shapefile")
 

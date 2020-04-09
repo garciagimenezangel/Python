@@ -7,13 +7,13 @@ Created on Mon Apr  6 16:37:49 2020
 import geopandas as gpd
 import pandas as pd
 import numpy as np
-import dataManipulation as dmani
+import blockCalculator as bc
 from os.path import expanduser
 home = expanduser("~")
 
 # INPUT
 layer = 'z30'
-inputESYRCE = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_' + layer + '.shp'
+inputESYRCE = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_' + layer + '_1.shp'
     
 # load file from local path
 data = gpd.read_file(inputESYRCE)
@@ -44,8 +44,8 @@ for blockNr in blockNrs:
     dataBlockEnd = gpd.GeoDataFrame(dataBlockEnd)
     
     # Calculate pollinators' demand in the initial and end years
-    demandIni = dmani.calculateDemand(dataBlockIni)
-    demandEnd = dmani.calculateDemand(dataBlockEnd)
+    demandIni = bc.calculateDemand(dataBlockIni)
+    demandEnd = bc.calculateDemand(dataBlockEnd)
     demandDiff = (demandEnd - demandIni) / (yearEnd - yearIni)
     
     # Save data in dataframes

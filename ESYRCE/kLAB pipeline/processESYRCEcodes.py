@@ -82,7 +82,7 @@ for index in data.index:
         try:
             dictCode = dictCodes[assocElts[0]]
         except:
-            dictCode = 999
+            dictCode = 0
         data.at[index, 'detailcode'] = dictCode
                 
         # Check if the elements have a complementary code == 3 characters

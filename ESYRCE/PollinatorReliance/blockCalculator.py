@@ -30,22 +30,24 @@ def calculateIntensificationParameters(dfEsyrce):
     
     accAreaSeminatural = 0
     accAreaCropFields = 0
+    avCropfieldSize = 0
     totalArea = 0
     crops = []
     for index in dfEsyrce.index:
         code = dfEsyrce.loc[index].D4_GRC       
         isSeminatural = dictCropNatArt[code] == 'Semi-natural'
         isCropfield   = dictCropNatArt[code] == 'Crop'
-        areaPolygon = dfEsyrce.loc[index].AREA
+        areaPolygon = dfEsyrce.loc[index].Shape_Area
         if isSeminatural: 
             accAreaSeminatural = accAreaSeminatural + areaPolygon
         if isCropfield:   
             accAreaCropFields  = accAreaCropFields + areaPolygon
-            crops = crops.append(dfEsyrce.loc[index].D5_CUL)
+            crops = np.append(crops, dfEsyrce.loc[index].D5_CUL)
         totalArea = totalArea + areaPolygon
     
     seminaturalPercentage = accAreaSeminatural / totalArea
-    avCropfieldSize = accAreaCropFields / len(crops)
+    if len(crops) > 0:
+        avCropfieldSize = accAreaCropFields / len(crops)
     heterogeneity = len(np.unique(crops))
     
     dictOut = {'seminaturalPercentage': seminaturalPercentage, 
@@ -81,7 +83,7 @@ def calculateDemand(dfEsyrce):
                 increase = ''
         
         demand = dictPollValues[increase]
-        area = dfEsyrce.loc[index].AREA
+        area = dfEsyrce.loc[index].Shape_Area
         output = output + demand*area
     
     return output;

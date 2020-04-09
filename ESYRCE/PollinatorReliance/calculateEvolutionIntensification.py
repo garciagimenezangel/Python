@@ -7,12 +7,12 @@ Created on Mon Apr  6 16:37:49 2020
 import geopandas as gpd
 import pandas as pd
 import numpy as np
-import dataManipulation as dmani
+import blockCalculator as bc
 from os.path import expanduser
 home = expanduser("~")
 
 # INPUT
-layer = 'z30'
+layer = 'z28'
 inputESYRCE = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_' + layer + '.shp'
     
 # load file from local path
@@ -44,8 +44,8 @@ for blockNr in blockNrs:
     dataBlockEnd = gpd.GeoDataFrame(dataBlockEnd)
     
     # Calculate intensification parameters in the initial and end years
-    intensParamsIni = dmani.calculateIntensificationParameters(dataBlockIni)
-    intensParamsEnd = dmani.calculateIntensificationParameters(dataBlockEnd)
+    intensParamsIni = bc.calculateIntensificationParameters(dataBlockIni)
+    intensParamsEnd = bc.calculateIntensificationParameters(dataBlockEnd)
     
     seminatuPercIni = intensParamsIni['seminaturalPercentage']
     seminatuPercEnd = intensParamsEnd['seminaturalPercentage']
