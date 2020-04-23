@@ -6,8 +6,10 @@ Created on Wed Mar 11 14:08:26 2020
 """
 import dill   
        
-# file                 
-filename = '.\\Documents\\REPOSITORIES\\Python\\ESYRCE\\gdbLayerZ30_LoadedSession.pkl'
+# file    
+from os.path import expanduser
+home = expanduser("~")            
+filename = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\gdbLayerZ30data.pkl'
 
 # save session 
 dill.dump_session(filename)

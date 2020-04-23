@@ -4,7 +4,7 @@ Spyder Editor
 
 This is a temporary script file.
 """
-
+import dill
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -14,13 +14,15 @@ home = expanduser("~")
 
 # INPUT
 inputESYRCE = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\Esyrce2001_2016.gdb'
-layer = 'z28'
+layer = 'z30'
+# load file from local path or saved Python session
+#data = gpd.read_file(inputESYRCE, layer=layer)
+#inputESYRCE = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\gdbLayerZ30data.pkl'
+borrarSession = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\borrarSession.pkl'
+dill.load_session(borrarSession)
 
 # OUTPUT
-processedFile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_' + layer + '.shp'
-
-# load file from local path
-data = gpd.read_file(inputESYRCE, layer=layer)
+rootFilename = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_' + layer
 
 if layer == 'z28':
     crs = "EPSG:32628"
@@ -37,6 +39,7 @@ plotNrs = np.unique(data.D2_NUM)
 totalNr = len(plotNrs) 
 contNr  = 0
 emptyDF = True
+contSavedFiles = 0
 for plotNr in plotNrs:
     
     selectedInd = data.D2_NUM == plotNr
@@ -52,9 +55,13 @@ for plotNr in plotNrs:
         selectedInd   = dataPlotsNr.YEA == year
         dataPlotsYear = [dataPlotsNr.iloc[i] for i in range(0,len(selectedInd)) if selectedInd.iloc[i]]
         dataPlotsYear = gpd.GeoDataFrame(dataPlotsYear)
-        dissolved     = dataPlotsYear.dissolve(by='YEA')    
-        newDissGeo    = dissolved.geometry
-        newBBox       = newDissGeo.bounds
+        try:
+            dissolved     = dataPlotsYear.dissolve(by='YEA')    
+            newDissGeo    = dissolved.geometry
+            newBBox       = newDissGeo.bounds
+        except:
+            validNr = False
+            break
         
         if (cont == 0):  
             lastBBox = newBBox
@@ -80,7 +87,18 @@ for plotNr in plotNrs:
     if np.mod(contNr, 10) == 0:
         times = contNr / totalNr 
         print("Processing data...", np.floor(times*100), "percent completed...")
+        
+    # If input data is very large, save file every certain number of blocks processed, e.g. 1000
+    if np.mod(contNr, 1000) == 0:
+        processedFilename = rootFilename + '_' + str(contSavedFiles) + '.shp'
+        validData.to_file(filename = processedFilename, driver="ESRI Shapefile")
+        print("Saved file:", processedFilename)
+        validData = None
+        emptyDF = True
+        contSavedFiles = contSavedFiles + 1
 
-# To file
-validData.to_file(filename = processedFile, driver="ESRI Shapefile")
+# To file 
+processedFilename = rootFilename + '_' + str(contSavedFiles) + '.shp'
+validData.to_file(filename = processedFilename, driver="ESRI Shapefile")
+print("Saved file:", processedFilename)
 
