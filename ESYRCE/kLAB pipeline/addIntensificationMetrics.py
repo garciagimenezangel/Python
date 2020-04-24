@@ -24,19 +24,19 @@ import blockCalculator as bc
 # INPUT
 inputESYRCE = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\session_esyrceFiltered_z30_epsg23030_selectedCols.pkl'
 dill.load_session(inputESYRCE) # data in dataSel
-data = dataSel
-data['seminaturalPercentage'] = np.nan
-data['avCropfieldSize'] = np.nan
-data['heterogeneity'] = np.nan
+
+dataSel['seminaturalPercentage'] = np.nan
+dataSel['avCropfieldSize'] = np.nan
+dataSel['heterogeneity'] = np.nan
 
 # Loop plot numbers
-blockNrs = np.unique(data.D2_NUM)
+blockNrs = np.unique(dataSel.D2_NUM)
 totalNr = len(blockNrs) 
 contNr = 0
-for blockNr in blockNrs[0:1]:
+for blockNr in blockNrs:
     
-    bSelectedInd = data.D2_NUM == blockNr
-    dataBlockNr = [data.iloc[i] for i in range(0,len(bSelectedInd)) if bSelectedInd.iloc[i]]
+    bSelectedInd = dataSel.D2_NUM == blockNr
+    dataBlockNr = [dataSel.iloc[i] for i in range(0,len(bSelectedInd)) if bSelectedInd.iloc[i]]
     dataBlockNr = gpd.GeoDataFrame(dataBlockNr)
     
     years = np.unique(dataBlockNr.YEA)
@@ -53,12 +53,12 @@ for blockNr in blockNrs[0:1]:
         heterogeneity   = intensParams['heterogeneity']
         
         # Assign values
-        data.seminaturalPercentage.iloc[dataBlockYear.index] = seminatuPerc
-        data.avCropfieldSize.iloc[dataBlockYear.index]       = avCropfieldSize
-        data.heterogeneity.iloc[dataBlockYear.index]         = heterogeneity
+        dataSel.seminaturalPercentage.iloc[dataBlockYear.index] = seminatuPerc
+        dataSel.avCropfieldSize.iloc[dataBlockYear.index]       = avCropfieldSize
+        dataSel.heterogeneity.iloc[dataBlockYear.index]         = heterogeneity
         
     contNr = contNr+1
-    if np.mod(contNr, 100) == 0:
+    if np.mod(contNr, 10) == 0:
         times = contNr / totalNr 
         print("Processing data...", np.floor(times*100), "percent completed...")
     

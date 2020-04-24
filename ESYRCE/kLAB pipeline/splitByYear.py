@@ -6,10 +6,13 @@ This is a temporary script file.
 """
 import geopandas as gpd
 import numpy as np
-import rasterize
 
 from os.path import expanduser
 home = expanduser("~")
+
+import sys
+sys.path.append(home + '\\Documents\\REPOSITORIES\\Python\\ESYRCE\\lib\\')
+import rasterize
 
 # INPUT
 resolution = 100
@@ -20,12 +23,12 @@ inputFile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esy
 processedData = gpd.read_file(inputFile)
 
 if layer == 'z28':
-    crs  = "EPSG:32628"
-    epsg = 32628
+    crs  = "EPSG:23028"
+    epsg = 23028
 
 if layer == 'z30':
-    crs  = "EPSG:32630"
-    epsg = 32630
+    crs  = "EPSG:23030"
+    epsg = 23030
     
 # To files, by year
 years = np.unique(processedData.YEA)
