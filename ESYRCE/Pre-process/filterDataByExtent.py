@@ -25,10 +25,10 @@ dill.load_session(borrarSession)
 rootFilename = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_' + layer
 
 if layer == 'z28':
-    crs = "EPSG:32628"
+    crs = "EPSG:23028"
 
 if layer == 'z30':
-    crs = "EPSG:32630"
+    crs = "EPSG:23030"
 
 ##################
 # Select plots

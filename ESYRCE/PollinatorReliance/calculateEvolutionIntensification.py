@@ -13,9 +13,12 @@ Calculate the evolution of the following variables using ESYRCE data
 import geopandas as gpd
 import pandas as pd
 import numpy as np
-import blockCalculator as bc
 from os.path import expanduser
 home = expanduser("~")
+
+import sys
+sys.path.append(home + '\\Documents\\REPOSITORIES\\Python\\ESYRCE\\lib\\')
+import blockCalculator as bc 
 
 # INPUT
 layer = 'z28'

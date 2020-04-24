@@ -12,8 +12,7 @@ from os.path import expanduser
 home = expanduser("~")
 
 # INPUT
-layer = 'z30'
-inputESYRCE = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_' + layer + '_1.shp'
+inputESYRCE = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_z30_merged.shp'
     
 # load file from local path
 data = gpd.read_file(inputESYRCE)
