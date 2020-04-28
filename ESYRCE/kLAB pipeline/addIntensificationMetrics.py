@@ -63,8 +63,11 @@ for blockNr in blockNrs:
         print("Processing data...", np.floor(times*100), "percent completed...")
     
     if np.mod(contNr, 3000) == 0:
+        times = contNr / totalNr 
         dill.dump_session(home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\session_esyrceFiltered_z30_epsg23030_selectedCols_addIntenMetrics.pkl')
+        print("Saved session... " + home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\session_esyrceFiltered_z30_epsg23030_selectedCols_addIntenMetrics.pkl')
 
 dill.dump_session(home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\session_esyrceFiltered_z30_epsg23030_selectedCols_addIntenMetrics.pkl')
+print("FINISHED... Saved session... " + home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\session_esyrceFiltered_z30_epsg23030_selectedCols_addIntenMetrics.pkl')
 
 

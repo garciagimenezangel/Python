@@ -34,10 +34,14 @@ def calculateIntensificationParameters(dfEsyrce):
     totalArea = 0
     crops = []
     for index in dfEsyrce.index:
-        code = dfEsyrce.loc[index].D4_GRC       
-        isSeminatural = dictCropNatArt[code] == 'Semi-natural'
-        isCropfield   = dictCropNatArt[code] == 'Crop'
         areaPolygon = dfEsyrce.loc[index].Shape_Area
+        code = dfEsyrce.loc[index].D4_GRC       
+        try:
+            isSeminatural = dictCropNatArt[code] == 'Semi-natural'
+            isCropfield   = dictCropNatArt[code] == 'Crop'
+        except:
+            isSeminatural = False
+            isCropfield   = False       
         if isSeminatural: 
             accAreaSeminatural = accAreaSeminatural + areaPolygon
         if isCropfield:   
