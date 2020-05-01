@@ -5,6 +5,7 @@ Created on Mon Apr  6 16:56:21 2020
 @author: angel.gimenez
 """
 
+import dill
 import csv
 import numpy as np
 from os.path import expanduser
@@ -56,12 +57,11 @@ def calculateIntensificationParameters(dfEsyrce):
     
     dictOut = {'seminaturalPercentage': seminaturalPercentage, 
                'avCropfieldSize': avCropfieldSize, 
-               'heterogeneity': heterogeneity}
-    
+               'heterogeneity': heterogeneity}   
     return dictOut;
 
+
 def calculateDemand(dfEsyrce):
-    
     # Read crop codes
     with open(pollReliance, mode='r') as infile:
         reader    = csv.reader(infile)
@@ -69,27 +69,55 @@ def calculateDemand(dfEsyrce):
     
     output = 0 
     for index in dfEsyrce.index:
-        code = dfEsyrce.loc[index].D5_CUL
-        if "-" in code:
+        try:
+            code = dfEsyrce.loc[index].D5_CUL
             assocElts = code.split("-")
-            #lenElts = [len(elt) for elt in assocElts]
-            
-            # Save first element
-            try:
-                increase = dictDemand[assocElts[0]]
-            except:
-                increase = ''
-                    
-        else:
-            try:
-                increase = dictDemand[code[0:2]]
-            except:
-                increase = ''
-        
-        demand = dictPollValues[increase]
+            demand = 0
+            if len(assocElts) > 0:
+                for elt in assocElts: # average over all elements
+                    increase = dictDemand[elt]
+                    demand = demand + dictPollValues[increase]      
+                demand = demand / len(assocElts)
+        except:
+            demand = 0
         area = dfEsyrce.loc[index].Shape_Area
-        output = output + demand*area
-    
+        output = output + demand*area  
     return output;
 
+
+def addDemand(dfEsyrce, stepsSave, backupFile):
+    
+    # Read crop codes
+    with open(pollReliance, mode='r') as infile:
+        reader    = csv.reader(infile)
+        dictDemand = {rows[0]:rows[1] for rows in reader} # key: 'ESYRCE_code; value: 'Demand'
+    
+    contNr = 0
+    totalNr = len(dfEsyrce) 
+    for index in dfEsyrce.index:       
+        try:
+            code = dfEsyrce.loc[index].D5_CUL
+            assocElts = code.split("-")
+            demand = 0
+            if len(assocElts) > 0:
+                for elt in assocElts: # average over all elements
+                    increase = dictDemand[elt]
+                    demand = demand + dictPollValues[increase]      
+                demand = demand / len(assocElts)
+        except:
+            demand = 0
+            
+        dfEsyrce.at[index,'demand'] = demand
+    
+        contNr = contNr+1
+        if np.mod(contNr, 10000) == 0:
+            times = contNr / totalNr 
+            print("Processing data...", np.floor(times*100), "percent completed...")
+    
+        if np.mod(contNr, stepsSave) == 0:
+            times = contNr / totalNr 
+            dill.dump_session(backupFile)
+            print("Saved session... " + backupFile)
+
+    return dfEsyrce;
 
