@@ -1,12 +1,31 @@
-Data processing for k.LAB:
+Scripts for processing ESYRCE data with the goal of creating models in k.LAB:
 
-1: Process the ESYRCE land cover codes, so that they can be ingested by k.LAB: run processESYRCEcodes.py
+- filterDataByExtent.py: filter data by spatial extent
 
-2: Split the shapefiles by year: run splitByYear.py
+- mergeSplitted.py: merge data files produced by 'filterDataByExtent.py'
 
-3: Rasterize
+- filterColumns.py: filter some columns, in case some "pruning" of the data is desired
 
-4: Go to k.LAB and annotate the data
+- processESYRCEcodes.py: process the ESYRCE land cover codes 
 
-CRS must be 'EPSG:32628' for layer z28 and 'EPSG:32630' for z30
+- splitByYear.py: split data into shapefiles by year
+
+- addIntensificationMetrics.py: add columns with metrics of agricultural intensification
+
+- addDemand.py: add column with demand of pollinators according to the crop
+
+- dissolveBlocks.py: dissolve geometries of the blocks to simplify the data (to use after splitting by year and after adding demand and intensification metrics)
+
+- divideFieldByAreaBlock.py: divide a field in the data by the area of the block
+
+Notes: 
+
+- CRS must be 'EPSG:23028' for layer z28 and 'EPSG:23030' for z30
+
+- Some blocks (noticed in the data of 2015) need some cleaning of geometries in order to be able to apply the dissolve operation. This cleaning is performed in QGIS using Processing>Delete holes
+
+- After applying all or some of these scripts to the ESYRCE data, other additional operations might still be necessary to create the rasters for its ingestion in k.LAB. The following operations were quite straigthforward to do in QGIS, so I didn't implement them in Python: 
+	- create centroids of the (dissolved) polygons
+	- interpolate centroids using Grid(Linear)
+	- mask the interpolated rasters using administrative boundaries and some additional clipping to avoid areas where no points are available
 

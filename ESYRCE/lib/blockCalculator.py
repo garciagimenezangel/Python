@@ -53,7 +53,7 @@ def calculateIntensificationParameters(dfEsyrce):
     seminaturalPercentage = accAreaSeminatural / totalArea
     if len(crops) > 0:
         avCropfieldSize = accAreaCropFields / len(crops)
-    heterogeneity = len(np.unique(crops))
+    heterogeneity = len(np.unique(crops)) / totalArea
     
     dictOut = {'seminaturalPercentage': seminaturalPercentage, 
                'avCropfieldSize': avCropfieldSize, 
@@ -121,3 +121,10 @@ def addDemand(dfEsyrce, stepsSave, backupFile):
 
     return dfEsyrce;
 
+
+def getBlockArea(block):
+    totalArea = 0
+    for index in block.index:
+        areaPolygon = block.loc[index].Shape_Area
+        totalArea = totalArea + areaPolygon
+    return totalArea*1e-6; # m^2 to km^2
