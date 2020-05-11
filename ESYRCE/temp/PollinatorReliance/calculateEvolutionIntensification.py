@@ -8,7 +8,7 @@ Calculate the evolution of the following variables using ESYRCE data
 # INTENSIFICATION METRICS: 
 # - Percentage of semi-natural cover
 # - Average of cropfield size
-# - Heterogeneity of crops
+# - Heterogeneity of crops (per km^2)
 """
 import geopandas as gpd
 import pandas as pd
@@ -21,34 +21,27 @@ sys.path.append(home + '\\Documents\\REPOSITORIES\\Python\\ESYRCE\\lib\\')
 import blockCalculator as bc 
 
 # INPUT
-layer = 'z28'
+layer = 'z30'
 inputESYRCE = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_' + layer + '.shp'
 
 # INTENSIFICATION METRICS: 
 # Percentage of semi-natural cover
-colsSeminatuByYear =  ['blockNr', 'year', 'seminaturalPercentage']
-colsSeminatuDiff   =  ['blockNr', 'seminaturalPercentage']
+colsSeminatuByYear =  ['blockNr', 'year', 'seminatura']
 DfSeminatuByYear   = pd.DataFrame(columns = colsSeminatuByYear)
-DfSeminatuDiff     = pd.DataFrame(columns = colsSeminatuDiff)
 
 # Average of cropfield size
-colsCropSizeByYear =  ['blockNr', 'year', 'avCropfieldSize']
-colsCropSizeDiff   =  ['blockNr', 'avCropfieldSize']
+colsCropSizeByYear =  ['blockNr', 'year', 'avCropfiel']
 DfCropSizeByYear   = pd.DataFrame(columns = colsCropSizeByYear)
-DfCropSizeDiff     = pd.DataFrame(columns = colsCropSizeDiff)
 
-# Heterogeneity of crops
-colsHeterogByYear =  ['blockNr', 'year', 'heterogeneity']
-colsHeterogDiff   =  ['blockNr', 'heterogeneity']
+# Heterogeneity of crops per km^2
+colsHeterogByYear =  ['blockNr', 'year', 'heteroge']
 DfHeterogByYear   = pd.DataFrame(columns = colsHeterogByYear)
-DfHeterogDiff     = pd.DataFrame(columns = colsHeterogDiff)
 
 # load file from local path
 data = gpd.read_file(inputESYRCE)
 
 # Loop plot numbers
-blockNrs = np.unique(data.D2_NUM)
-for blockNr in blockNrs:
+for index in data.index:
     
     selectedInd = data.D2_NUM == blockNr
     dataBlockNr = [data.iloc[i] for i in range(0,len(selectedInd)) if selectedInd.iloc[i]]
