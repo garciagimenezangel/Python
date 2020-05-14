@@ -37,11 +37,13 @@ for year in years:
     if (dissolve):
         try:
             validDataYear = validDataYear.dissolve(by='D2_NUM')
+            shapefile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\'+layer+'\\dissolved\\'+str(year)+".shp"
         except:
             print("Warning: dissolve in year "+str(year)+" failed...")
-        shapefile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\'+layer+'\\dissolved\\'+str(year)+".shp"
+            shapefile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\'+layer+'\\full\\'+str(year)+".shp"
     else:
         shapefile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\'+layer+'\\full\\'+str(year)+".shp"
     validDataYear.crs = crs;
     validDataYear.to_file(filename = shapefile, driver="ESRI Shapefile")
+    print("Processed year... Saved file: "+shapefile)
     

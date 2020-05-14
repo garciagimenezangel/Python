@@ -11,20 +11,19 @@ from os.path import expanduser
 home = expanduser("~")
 
 # INPUT
-layer = 'z30'
-rootFilename = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceFiltered_' + layer
+root = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\z30\\yearly\\'
 
 # OUTPUT
-outFilename = rootFilename + "_merged.shp"
+outFilename = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\z30\\merged.shp'
 
 # Get filtered files
-listFiltered = glob.glob(rootFilename+"*.shp")
+listFiles = glob.glob(root+"*.shp")
 
 # Concat dataframes
-data = gpd.read_file(listFiltered[0])
-print("Read file:", listFiltered[0])
+data = gpd.read_file(listFiles[0])
+print("Read file:", listFiles[0])
 frames = [data]
-for file in listFiltered[1:]:
+for file in listFiles[1:]:
     data = gpd.read_file(file)
     frames.append(data)
     print("Read file:", file)

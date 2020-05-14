@@ -66,10 +66,10 @@ def calculateIntensificationParameters(dfEsyrce):
 
 
 """
-INPUT: a block from ESYRCE data (squares of 700x700m or 500x500m) 
+INPUT: a block of one year from ESYRCE data (squares of 700x700m or 500x500m) 
 OUTPUT: demand averaged over the area of the polygons
 """
-def calculateDemand(block):
+def calculateDemand(blockYear):
     # Read crop codes
     with open(pollReliance, mode='r') as infile:
         reader    = csv.reader(infile)
@@ -77,9 +77,9 @@ def calculateDemand(block):
 
     total_area = 0
     acc_demand = 0
-    for index in block.index:
+    for index in blockYear.index:
         try:
-            code = block.loc[index].D5_CUL
+            code = blockYear.loc[index].D5_CUL
             assocElts = code.split("-")
             demand = 0
             if len(assocElts) > 0:
@@ -89,39 +89,10 @@ def calculateDemand(block):
                 demand = demand / len(assocElts)
         except:
             demand = 0
-        area = block.loc[index].geometry.area
+        area = blockYear.loc[index].geometry.area
         acc_demand = acc_demand + demand*area  
         total_area = total_area + area
     return acc_demand/total_area;
-
-
-"""
-INPUT: any subset of ESYRCE data
-OUTPUT: the input dataframe plus a new column of demand averaged over the area of the polygons
-"""
-def addDemandBlockAvg(dfEsyrce, stepsSave, backupFile):
-    
-    dfEsyrce['block_demand'] = np.nan
-    blockNrs = np.unique(dfEsyrce.D2_NUM)
-    contNr = 0
-    totalNr = len(blockNrs) 
-    for blockNr in blockNrs:
-        selectedInd = dfEsyrce.D2_NUM == blockNr
-        block = [dfEsyrce.iloc[i] for i in range(0,len(selectedInd)) if selectedInd.iloc[i]]
-        block = gpd.GeoDataFrame(block)
-        blockDemand = calculateDemand(block)
-        dfEsyrce.at[selectedInd,'block_demand'] = blockDemand
-        
-        contNr = contNr+1
-        if np.mod(contNr, 100) == 0:
-            times = contNr / totalNr 
-            print("addDemandBlockAvg...", np.floor(times*100), "percent completed...")
-        
-        if np.mod(contNr, stepsSave) == 0:
-            times = contNr / totalNr 
-            dill.dump_session(backupFile)
-            print("Saved session... " + backupFile)
-    return dfEsyrce;
 
 
 """

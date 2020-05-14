@@ -22,10 +22,7 @@ Notes:
 
 - CRS must be 'EPSG:23028' for layer z28 and 'EPSG:23030' for z30
 
-- Some blocks (noticed in the data of 2015) need some cleaning of geometries in order to be able to apply the dissolve operation. This cleaning is performed in QGIS using Processing>Delete holes
+- Some blocks (noticed in the data of 2015) need some cleaning of geometries in order to be able to apply the dissolve operation. Therefore the dissolve operation and the cleaning for that year (2015) is performed in QGIS (cleaning using Processing>Delete holes)
 
-- After applying all or some of these scripts to the ESYRCE data, other additional operations might still be necessary to create the rasters for its ingestion in k.LAB. The following operations were quite straigthforward to do in QGIS, so I didn't implement them in Python: 
-	- create centroids of the (dissolved) polygons
-	- interpolate centroids using Grid(Linear)
-	- mask the interpolated rasters using administrative boundaries and some additional clipping to avoid areas where no points are available
+- After mergeSplitted.py: the process of getting the metrics finished, and we should have a shapefile with a value per (block, year). 
 

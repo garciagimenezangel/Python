@@ -35,22 +35,36 @@ totalNr = len(blockNrs)
 contNr = 0
 for blockNr in blockNrs:
     
-    bSelectedInd = dataSel.D2_NUM == blockNr
-    dataBlockNr = [dataSel.iloc[i] for i in range(0,len(bSelectedInd)) if bSelectedInd.iloc[i]]
-    dataBlockNr = gpd.GeoDataFrame(dataBlockNr)
+#    bSelectedInd = dataSel.D2_NUM == blockNr
+#    dataBlockNr = [dataSel.iloc[i] for i in range(0,len(bSelectedInd)) if bSelectedInd.iloc[i]]
+#    dataBlockNr = gpd.GeoDataFrame(dataBlockNr)
+    ii = np.where(dataSel.D2_NUM == blockNr)
+    i0 = ii[0][0]
+    iM = ii[0][len(ii[0])-1]
+    dataBlockNr = dataSel[i0:(iM+1)]
+    if (iM-i0+1)!=len(ii[0]): 
+        print("Error... Exit loop in Block nr:",blockNr)
+        break
     
     years = np.unique(dataBlockNr.YEA)
     for year in years:
         
-        bSelectedInd  = dataBlockNr.YEA == year
-        dataBlockYear = [dataBlockNr.iloc[i] for i in range(0,len(bSelectedInd)) if bSelectedInd.iloc[i]]    
-        dataBlockYear = gpd.GeoDataFrame(dataBlockYear)
+#        bSelectedInd  = dataBlockNr.YEA == year
+#        dataBlockYear = [dataBlockNr.iloc[i] for i in range(0,len(bSelectedInd)) if bSelectedInd.iloc[i]]    
+#        dataBlockYear = gpd.GeoDataFrame(dataBlockYear)
+        ii = np.where(dataBlockNr.YEA == year)
+        i0 = ii[0][0]
+        iM = ii[0][len(ii[0])-1]
+        dataBlockYear = dataBlockNr[i0:(iM+1)]
+        if (iM-i0+1)!=len(ii[0]): 
+            print("Error... Exit loop in Block nr:",blockNr,"...Year:",year)
+            break
     
         # Calculate intensification parameters 
         intensParams    = bc.calculateIntensificationParameters(dataBlockYear)
         seminatuPerc    = intensParams['seminaturalPercentage']
         avCropfieldSize = intensParams['avCropfieldSize']
-        heterogeneity   = intensParams['heterogeneity']
+        heterogeneity   = intensParams['heterogeneity']/bc.getBlockArea(dataBlockYear)
         
         # Assign values
         dataSel.seminaturalPercentage.iloc[dataBlockYear.index] = seminatuPerc
@@ -58,7 +72,7 @@ for blockNr in blockNrs:
         dataSel.heterogeneity.iloc[dataBlockYear.index]         = heterogeneity
         
     contNr = contNr+1
-    if np.mod(contNr, 10) == 0:
+    if np.mod(contNr, 100) == 0:
         times = contNr / totalNr 
         print("Processing data...", np.floor(times*100), "percent completed...")
     
