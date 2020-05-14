@@ -38,16 +38,23 @@ contNr  = 0
 totalNr = len(seminatural)
 for indexPt in seminatural.index:
     pt = seminatural.at[indexPt,'geometry']
-    indices = [i for i in range(0,len(centroids)) if np.isclose(pt.x, centroids.at[i,'geometry'].x, atol=1e0) and np.isclose(pt.y, centroids.at[i,'geometry'].y, atol=1e0)]    
-    dataYear = centroids.iloc[indices]
-    for indexYr in indices:
-        year = str(dataYear.at[indexYr,'year'])
-        seminatural.at[indexPt, year] = dataYear.at[indexYr,'seminatural']
+    indSameX  = np.where(np.isclose(pt.x, centroids['geometry'].x, atol=1e0))
+    dataSameX = centroids.iloc[indSameX]
+    indSameY  = np.where(np.isclose(pt.y, dataSameX['geometry'].y, atol=1e0))
+    dataYear  = dataSameX.iloc[indSameY]
+#    indices = [i for i in range(0,len(centroids)) if np.isclose(pt.x, centroids.at[i,'geometry'].x, atol=1e0) and np.isclose(pt.y, centroids.at[i,'geometry'].y, atol=1e0)]    
+#    dataYear = centroids.iloc[indices]
+    for index, row in dataYear.iterrows():
+        year = str(row['year'])
+        seminatural.at[indexPt, year] = row['seminatural']
         
     contNr = contNr+1
     if np.mod(contNr, 100) == 0:
         times = contNr / totalNr 
         print("Creating time series seminatural habitat percentage...", np.floor(times*100), "percent completed...")
+backupFile = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\timeSeries.pkl'
+dill.dump_session(backupFile)
+print("Time series seminatural habitat percentage FINISHED... " + backupFile)
 
 # Evolution of fieldsize (average size of crop fields)
 fieldsize = gpd.GeoDataFrame()
@@ -57,16 +64,23 @@ contNr  = 0
 totalNr = len(fieldsize)
 for indexPt in fieldsize.index:
     pt = fieldsize.at[indexPt,'geometry']
-    indices = [i for i in range(0,len(centroids)) if np.isclose(pt.x, centroids.at[i,'geometry'].x, atol=1e0) and np.isclose(pt.y, centroids.at[i,'geometry'].y, atol=1e0)]    
-    dataYear = centroids.iloc[indices]
-    for indexYr in indices:
-        year = str(dataYear.at[indexYr,'year'])
-        fieldsize.at[indexPt, year] = dataYear.at[indexYr,'fieldsize']
+    indSameX  = np.where(np.isclose(pt.x, centroids['geometry'].x, atol=1e0))
+    dataSameX = centroids.iloc[indSameX]
+    indSameY  = np.where(np.isclose(pt.y, dataSameX['geometry'].y, atol=1e0))
+    dataYear  = dataSameX.iloc[indSameY]
+#    indices = [i for i in range(0,len(centroids)) if np.isclose(pt.x, centroids.at[i,'geometry'].x, atol=1e0) and np.isclose(pt.y, centroids.at[i,'geometry'].y, atol=1e0)]    
+#    dataYear = centroids.iloc[indices]
+    for index, row in dataYear.iterrows():
+        year = str(row['year'])
+        fieldsize.at[indexPt, year] = row['fieldsize']
         
     contNr = contNr+1
     if np.mod(contNr, 100) == 0:
         times = contNr / totalNr 
         print("Creating time series fieldsize average...", np.floor(times*100), "percent completed...")
+backupFile = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\timeSeries.pkl'
+dill.dump_session(backupFile)
+print("Time series fieldsize average FINISHED... " + backupFile)
 
 # Evolution of heterogeneity (number of different crops per km^2)
 heterogeneity = gpd.GeoDataFrame()
@@ -76,16 +90,23 @@ contNr  = 0
 totalNr = len(heterogeneity)
 for indexPt in heterogeneity.index:
     pt = heterogeneity.at[indexPt,'geometry']
-    indices = [i for i in range(0,len(centroids)) if np.isclose(pt.x, centroids.at[i,'geometry'].x, atol=1e0) and np.isclose(pt.y, centroids.at[i,'geometry'].y, atol=1e0)]    
-    dataYear = centroids.iloc[indices]
-    for indexYr in indices:
-        year = str(dataYear.at[indexYr,'year'])
-        heterogeneity.at[indexPt, year] = dataYear.at[indexYr,'heterogeneity']
+    indSameX  = np.where(np.isclose(pt.x, centroids['geometry'].x, atol=1e0))
+    dataSameX = centroids.iloc[indSameX]
+    indSameY  = np.where(np.isclose(pt.y, dataSameX['geometry'].y, atol=1e0))
+    dataYear  = dataSameX.iloc[indSameY]
+#    indices = [i for i in range(0,len(centroids)) if np.isclose(pt.x, centroids.at[i,'geometry'].x, atol=1e0) and np.isclose(pt.y, centroids.at[i,'geometry'].y, atol=1e0)]    
+#    dataYear = centroids.iloc[indices]
+    for index, row in dataYear.iterrows():
+        year = str(row['year'])
+        heterogeneity.at[indexPt, year] = row['heterogeneity']
         
     contNr = contNr+1
     if np.mod(contNr, 100) == 0:
         times = contNr / totalNr 
         print("Creating time series heterogeneity...", np.floor(times*100), "percent completed...")
+backupFile = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\timeSeries.pkl'
+dill.dump_session(backupFile)
+print("Time series heterogeneity FINISHED... " + backupFile)
 
 # Evolution of demand (pollinator's demand averaged over area)
 demand = gpd.GeoDataFrame()
@@ -95,20 +116,23 @@ contNr  = 0
 totalNr = len(demand)
 for indexPt in demand.index:
     pt = demand.at[indexPt,'geometry']
-    indices = [i for i in range(0,len(centroids)) if np.isclose(pt.x, centroids.at[i,'geometry'].x, atol=1e0) and np.isclose(pt.y, centroids.at[i,'geometry'].y, atol=1e0)]    
-    dataYear = centroids.iloc[indices]
-    for indexYr in indices:
-        year = str(dataYear.at[indexYr,'year'])
-        demand.at[indexPt, year] = dataYear.at[indexYr,'demand']
+    indSameX  = np.where(np.isclose(pt.x, centroids['geometry'].x, atol=1e0))
+    dataSameX = centroids.iloc[indSameX]
+    indSameY  = np.where(np.isclose(pt.y, dataSameX['geometry'].y, atol=1e0))
+    dataYear  = dataSameX.iloc[indSameY]
+#    indices = [i for i in range(0,len(centroids)) if np.isclose(pt.x, centroids.at[i,'geometry'].x, atol=1e0) and np.isclose(pt.y, centroids.at[i,'geometry'].y, atol=1e0)]    
+#    dataYear = centroids.iloc[indices]
+    for index, row in dataYear.iterrows():
+        year = str(row['year'])
+        demand.at[indexPt, year] = row['demand']
         
     contNr = contNr+1
     if np.mod(contNr, 100) == 0:
         times = contNr / totalNr 
         print("Creating time series demand...", np.floor(times*100), "percent completed...")
-
 backupFile = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\timeSeries.pkl'
 dill.dump_session(backupFile)
-print("FINISHED... Saved session... " + backupFile)
+print("Time series demand FINISHED... " + backupFile)
 
 
 
