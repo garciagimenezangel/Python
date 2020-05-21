@@ -18,7 +18,7 @@ home = expanduser("~")
 
 # INPUT
 session = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\timeSeries.pkl'
-dill.loadSession(session)
+dill.load_session(session)
 
 # Data: seminatural, fieldsize, heterogeneity, demand
 # Pintar con colores por comunidad autónoma
@@ -34,7 +34,7 @@ points = seminatural['geometry']
 df = seminatural.T
 df = pd.DataFrame(df)
 df = df.drop(['geometry'], axis=0)
-df.plot(color=[getColor(points[i],polygons, palette) for i in range(0:len(df.columns)) ], legend=False)
+df.plot(color=[getColor(points[i], polygons, palette) for i in range(0:len(df.columns)) ], legend=False)
 plt.show()
 
 a=seminatural[0:10]

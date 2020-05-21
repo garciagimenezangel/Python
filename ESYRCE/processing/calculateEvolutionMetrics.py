@@ -14,6 +14,7 @@ home = expanduser("~")
 # INPUT
 inputFile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\z30\\merged.shp'
 data = gpd.read_file(inputFile)
+crs  = "EPSG:23030"
 
 # Compute centroids and add to data
 centroids = data.centroid
@@ -29,10 +30,15 @@ centroids['heterogeneity'] = data['heterogene']
 centroids['demand']        = data['block_dema']
 centroids['year']          = data['YEA']
 
+# Get points with unique coordinates (within a tolerance of 1m)
+centX = np.around(centroids.geometry.x)
+centY = np.around(centroids.geometry.y)
+uniquePts = gpd.GeoDataFrame(geometry=gpd.points_from_xy(centX, centY))
+uniquePts = uniquePts.drop_duplicates()
+
 # Evolution of seminatural habitat percentage
 seminatural = gpd.GeoDataFrame()
-uniquePts = centroids.geometry.unique()
-seminatural['geometry'] = uniquePts
+seminatural['geometry'] = uniquePts.geometry
 for i in range(2001,2017): seminatural[str(i)]=np.nan
 contNr  = 0
 totalNr = len(seminatural)
@@ -54,11 +60,13 @@ for indexPt in seminatural.index:
         print("Creating time series seminatural habitat percentage...", np.floor(times*100), "percent completed...")
 backupFile = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\timeSeries.pkl'
 dill.dump_session(backupFile)
-print("Time series seminatural habitat percentage FINISHED... " + backupFile)
+seminatural.crs = crs
+seminatural.to_file(filename = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\seminatural.shp', driver="ESRI Shapefile")
+print("Time series seminatural habitat percentage FINISHED... Saved session: " + backupFile)
 
 # Evolution of fieldsize (average size of crop fields)
 fieldsize = gpd.GeoDataFrame()
-fieldsize['geometry'] = uniquePts
+fieldsize['geometry'] = uniquePts.geometry
 for i in range(2001,2017): fieldsize[str(i)]=np.nan
 contNr  = 0
 totalNr = len(fieldsize)
@@ -80,11 +88,13 @@ for indexPt in fieldsize.index:
         print("Creating time series fieldsize average...", np.floor(times*100), "percent completed...")
 backupFile = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\timeSeries.pkl'
 dill.dump_session(backupFile)
+fieldsize.crs = crs
+fieldsize.to_file(filename = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\fieldsize.shp', driver="ESRI Shapefile")
 print("Time series fieldsize average FINISHED... " + backupFile)
 
 # Evolution of heterogeneity (number of different crops per km^2)
 heterogeneity = gpd.GeoDataFrame()
-heterogeneity['geometry'] = uniquePts
+heterogeneity['geometry'] = uniquePts.geometry
 for i in range(2001,2017): heterogeneity[str(i)]=np.nan
 contNr  = 0
 totalNr = len(heterogeneity)
@@ -106,11 +116,13 @@ for indexPt in heterogeneity.index:
         print("Creating time series heterogeneity...", np.floor(times*100), "percent completed...")
 backupFile = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\timeSeries.pkl'
 dill.dump_session(backupFile)
+heterogeneity.crs = crs
+heterogeneity.to_file(filename = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\heterogeneity.shp', driver="ESRI Shapefile")
 print("Time series heterogeneity FINISHED... " + backupFile)
 
 # Evolution of demand (pollinator's demand averaged over area)
 demand = gpd.GeoDataFrame()
-demand['geometry'] = uniquePts
+demand['geometry'] = uniquePts.geometry
 for i in range(2001,2017): demand[str(i)]=np.nan
 contNr  = 0
 totalNr = len(demand)
@@ -132,6 +144,8 @@ for indexPt in demand.index:
         print("Creating time series demand...", np.floor(times*100), "percent completed...")
 backupFile = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\timeSeries.pkl'
 dill.dump_session(backupFile)
+demand.crs = crs
+demand.to_file(filename = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\demand.shp', driver="ESRI Shapefile")
 print("Time series demand FINISHED... " + backupFile)
 
 
