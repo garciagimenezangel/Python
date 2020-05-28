@@ -12,7 +12,7 @@ from os.path import expanduser
 home = expanduser("~")
 
 # INPUT
-inputFile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\z30\\merged.shp'
+inputFile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\z30\\merged\\dissolved_polygons.shp'
 data = gpd.read_file(inputFile)
 crs  = "EPSG:23030"
 
