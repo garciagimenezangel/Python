@@ -85,7 +85,7 @@ def saveTrajectories(df, name):
     for traj in uniqueTraj:
         trajIloc = np.where(df['trajClass'] == traj)
         trajElts = df.iloc[trajIloc]
-        fileName = rootDir+"\\"+name+"\\"+"traj"+traj+".shp"
+        fileName = rootDir+name+"\\"+"traj"+traj+".shp"
         trajElts.crs = crs
         trajElts.to_file(filename = fileName, driver="ESRI Shapefile")    
         print("Saved Trajectory: "+traj+" in file: " + fileName)
@@ -100,4 +100,11 @@ saveTrajectories(seminatural, 'seminatural')
 demand = calculateTrajectoryBins(demand, 0.25, 0.5)
 saveTrajectories(demand, 'demand')
 
+# Heterogeneity
+heterogeneity = calculateTrajectoryBins(heterogeneity, 5, 10)
+saveTrajectories(heterogeneity, 'heterogeneity')
+
+# Field size
+fieldsize = calculateTrajectoryBins(fieldsize, 10000, 50000)
+saveTrajectories(fieldsize, 'fieldsize')
 
