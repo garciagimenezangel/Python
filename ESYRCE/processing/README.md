@@ -18,6 +18,10 @@ Scripts for processing ESYRCE data with the goal of creating models in k.LAB:
 
 - divideFieldByAreaBlock.py: divide a field in the data by the area of the block
 
+- calculateEvolutionMetrics.py: calculate time series of metrics
+
+- clusterEvolutionMetrics.py: calculate slope of the metrics and trajectory types
+
 Notes: 
 
 - CRS must be 'EPSG:23028' for layer z28 and 'EPSG:23030' for z30
