@@ -8,11 +8,11 @@ Created on Mon Apr  6 16:56:21 2020
 import dill
 import csv
 import numpy as np
-import geopandas as gpd
 from os.path import expanduser
 home = expanduser("~")
-pollReliance = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\Cultivar-Demand.csv'
-cropNatArt   = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\CropNaturalArtificial.csv'
+pollReliance        = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\Cultivar-Demand.csv'
+cropNatArt          = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\CropNaturalArtificial.csv'
+cropNatArt_detailed = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\CropNaturalArtificial_detailed.csv'
 dictPollValues = { ''           :       0,
                    'no increase':       0, 
                    'increase':          0.5,
@@ -22,6 +22,79 @@ dictPollValues = { ''           :       0,
                    'modest': 0.25,
                    'great': 0.65,
                    'essential': 0.95}
+
+"""
+INPUT: any subset of ESYRCE data
+OUTPUT: dictionary with the values of intensification metrics
+"""
+def calculateIntensificationParametersDetailed(dfEsyrce):
+    # Read LC codes
+    with open(cropNatArt_detailed, mode='r') as infile:
+        reader    = csv.reader(infile)
+        dictCropNatArt = {rows[0]:rows[1] for rows in reader} # key: 'ESYRCE_code; value: 'Crop, Natural or Artificial'
+    
+    # Metrics to calculate
+    accAreaCereal        = 0
+    accAreaLegume        = 0
+    accAreaTuber         = 0
+    accAreaIndustrial    = 0
+    accAreaFodder        = 0
+    accAreaVegetable     = 0
+    accAreaOrnamental    = 0
+    accAreaEmptyGreenh   = 0
+    accAreaCitrics       = 0
+    accAreaFruitTree     = 0
+    accAreaVineyard      = 0
+    accAreaOlive         = 0
+    accAreaOtherWoody    = 0
+    accAreaNursery       = 0
+    accAreaAssociation   = 0
+    accAreaFallow        = 0
+    accAreaOrchard       = 0
+    accAreaGrasslandNat  = 0
+    accAreaPastureMount  = 0
+    accAreaPasture       = 0
+    accAreaPastureShrub  = 0
+    accAreaConifer       = 0
+    accAreaBroadleafSlow = 0
+    accAreaBroadleafFast = 0
+    accAreaPoplar        = 0
+    accAreaConiferBroad  = 0
+    accAreaShrub         = 0
+    accAreaWasteland     = 0
+    accAreaSpartizal     = 0
+    accAreaWasteToUrbanize = 0
+    accAreaImproductive  = 0
+    accAreaArtificial    = 0
+    avCropfieldSize = 0
+    totalArea = 0
+    crops = []
+    for index in dfEsyrce.index:
+        areaPolygon = dfEsyrce.loc[index].Shape_Area
+        code = dfEsyrce.loc[index].D4_GRC       
+        try:
+            isSeminatural = dictCropNatArt[code] == 'Semi-natural'
+            isCropfield   = dictCropNatArt[code] == 'Crop'
+        except:
+            isSeminatural = False
+            isCropfield   = False       
+        if isSeminatural: 
+            accAreaSeminatural = accAreaSeminatural + areaPolygon
+        if isCropfield:   
+            accAreaCropFields  = accAreaCropFields + areaPolygon
+            crops = np.append(crops, dfEsyrce.loc[index].D5_CUL)
+        totalArea = totalArea + areaPolygon
+    
+    seminaturalPercentage = accAreaSeminatural / totalArea
+    if len(crops) > 0:
+        avCropfieldSize = accAreaCropFields / len(crops)
+    heterogeneity = len(np.unique(crops)) / totalArea
+    
+    dictOut = {'seminaturalPercentage': seminaturalPercentage, 
+               'avCropfieldSize': avCropfieldSize, 
+               'heterogeneity': heterogeneity}   
+    return dictOut;
+
 
 """
 INPUT: any subset of ESYRCE data

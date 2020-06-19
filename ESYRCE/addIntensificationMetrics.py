@@ -22,8 +22,8 @@ sys.path.append(home + '\\Documents\\REPOSITORIES\\Python\\ESYRCE\\lib\\')
 import blockCalculator as bc 
 
 # INPUT
-inputESYRCE = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\session_esyrceFiltered_z30_epsg23030_selectedCols.pkl'
-dill.load_session(inputESYRCE) # data in dataSel
+session = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\sessions\\metricsAdded.pkl'
+dill.load_session(session) # data in dataSel
 
 dataSel['seminaturalPercentage'] = np.nan
 dataSel['avCropfieldSize'] = np.nan
@@ -81,7 +81,7 @@ for blockNr in blockNrs:
         dill.dump_session(home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\session_esyrceFiltered_z30_epsg23030_selectedCols_addIntenMetrics.pkl')
         print("Saved session... " + home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\session_esyrceFiltered_z30_epsg23030_selectedCols_addIntenMetrics.pkl')
 
-dill.dump_session(home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\session_esyrceFiltered_z30_epsg23030_selectedCols_addIntenMetrics.pkl')
+dill.dump_session(session)
 print("FINISHED... Saved session... " + home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\session_esyrceFiltered_z30_epsg23030_selectedCols_addIntenMetrics.pkl')
 
 

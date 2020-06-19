@@ -11,10 +11,10 @@ from os.path import expanduser
 home = expanduser("~")
 
 # INPUT
-root = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\z30\\yearly\\'
+root = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\filtered\\'
 
 # OUTPUT
-outFilename = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\z30\\merged.shp'
+outFilename = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\merged.shp'
 
 # Get filtered files
 listFiles = glob.glob(root+"*.shp")

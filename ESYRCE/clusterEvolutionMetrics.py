@@ -119,23 +119,23 @@ def saveToShapefile(df, name):
 seminatural = calculateTrajectoryBins(seminatural)
 seminatural = calculateSlopes(seminatural)
 saveToShapefile(seminatural, 'seminatural')
-#saveTrajectories(seminatural, 'seminatural')
+saveTrajectories(seminatural, 'seminatural')
 
 # Demand
 demand = calculateTrajectoryBins(demand, 0.25, 0.5)
 demand = calculateSlopes(demand)
 saveToShapefile(demand, 'demand')
-#saveTrajectories(demand, 'demand')
+saveTrajectories(demand, 'demand')
 
 # Heterogeneity
 heterogeneity = calculateTrajectoryBins(heterogeneity, 5, 10)
 heterogeneity = calculateSlopes(heterogeneity)
 saveToShapefile(heterogeneity, 'heterogeneity')
-#saveTrajectories(heterogeneity, 'heterogeneity')
+saveTrajectories(heterogeneity, 'heterogeneity')
 
 # Field size
 fieldsize = calculateTrajectoryBins(fieldsize, 5000, 20000)
 fieldsize = calculateSlopes(fieldsize)
 saveToShapefile(fieldsize, 'fieldsize')
-#saveTrajectories(fieldsize, 'fieldsize')
+saveTrajectories(fieldsize, 'fieldsize')
 
