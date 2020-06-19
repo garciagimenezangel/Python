@@ -2,6 +2,10 @@
 """
 INPUT: ESYRCE database (.gdb file)
 OUTPUT: shapefiles (data is saved every 1000 blocks) with the ESYRCE blocks where 
+Notes: sometimes, the area of the blocks changes from one year to another. It seems (from the exploration
+of the data in QGIS) that some of the blocks are wrongly referenced (they are shifted in space), and some are 
+different because of a change in the survey area (e.g from 500x500m to 700x700m or vice versa). These situations
+are flagged to deal with them as good as possible
 """
 import dill
 import geopandas as gpd
@@ -10,15 +14,19 @@ import pandas as pd
 from os.path import expanduser
 home = expanduser("~")
 
+import sys
+sys.path.append(home + '\\Documents\\REPOSITORIES\\Python\\ESYRCE\\')
+import blockCalculator as bc 
+
 # INPUT
-inputESYRCE = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\Esyrce2001_2016.gdb'
+inputESYRCE = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\Esyrce2001_2016.gdb'
 layer = 'z30'
 # load file from local path or saved Python session
-#data = gpd.read_file(inputESYRCE, layer=layer)
-data = 
+data = gpd.read_file(inputESYRCE, layer=layer)
+#data = gpd.read_file(home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\tests\\testNorth.shp')
 
 # OUTPUT
-rootFilename = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\' + layer + '\\filtered\\data'
+rootFilename = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\' + layer + '\\filtered\\data' # output is splitted in many files-> rootFilename_NUMBER.shp
 
 if layer == 'z28':
     crs = "EPSG:23028"
@@ -27,64 +35,39 @@ if layer == 'z30':
     crs = "EPSG:23030"
 
 ##################
-# Select plots
-validPlots = np.array([0])
-
 # Loop block numbers
 blockNrs = np.unique(data.D2_NUM)
 totalNr = len(blockNrs) 
 contNr  = 0
 emptyDF = True
 contSavedFiles = 0
-for blockNr in blockNrs:
+for blockNr in blockNrs[1:]:
     
-    ii = np.where(data.D2_NUM == blockNr)
-    i0 = ii[0][0]
-    iM = ii[0][len(ii[0])-1]
-    dataBlockNr = data[i0:(iM+1)]
-    if (iM-i0+1)!=len(ii[0]): 
-        print("Warning Block nr:",blockNr," excluded. Indices not consecutive")
-        validNr = False
+    # Select block data
+    selectedInd = data.D2_NUM == blockNr
+    dataBlockNr = [data.iloc[i] for i in range(0,len(selectedInd)) if selectedInd.iloc[i]]
+    dataBlockNr = gpd.GeoDataFrame(dataBlockNr)
     
-    if validNr:
-        # Loop years: check every year has the same spatial extent
-        years = np.unique(dataBlockNr.YEA)
-        cont  = 0
-        validNr = True
-        for year in years:
-            
-            selectedInd   = dataBlockNr.YEA == year
-            dataBlockYear = [dataBlockNr.iloc[i] for i in range(0,len(selectedInd)) if selectedInd.iloc[i]]
-            dataBlockYear = gpd.GeoDataFrame(dataBlockYear)
-            try:
-                dissolved     = dataBlockYear.dissolve(by='YEA')    
-                newDissGeo    = dissolved.geometry
-                newBBox       = newDissGeo.bounds
-            except:
-                print("Warning Block nr:",blockNr," excluded. Geometry problems")
-                validNr = False
-                break
-            
-            if (cont == 0):  
-                lastBBox = newBBox
-                cont = cont+1
-            else:
-                condition = np.isclose(lastBBox.iloc[0].reset_index(drop=True), newBBox.iloc[0].reset_index(drop=True), rtol=1e-6) 
-                if all(condition):
-                    lastBBox = newBBox
-                    cont = cont+1
-                else:
-                    print("Warning Block nr:",blockNr," excluded. It does not meet the required conditions")
-                    validNr = False
-                    break
-        
-    if validNr: 
+    # Three cases seen in the exploration of the data: every year same spatial cover, spatial cover reduced from 700x700m to 500x500m after 2007 and data wrong in 2001, 2002. 
+    # Check in which case we are: 0:ok; 1:size changed, clip to smallest; 2: data not aligned, skip; 3: geometry problems dissolving, skip data
+    flag = bc.getBlockQualityFlag(dataBlockNr);
+    if (flag == 0):
         if emptyDF:
             validData = dataBlockNr
             validData.crs = crs
             emptyDF = False
         else:
-            validData = pd.concat([validData, dataBlockNr], ignore_index=True) 
+            validData = pd.concat([validData, dataBlockNr], ignore_index=True)
+    
+    elif (flag == 1):
+        minPolygon = bc.getPolygonToClip(dataBlockNr);
+        intersDataBlockNr = gpd.overlay(dataBlockNr, minPolygon, how='intersection')
+        if emptyDF:
+            validData = intersDataBlockNr
+            validData.crs = crs
+            emptyDF = False
+        else:
+            validData = pd.concat([validData, intersDataBlockNr], ignore_index=True)
     
     contNr = contNr+1
     if np.mod(contNr, 10) == 0:

@@ -8,6 +8,7 @@ Created on Mon Apr  6 16:56:21 2020
 import dill
 import csv
 import numpy as np
+import geopandas as gpd
 from os.path import expanduser
 home = expanduser("~")
 pollReliance        = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\Cultivar-Demand.csv'
@@ -23,6 +24,73 @@ dictPollValues = { ''           :       0,
                    'great': 0.65,
                    'essential': 0.95}
 
+"""
+INPUT: subset of ESYRCE data corresponding to one block number
+OUTPUT: polygon corresponding to the data of the year with the smallest spatial coverage
+"""
+def getPolygonToClip(dataBlockNr):
+    years = np.unique(dataBlockNr.YEA)
+    cont = 0
+    for year in years:
+        selectedInd   = dataBlockNr.YEA == year
+        dataBlockYear = [dataBlockNr.iloc[i] for i in range(0,len(selectedInd)) if selectedInd.iloc[i]]
+        dataBlockYear = gpd.GeoDataFrame(dataBlockYear)
+        try:
+            dissolved = dataBlockYear.dissolve(by='YEA')    
+        except:
+            print("Warning: problems dissolving block ", dataBlockNr.iloc[0]['D2_NUM'])
+            return gpd.GeoDataFrame()
+            
+        if (cont == 0):  
+            intersection = dissolved
+            cont = cont+1
+        else:
+            intersection = gpd.overlay(intersection, dissolved, how='intersection')
+    
+    return gpd.GeoDataFrame(intersection.geometry)
+
+"""
+INPUT: subset of ESYRCE data corresponding to one block number
+OUTPUT: quality flag. 0:ok; 1:size changed, clip to smallest; 2: blocks not aligned; 3: geometry problems dissolving
+"""
+def getBlockQualityFlag(dataBlockNr):
+    flag = 0 
+    years = np.unique(dataBlockNr.YEA)
+    cont = 0
+    for year in years:
+        selectedInd   = dataBlockNr.YEA == year
+        dataBlockYear = [dataBlockNr.iloc[i] for i in range(0,len(selectedInd)) if selectedInd.iloc[i]]
+        dataBlockYear = gpd.GeoDataFrame(dataBlockYear)
+        try:
+            dissolved     = dataBlockYear.dissolve(by='YEA')    
+            newDissGeo    = dissolved.geometry
+            newBBox       = newDissGeo.bounds
+        except:
+            return 3
+            
+        if (cont == 0):  
+            minBBox = newBBox
+            cont = cont+1
+        else:
+            lastMinX = minBBox.iloc[0][0];
+            lastMinY = minBBox.iloc[0][1];            
+            newMinX  = newBBox.iloc[0][0];
+            newMinY  = newBBox.iloc[0][1];
+            lastMaxX = minBBox.iloc[0][2];
+            lastMaxY = minBBox.iloc[0][3];            
+            newMaxX  = newBBox.iloc[0][2];
+            newMaxY  = newBBox.iloc[0][3];      
+            if (not(np.isclose(lastMinX, newMinX, rtol=1e-6)) or not(np.isclose(lastMinY, newMinY, rtol=1e-6))):
+                return 2
+            elif (not(np.isclose(lastMaxX, newMaxX, rtol=1e-6)) or not(np.isclose(lastMaxY, newMaxY, rtol=1e-6))):
+                flag = 1
+                minBBox = newBBox
+            else:
+                minBBox = newBBox
+                
+    return flag
+
+        
 """
 INPUT: any subset of ESYRCE data
 OUTPUT: dictionary with the values of intensification metrics

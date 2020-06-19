@@ -22,7 +22,7 @@ import blockCalculator as bc
 from sklearn import linear_model
 
 # INPUT
-session = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\z30\\sessions\\timeSeries.pkl'
+session = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\sessions\\timeSeries.pkl'
 dill.load_session(session)
 crs  = "EPSG:23030"
 

@@ -18,7 +18,7 @@ from os.path import expanduser
 home = expanduser("~")
 
 import sys
-sys.path.append(home + '\\Documents\\REPOSITORIES\\Python\\ESYRCE\\lib\\')
+sys.path.append(home + '\\Documents\\REPOSITORIES\\Python\\ESYRCE\\')
 import blockCalculator as bc 
 
 # INPUT
