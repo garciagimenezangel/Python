@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Spyder Editor
-
-This is a temporary script file.
+INPUT: root folder with shapefiles (for example, output files from script 'filterDataByExtent')
+OUTPUT: one shapefile merging all the input files
 """
 import geopandas as gpd
 import pandas as pd
@@ -14,7 +13,7 @@ home = expanduser("~")
 root = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\filtered\\'
 
 # OUTPUT
-outFilename = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\merged.shp'
+outFilename = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\filtered\\merged.shp'
 
 # Get filtered files
 listFiles = glob.glob(root+"*.shp")

@@ -16,7 +16,7 @@ home = expanduser("~")
 
 import sys
 sys.path.append(home + '\\Documents\\REPOSITORIES\\Python\\ESYRCE\\')
-import blockCalculator as bc 
+import functions 
 
 # INPUT
 inputESYRCE = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\Esyrce2001_2016.gdb'
@@ -48,9 +48,10 @@ for blockNr in blockNrs[1:]:
     dataBlockNr = [data.iloc[i] for i in range(0,len(selectedInd)) if selectedInd.iloc[i]]
     dataBlockNr = gpd.GeoDataFrame(dataBlockNr)
     
-    # Three cases seen in the exploration of the data: every year same spatial cover, spatial cover reduced from 700x700m to 500x500m after 2007 and data wrong in 2001, 2002. 
+    # Three cases seen in the exploration of the data: every year same spatial cover, spatial cover reduced from 700x700m to 500x500m after 2007 and data wrong in some years (I think that 2001, 2002). 
     # Check in which case we are: 0:ok; 1:size changed, clip to smallest; 2: data not aligned, skip; 3: geometry problems dissolving, skip data
-    flag = bc.getBlockQualityFlag(dataBlockNr);
+    tol  = 1.0
+    flag = functions.getBlockQualityFlag(dataBlockNr, tol)
     if (flag == 0):
         if emptyDF:
             validData = dataBlockNr
@@ -60,7 +61,7 @@ for blockNr in blockNrs[1:]:
             validData = pd.concat([validData, dataBlockNr], ignore_index=True)
     
     elif (flag == 1):
-        minPolygon = bc.getPolygonToClip(dataBlockNr);
+        minPolygon = functions.getPolygonToClip(dataBlockNr);
         intersDataBlockNr = gpd.overlay(dataBlockNr, minPolygon, how='intersection')
         if emptyDF:
             validData = intersDataBlockNr
