@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-INPUT: root folder with shapefiles (for example, output files from script 'filterDataByExtent')
+INPUT: root folder with shapefiles (for example, output files from script 'flagDataBlocks')
 OUTPUT: one shapefile merging all the input files
 """
 import geopandas as gpd
@@ -10,10 +10,10 @@ from os.path import expanduser
 home = expanduser("~")
 
 # INPUT
-root = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\filtered\\'
+root = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\flagged\\'
 
 # OUTPUT
-outFilename = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\filtered\\merged.shp'
+outFilename = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\flagged\\data_flag_012.shp'
 
 # Get filtered files
 listFiles = glob.glob(root+"*.shp")

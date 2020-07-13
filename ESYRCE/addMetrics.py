@@ -43,6 +43,20 @@ MO	    * 	    mar, lagunas litorales, estuarios, etc.
 3) Heterogeneity: number of different crop types within a block, per km^2
 
 4) Demand: demand in a block, averaged over the area of the polygons
+    
+5) Soil maintenance (for woody crops, fallows, cereal, sunflower, fodder corn and fodder cereals): 
+DE_CS
+For woody crops and fallows:
+LT    laboreo tradicional
+LM    laboreo mínimo
+CE    cubiertas vegetales espontáneas
+CS    cubiertas vegetales sembradas
+CP    cubiertas inertes
+SM    sin mantenimiento
+NL    no laboreo (caso de cultivos leñosos)
+For cereals, sunflower, fodder corn and fodder cereals:
+D     siembra directa
+N     siembra tradicional
 
 INPUT: 
     - one shapefile with the ESYRCE data, and csv's: 
@@ -53,7 +67,6 @@ INPUT:
 OUTPUT: csv file with the ESYRCE data and the new metrics added as columns
 """
 
-import dill
 import csv
 import geopandas as gpd
 import numpy as np
@@ -69,10 +82,17 @@ import functions
 #import dill
 #session = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\sessions\\dataSel.pkl'
 #dill.load_session(session) # data in dataSel
-inputESYRCE = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\filtered\\merged.shp'
+inputESYRCE = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\flagged\\data_flag_012.shp'
 data = gpd.read_file(inputESYRCE)
+ 
 tableCultivarDemand = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
 tableIsCrop         = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCrop.csv'
+
+# Select columns, sort and reset indices
+data.Shape_Area = data.geometry.area
+data = data[['D2_NUM','D3_PAR', 'D4_GRC', 'D5_CUL','DE_CS','YEA','Shape_Area']]
+data.sort_values(by=['D2_NUM','YEA'], inplace = True)
+data.reset_index(drop=True, inplace=True)
 
 # Land cover types (associating to esyrce codes, add more or remove if needed), to calculate proportion in every block for each year
 landCoverTypes = {'cerealGrain':        ['CE','*'],     
@@ -115,6 +135,18 @@ landCoverTypes = {'cerealGrain':        ['CE','*'],
 alternatCodes = {'improductive': ['IM','*'], 
                  'notAgri':      ['NA','*']}
 
+# Soil codes. Apply to land cover types of woody crops and fallow: 
+soilCodes = {'traditional':   ['LT'],
+             'minimal':       ['LM'],
+             'spontVegCover': ['CE'],
+             'sowedVegCover': ['CS'],
+             'noMainten':     ['SM'],
+             'noTillage':     ['NL']}
+
+# Sowing codes. Apply to cereals, sunflower, fodder corn and fodder cereals: 
+sowCodes = { 'directSowing':  ['D'],
+             'traditSowing':  ['N']} 
+
 # OUTPUT
 outFilename = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\filtered\\metrics.shp'
 
@@ -124,6 +156,13 @@ backupSession = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\sessi
 # Init new columns
 for x in landCoverTypes.keys(): 
     data[x] = np.nan
+
+for x in soilCodes.keys(): 
+    data[x] = np.nan
+
+for x in sowCodes.keys(): 
+    data[x] = np.nan
+
 data['avgFieldSize'] = np.nan
 data['heterogeneity'] = np.nan
 data['demand'] = np.nan
@@ -133,11 +172,13 @@ data['demand'] = np.nan
 with open(tableIsCrop, mode='r') as infile:
     reader     = csv.reader(infile)
     dictIsCrop = {rows[0]:rows[1] for rows in reader} # keys: esyrce codes; values: 'YES' or 'NO'
-    
+
+
 # Dictionary to associate crop codes with demand
 with open(tableCultivarDemand, mode='r') as infile:
     reader             = csv.reader(infile)
     dictCultivarDemand = {rows[0]:rows[1] for rows in reader} # key: 'esyrce codes; value: demand estimation (see dictDemandValues defined at the beginning of this file)
+
 
 # Loop plot numbers
 blockNrs = np.unique(data.D2_NUM)
@@ -167,9 +208,11 @@ for blockNr in blockNrs:
         if (iM-i0+1)!=len(ii[0]): # sanity check
             print("Error... Exit loop in Block nr:",blockNr,"...Year:",year)  
             break
-    
+        
         # Calculate metrics
         landCoverProportion = functions.calculateLandCoverProportion(dataBlockYear, landCoverTypes, alternatCodes)
+        soilTechnProportion = functions.calculateSoilTechniqueProportion(dataBlockYear, soilCodes, sowCodes) 
+        sowTechnProportion  = functions.calculateSoilTechniqueProportion(dataBlockYear, sowCodes, soilCodes) 
         avgFieldSize        = functions.calculateAvgFieldSize(dataBlockYear, dictIsCrop)
         heterogeneity       = functions.calculateHeterogeneity(dataBlockYear, dictIsCrop)
         demand              = functions.calculateDemand(dataBlockYear, dictCultivarDemand)
@@ -177,10 +220,14 @@ for blockNr in blockNrs:
         # Assign values
         for x in landCoverTypes.keys(): 
             data[x].loc[dataBlockYear.index] = landCoverProportion[x]
+        for x in soilCodes.keys(): 
+            data[x].loc[dataBlockYear.index] = soilTechnProportion[x]
+        for x in sowCodes.keys(): 
+            data[x].loc[dataBlockYear.index] = sowTechnProportion[x]
         data.avgFieldSize.loc[dataBlockYear.index]  = avgFieldSize
         data.heterogeneity.loc[dataBlockYear.index] = heterogeneity
         data.demand.loc[dataBlockYear.index]        = demand
-        
+    
     contNr = contNr+1
     if np.mod(contNr, 100) == 0:
         times = contNr / totalNr 
@@ -191,7 +238,6 @@ for blockNr in blockNrs:
         dill.dump_session(backupSession)
         print("Saved session... " + backupSession)
 
+
 data.to_file(filename = outFilename, driver="ESRI Shapefile")
 print("FINISHED... Data saved... " + outFilename)
-
-

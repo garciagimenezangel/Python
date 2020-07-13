@@ -4,8 +4,6 @@ Created on Mon Apr  6 16:56:21 2020
 
 @author: angel.gimenez
 """
-
-import dill
 import numpy as np
 import geopandas as gpd
 from os.path import expanduser
@@ -29,20 +27,28 @@ def getPolygonToClip(dataBlockNr):
     years = np.unique(dataBlockNr.YEA)
     cont = 0
     for year in years:
-        selectedInd   = dataBlockNr.YEA == year
-        dataBlockYear = [dataBlockNr.iloc[i] for i in range(0,len(selectedInd)) if selectedInd.iloc[i]]
-        dataBlockYear = gpd.GeoDataFrame(dataBlockYear)
+#        selectedInd   = dataBlockNr.YEA == year
+#        dataBlockYear = [dataBlockNr.iloc[i] for i in range(0,len(selectedInd)) if selectedInd.iloc[i]]
+#        dataBlockYear = gpd.GeoDataFrame(dataBlockYear)
+        ii = np.where(dataBlockNr.YEA == year)
+        i0 = ii[0][0]
+        iM = ii[0][len(ii[0])-1]
+        dataBlockYear = dataBlockNr[i0:(iM+1)]
         try:
             dissolved = dataBlockYear.dissolve(by='YEA')    
         except:
-            print("Warning: problems dissolving block ", dataBlockNr.iloc[0]['D2_NUM'])
+            print("Warning (getPolygonToClip): problems dissolving block ", dataBlockNr.iloc[0]['D2_NUM'])
             return gpd.GeoDataFrame()
             
         if (cont == 0):  
             intersection = dissolved
             cont = cont+1
         else:
-            intersection = gpd.overlay(intersection, dissolved, how='intersection')
+            try:
+                intersection = gpd.overlay(intersection, dissolved, how='intersection')
+            except:
+                print("Warning: problems performing intersection ", dataBlockNr.iloc[0]['D2_NUM'])
+                return gpd.GeoDataFrame()
     
     return gpd.GeoDataFrame(intersection.geometry)
 
@@ -56,9 +62,13 @@ def getBlockQualityFlag(dataBlockNr, tol):
     years = np.unique(dataBlockNr.YEA)
     cont = 0
     for year in years:
-        selectedInd   = dataBlockNr.YEA == year
-        dataBlockYear = [dataBlockNr.iloc[i] for i in range(0,len(selectedInd)) if selectedInd.iloc[i]]
-        dataBlockYear = gpd.GeoDataFrame(dataBlockYear)
+#        selectedInd   = dataBlockNr.YEA == year
+#        dataBlockYear = [dataBlockNr.iloc[i] for i in range(0,len(selectedInd)) if selectedInd.iloc[i]]
+#        dataBlockYear = gpd.GeoDataFrame(dataBlockYear)
+        ii = np.where(dataBlockNr.YEA == year)
+        i0 = ii[0][0]
+        iM = ii[0][len(ii[0])-1]
+        dataBlockYear = dataBlockNr[i0:(iM+1)]
         try:
             dissolved     = dataBlockYear.dissolve(by='YEA')    
             newDissGeo    = dissolved.geometry
@@ -173,10 +183,73 @@ def calculateLandCoverProportion(dataBlockYear, landCoverTypes, alternatCodes):
                   "...D4_GRC:", polyGrc,
                   "...D5_CUL:", polyCul)
             
+    if totalArea != 0:
+        values = lcAcc/totalArea
+    else:
+        values = np.zeros(len(keys))
+        
     # Output dictionary. Key: land cover type; value: accumulated area in the block
-    return dict((keys[ind], lcAcc[ind]/totalArea) for ind in range(0,len(keys)))          
+    return dict((keys[ind], values[ind]) for ind in range(0,len(keys)))          
 
     
+"""
+INPUT: 
+    - a subset of ESYRCE data corresponding to a block for a particular year 
+    - dictionary of soil techniques with associated ESYRCE codes. 
+    - dictionary of soil techniques to be ignored (in order to use the same function for soil maintenance and sowing techniques). 
+    
+OUTPUT: dictionary with the porportion of each soil management technique within the block
+
+Note: proportion is computed only with regard to codes present in the input dictionary. If no code present, then returns 0.
+"""
+def calculateSoilTechniqueProportion(dataBlockYear, soilCodes, ignoreCodes):
+    # Read codes from dictionary landCoverTypes
+    keys     = list(soilCodes.keys())
+    codes    = list(soilCodes.values())
+    codesCS  = np.array([x[0] for x in codes])
+    
+    # Initialize variables to store accumulated area values 
+    soilAcc = np.zeros(len(codesCS)) # accumulated area of each soil management technique
+    totalArea = 0
+    
+    # Iterate through the polygons in dataBlockYear
+    for index in dataBlockYear.index:
+        # area of the polygon
+        areaPolygon = dataBlockYear.loc[index].Shape_Area
+        
+        # soil management technique code
+        polyCS = dataBlockYear.loc[index].DE_CS       
+        
+        # Ignore water codes
+        if np.isin(polyCS, np.array(list(ignoreCodes.values()))): continue
+    
+        # If code found (polyCS != None), add area to the corresponding soil management technique
+        if polyCS:
+    
+            # identify soil technique index
+            ii = np.where(codesCS == polyCS)[0]
+        
+            # add area of this soil technique
+            if (len(ii)==1): # it should find only one index
+                ind = ii[0]
+                soilAcc[ind] = soilAcc[ind] + areaPolygon
+                totalArea    = totalArea + areaPolygon
+            else: 
+                print("Warning... Index problems in calculateSoilTechniqueProportion. Parcel IGNORED",
+                  "...Block:", dataBlockYear.loc[index].D2_NUM,
+                  "...Parcel:", dataBlockYear.loc[index].D3_PAR,
+                  "...Year:", dataBlockYear.loc[index].YEA,
+                  "...DE_CS:", polyCS)
+                        
+    if totalArea != 0:
+        values = soilAcc/totalArea
+    else:
+        values = np.zeros(len(keys))
+        
+    # Output dictionary. Key: soil management technique; value: accumulated area in the block
+    return dict((keys[ind], values[ind]) for ind in range(0,len(keys)))              
+
+
 """
 INPUT: 
     - a subset of ESYRCE data corresponding to a block for a particular year 

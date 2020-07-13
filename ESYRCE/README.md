@@ -4,9 +4,9 @@ Main files:
 
 - functions.py: important functions used in the scripts (e.g. to calculate metrics) are stored in this file
 
-- filterDataByExtent.py: filter data by spatial extent
+- flagDataBlocks.py: flag data blocks. 0:ok; 1:size changed, clip to smallest; 2: data not aligned
 
-- mergeSplitted.py: merge data files produced by 'filterDataByExtent.py'
+- mergeSplitted.py: merge data files produced by 'flagDataBlocks.py'
 
 - addMetrics.py: add columns with metrics associated to each block, such as area of land cover types, field size or demand.
 
