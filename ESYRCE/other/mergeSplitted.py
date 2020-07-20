@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-INPUT: root folder with shapefiles (for example, output files from script 'flagDataBlocks')
+INPUT: root folder with shapefiles (for example, output files from script 'flagDataSegments')
 OUTPUT: one shapefile merging all the input files
 """
 import geopandas as gpd

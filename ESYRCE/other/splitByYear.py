@@ -12,7 +12,7 @@ from os.path import expanduser
 home = expanduser("~")
 
 # INPUT
-dissolve = False # dissolve polygons in each block? 
+dissolve = False # dissolve polygons in each segment? 
 layer = "z30"
 #inputFile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceProcessed_' + layer + '.shp'
 #inputFile = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\session_esyrceFiltered_z30_epsg23030_selectedCols_addIntenMetrics_addDemand.pkl'

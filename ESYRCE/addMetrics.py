@@ -38,11 +38,11 @@ NA	    *	    producción de energía, industria, transportes, almacenamiento, co
 AG	    *	    aguas interiores
 MO	    * 	    mar, lagunas litorales, estuarios, etc.
 
-2) Average cropfield size: average size in every block of the fields identified as crops
+2) Average cropfield size: average size in every segment of the fields identified as crops
 
-3) Heterogeneity: number of different crop types within a block, per km^2
+3) Heterogeneity: number of different crop types within a segment, per km^2
 
-4) Demand: demand in a block, averaged over the area of the polygons
+4) Demand: demand in a segment, averaged over the area of the polygons
     
 5) Soil maintenance (for woody crops, fallows, cereal, sunflower, fodder corn and fodder cereals): 
 DE_CS
@@ -58,13 +58,19 @@ For cereals, sunflower, fodder corn and fodder cereals:
 D     siembra directa
 N     siembra tradicional
 
+6) Average yield of crops (see variable 'cropCodes') 
+    
+
 INPUT: 
     - one shapefile with the ESYRCE data, and csv's: 
     - table with values of crops' demand of pollinators
     - table of classification of ESYRCE codes as crop or not
     - land cover types to measure their percentage
+    - soil management techniques
+    - sowing technique options
+    - crop codes that have available measurements of yield 
     
-OUTPUT: csv file with the ESYRCE data and the new metrics added as columns
+OUTPUT: csv file with ESYRCE identificator (segment number + year) and the metrics 
 """
 
 import csv
@@ -79,22 +85,26 @@ sys.path.append(home + '\\Documents\\REPOSITORIES\\Python\\ESYRCE\\')
 import functions
 
 # INPUT
-#import dill
-#session = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\sessions\\dataSel.pkl'
-#dill.load_session(session) # data in dataSel
-inputESYRCE = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\flagged\\data_flag_012.shp'
+inputESYRCE = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\flagged\\data_flag2.shp'
 data = gpd.read_file(inputESYRCE)
- 
-tableCultivarDemand = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
-tableIsCrop         = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCrop.csv'
+
+# OUTPUT
+outFilename = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\metrics\\flag2.csv'
 
 # Select columns, sort and reset indices
 data.Shape_Area = data.geometry.area
-data = data[['D2_NUM','D3_PAR', 'D4_GRC', 'D5_CUL','DE_CS','YEA','Shape_Area']]
-data.sort_values(by=['D2_NUM','YEA'], inplace = True)
+data = data[['D1_HUS','D2_NUM','D3_PAR','D4_GRC','D5_CUL','D9_RTO','DE_CS','YEA','Shape_Area']]
+data = data.dropna(thresh=1)
+data = data.where(data['D1_HUS'] != 0)
+data = data.where(data['D2_NUM'] != 0)
+data.sort_values(by=['D1_HUS','D2_NUM','YEA'], inplace = True)
 data.reset_index(drop=True, inplace=True)
 
-# Land cover types (associating to esyrce codes, add more or remove if needed), to calculate proportion in every block for each year
+# Define dictionaries:
+tableCultivarDemand = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
+tableIsCrop         = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCrop.csv'
+
+# Land cover types (associating to esyrce codes, add more or remove if needed), to calculate proportion in every segment for each year
 landCoverTypes = {'cerealGrain':        ['CE','*'],     
                   'legumeGrain':        ['LE','*'],    
                   'tuber':              ['TU','*'],  
@@ -140,6 +150,7 @@ soilCodes = {'traditional':   ['LT'],
              'minimal':       ['LM'],
              'spontVegCover': ['CE'],
              'sowedVegCover': ['CS'],
+             'inertCover':    ['CP'],
              'noMainten':     ['SM'],
              'noTillage':     ['NL']}
 
@@ -147,25 +158,73 @@ soilCodes = {'traditional':   ['LT'],
 sowCodes = { 'directSowing':  ['D'],
              'traditSowing':  ['N']} 
 
-# OUTPUT
-outFilename = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\filtered\\metrics.shp'
+# Crop codes. Crops that might have a yield estimation (only some of the fields, have a yield estimation, and theoretically this is done only for these crops, according to the ESYRCE manual 2017)
+cropCodes = {'hardWheat':     ['TD'],
+             'softWheat':     ['TB'],
+             'barleyTwoRows': ['C2'],
+             'barleySixRows': ['C6'],
+             'oat':           ['AV'],
+             'rye':           ['CN'],
+             'rice':          ['AR'],
+             'maize':         ['MA'],
+             'quinoa':        ['QN'],
+             'frijol':        ['JS'],
+             'fabaBean':      ['HS'],
+             'lentil':        ['LE'],
+             'chickpea':      ['GA'],
+             'pea':           ['GS'],
+             'ervil':         ['YE'],
+             'potato':        ['PT'],
+             'sugarbeet':     ['RM'],
+             'cotton':        ['AD'],
+             'sunflower':     ['GI'],
+             'soybean':       ['SO'],
+             'rapeseed':      ['CZ'],
+             'industTomato':  ['TI'],
+             'fodderMaize':   ['MF'],
+             'garlic':        ['AJ'],
+             'artichoke':     ['AC'],
+             'eggplant':      ['BE'],
+             'zucchini':      ['CB'],
+             'onion':         ['CL'],
+             'strawberry':    ['FN'],
+             'greenPea':      ['GV'],
+             'greenBean':     ['HV'],
+             'kidneyBean':    ['JV'],
+             'melon':         ['MO'],
+             'cucumber':      ['PI'],
+             'sweetPepper':   ['PQ'],
+             'watermelon':    ['SA'],
+             'carrot':        ['CT'],
+             'orange':        ['NR'],
+             'clementine':    ['MR'],
+             'lemon':         ['LI'],
+             'apple':         ['MN'],
+             'pear':          ['PE'],
+             'apricot':       ['AB'],
+             'cherry':        ['CE'],
+             'peach':         ['ME'],
+             'plum':          ['CR'],
+             'banana':        ['PL'],
+             'almond':        ['AM'],
+             'walnut':        ['AE'],
+             'whiteGrapeSeedless':['V1'],
+             'whiteGrape':    ['V2'],
+             'redGrapeSeedless':['V3'],
+             'redGrape':      ['V4'],
+             'transfGrape':   ['VT'],
+             'oliveTable':    ['OM'],
+             'olive':         ['OD'],
+             'oliveMill':     ['OT']}
 
-# Backup session
-backupSession = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\sessions\\backup.pkl'
-
-# Init new columns
-for x in landCoverTypes.keys(): 
-    data[x] = np.nan
-
-for x in soilCodes.keys(): 
-    data[x] = np.nan
-
-for x in sowCodes.keys(): 
-    data[x] = np.nan
-
-data['avgFieldSize'] = np.nan
-data['heterogeneity'] = np.nan
-data['demand'] = np.nan
+# Init new columns with NaN data
+for x in landCoverTypes.keys(): data[x] = np.repeat(np.nan, len(data))
+for x in soilCodes.keys():      data[x] = np.repeat(np.nan, len(data))
+for x in sowCodes.keys():       data[x] = np.repeat(np.nan, len(data))
+for x in cropCodes.keys():      data[x] = np.repeat(np.nan, len(data))
+data['avgFieldSize']                    = np.repeat(np.nan, len(data))
+data['heterogeneity']                   = np.repeat(np.nan, len(data))
+data['demand']                          = np.repeat(np.nan, len(data))
 
 # Define dictionaries from tables
 # Dictionary to associate codes with crop category
@@ -180,64 +239,74 @@ with open(tableCultivarDemand, mode='r') as infile:
     dictCultivarDemand = {rows[0]:rows[1] for rows in reader} # key: 'esyrce codes; value: demand estimation (see dictDemandValues defined at the beginning of this file)
 
 
-# Loop plot numbers
-blockNrs = np.unique(data.D2_NUM)
-totalNr = len(blockNrs) 
-contNr = 0
-for blockNr in blockNrs:
-    
-    # Get the rows corresponding to blockNr. This is not the safest way (it doesn't work if the rows are not sorted out by number of block, which seems not to be the case), 
-    # but it is the fastest way. A sanity check is included to make sure that this way works reasonably well. If the "Error..." message is prompted too much times, then 
-    # this way of getting the rows for the blockNr must be replaced by the slow way (see filterDataByExtent.py as an example)
-    ii = np.where(data.D2_NUM == blockNr) 
+##################
+# Loop zones
+zoneNrs = np.unique(data.D1_HUS)
+for zoneNr in zoneNrs:
+    # Select zone data 
+    ii = np.where(data.D1_HUS == zoneNr) 
     i0 = ii[0][0]
     iM = ii[0][len(ii[0])-1]
-    dataBlockNr = data[i0:(iM+1)]
+    dataZoneNr = data[i0:(iM+1)]
     if (iM-i0+1)!=len(ii[0]): # sanity check
-        print("Error... Exit loop in Block nr:",blockNr) # sanity check
+        print("Error... Exit loop in zone nr:", zoneNr) # sanity check
         break
     
-    years = np.unique(dataBlockNr.YEA)
-    for year in years:
-        
-        # Get the rows corresponding to a particular year. As above-mentioned, not the safest way, but the fastest (to my knowledge), so a sanity check is needed.
-        ii = np.where(dataBlockNr.YEA == year)
+    # Loop plot numbers
+    segmentNrs = np.unique(dataZoneNr.D2_NUM)
+    totalNr = len(segmentNrs) 
+    contNr = 0
+    for segmentNr in segmentNrs:
+    
+        # Get the rows corresponding to segmentNr. This is not the safest way (it doesn't work if the rows are not sorted out by number of segment, which seems not to be the case), 
+        # but it is the fastest way. A sanity check is included to make sure that this way works reasonably well. If the "Error..." message is prompted too much times, then 
+        # this way of getting the rows for the segmentNr must be replaced by the slow way (see filterDataByExtent.py as an example)
+        ii = np.where(dataZoneNr.D2_NUM == segmentNr) 
         i0 = ii[0][0]
         iM = ii[0][len(ii[0])-1]
-        dataBlockYear = dataBlockNr[i0:(iM+1)]
+        dataSegmentNr = dataZoneNr[i0:(iM+1)]
         if (iM-i0+1)!=len(ii[0]): # sanity check
-            print("Error... Exit loop in Block nr:",blockNr,"...Year:",year)  
+            print("Error... Exit loop in Segment nr:", segmentNr) # sanity check
             break
-        
-        # Calculate metrics
-        landCoverProportion = functions.calculateLandCoverProportion(dataBlockYear, landCoverTypes, alternatCodes)
-        soilTechnProportion = functions.calculateSoilTechniqueProportion(dataBlockYear, soilCodes, sowCodes) 
-        sowTechnProportion  = functions.calculateSoilTechniqueProportion(dataBlockYear, sowCodes, soilCodes) 
-        avgFieldSize        = functions.calculateAvgFieldSize(dataBlockYear, dictIsCrop)
-        heterogeneity       = functions.calculateHeterogeneity(dataBlockYear, dictIsCrop)
-        demand              = functions.calculateDemand(dataBlockYear, dictCultivarDemand)
-        
-        # Assign values
-        for x in landCoverTypes.keys(): 
-            data[x].loc[dataBlockYear.index] = landCoverProportion[x]
-        for x in soilCodes.keys(): 
-            data[x].loc[dataBlockYear.index] = soilTechnProportion[x]
-        for x in sowCodes.keys(): 
-            data[x].loc[dataBlockYear.index] = sowTechnProportion[x]
-        data.avgFieldSize.loc[dataBlockYear.index]  = avgFieldSize
-        data.heterogeneity.loc[dataBlockYear.index] = heterogeneity
-        data.demand.loc[dataBlockYear.index]        = demand
     
-    contNr = contNr+1
-    if np.mod(contNr, 100) == 0:
-        times = contNr / totalNr 
-        print("Processing data...", np.floor(times*100), "percent completed...")
+        years = np.unique(dataSegmentNr.YEA)
+        for year in years:
+        
+            # Get the rows corresponding to a particular year. As above-mentioned, not the safest way, but the fastest (to my knowledge), so a sanity check is needed.
+            ii = np.where(dataSegmentNr.YEA == year)
+            i0 = ii[0][0]
+            iM = ii[0][len(ii[0])-1]
+            dataSegmentYear = dataSegmentNr[i0:(iM+1)]
+            if (iM-i0+1)!=len(ii[0]): # sanity check
+                print("Error... Exit loop in Segment nr:", segmentNr, "...Year:",year)  
+                break
+        
+            # Calculate metrics
+            landCoverProportion = functions.calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes)
+            soilTechnProportion = functions.calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, sowCodes) 
+            sowTechnProportion  = functions.calculateSoilTechniqueProportion(dataSegmentYear, sowCodes, soilCodes) 
+            cropYield           = functions.calculateCropYield(dataSegmentYear, cropCodes)
+            avgFieldSize        = functions.calculateAvgFieldSize(dataSegmentYear, dictIsCrop)
+            heterogeneity       = functions.calculateHeterogeneity(dataSegmentYear, dictIsCrop)
+            demand              = functions.calculateDemand(dataSegmentYear, dictCultivarDemand)
+        
+            # Assign values
+            for x in landCoverTypes.keys(): data.loc[dataSegmentYear.index, x] = np.repeat(landCoverProportion[x], len(dataSegmentYear))              
+            for x in soilCodes.keys():      data.loc[dataSegmentYear.index, x] = np.repeat(soilTechnProportion[x], len(dataSegmentYear))
+            for x in sowCodes.keys():       data.loc[dataSegmentYear.index, x] = np.repeat(sowTechnProportion[x], len(dataSegmentYear))
+            for x in cropYield.keys():      data.loc[dataSegmentYear.index, x] = np.repeat(cropYield[x], len(dataSegmentYear))
+            data.loc[dataSegmentYear.index, 'avgFieldSize']                    = np.repeat(avgFieldSize, len(dataSegmentYear))
+            data.loc[dataSegmentYear.index, 'heterogeneity']                   = np.repeat(heterogeneity, len(dataSegmentYear))
+            data.loc[dataSegmentYear.index, 'demand']                          = np.repeat(demand, len(dataSegmentYear))
     
-    if np.mod(contNr, 3000) == 0:
-        times = contNr / totalNr 
-        dill.dump_session(backupSession)
-        print("Saved session... " + backupSession)
+        contNr = contNr+1
+        if np.mod(contNr, 100) == 0:
+            times = contNr / totalNr 
+            print("Processing data Zone...", int(zoneNr), "Percentage completed...", np.floor(times*100))
 
-
-data.to_file(filename = outFilename, driver="ESRI Shapefile")
+# Group by number of the segment and year, drop not useful columns, and save to csv
+data = data.drop(columns=['D3_PAR','D4_GRC','D5_CUL','D9_RTO','DE_CS','Shape_Area'])
+data = data.groupby(['D1_HUS','D2_NUM','YEA']).first().reset_index()
+print("Writing file...", outFilename)
+data.to_csv(outFilename, index=False)
 print("FINISHED... Data saved... " + outFilename)

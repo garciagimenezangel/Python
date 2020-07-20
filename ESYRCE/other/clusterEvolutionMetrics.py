@@ -18,7 +18,7 @@ from os.path import expanduser
 home = expanduser("~")
 import sys
 sys.path.append(home + '\\Documents\\REPOSITORIES\\Python\\ESYRCE\\lib\\')
-import blockCalculator as bc 
+import segmentCalculator as bc 
 from sklearn import linear_model
 
 # INPUT

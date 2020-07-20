@@ -27,7 +27,7 @@ centroids['geometry']      = data['centroids']
 centroids['seminatural']   = data['seminatura']
 centroids['fieldsize']     = data['avCropfiel']
 centroids['heterogeneity'] = data['heterogene']
-centroids['demand']        = data['block_dema']
+centroids['demand']        = data['segment_dema']
 centroids['year']          = data['YEA']
 
 # Get points with unique coordinates (within a tolerance of 1m)
