@@ -5,6 +5,7 @@ Created on Mon Apr  6 16:56:21 2020
 @author: angel.gimenez
 """
 import numpy as np
+import pandas as pd
 import geopandas as gpd
 from sklearn import linear_model
 from os.path import expanduser
@@ -511,25 +512,26 @@ def calculateVarianceYield(dataSegmentYear, cropCodes, weightedMeans, log):
 
 
 """
-INPUT: a slice of a dataframe from a groupBy operation, corresponding to one segment number in ESYRCE data 
+INPUT: a slice of a dataframe from a groupBy operation, corresponding to one segment in ESYRCE data in different years
 OUTPUT: the slope of the line derived from a linear regression using the values in each column
 """
-def calculateSlopes(df):
-    regr = linear_model.LinearRegression()
-    slopes = np.array([])
-    for index in df.index:
-        X = np.array(range(2001,2017), dtype=int)
-        Y = np.array(df.loc[index][1:17], dtype=float)
-        valid = np.invert(np.isnan(Y))
-        X = X[valid]
-        Y = Y[valid]
+def getEvolutionMetrics(segment):
+    regr  = linear_model.LinearRegression()
+    years = np.array(segment.YEA)
+    out={}
+    segmMetrics = segment.drop(columns=['D1_HUS','D2_NUM','YEA'])
+    for column in segmMetrics:
+        if (column.find('var_') == 0): continue # Skip columns with the variance of the yields
+        yaxis = np.array(segmMetrics[column])
+        valid = ~np.isnan(years) & ~np.isnan(yaxis)
+        xaxis = years[valid]
+        yaxis = yaxis[valid]
         slope = np.nan
-        if X.size > 2:
-            regr.fit(X.reshape(-1,1),Y.reshape(-1,1))
+        if xaxis.size > 2:
+            regr.fit(xaxis.reshape(-1,1), yaxis.reshape(-1,1))
             slope = regr.coef_[0][0]
-        slopes = np.append(slopes, slope)   
-    df['slope'] = slopes
-    return df
+        out[column+'_slope'] = slope
+    return pd.Series(out)
 
 
 """

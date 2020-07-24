@@ -6,9 +6,8 @@ INPUT: csv file with ESYRCE identificator (segment number + year) and the metric
 OUTPUT: csv file with ESYRCE identificator (segment number) and the slope of each metric 
 """
 
-import csv
-import geopandas as gpd
-import numpy as np
+import pandas as pd
+from datetime import datetime
 from os.path import expanduser
 home = expanduser("~")
 
@@ -18,18 +17,28 @@ sys.path.append(home + '\\Documents\\REPOSITORIES\\Python\\ESYRCE\\')
 import functions
 
 # INPUT
-inputESYRCE = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\metrics\\flag2.csv'
-data = gpd.read_file(inputESYRCE)
+metrics = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z28\\metrics\\flag0.csv'
+data = pd.read_csv(metrics)
 
 # OUTPUT
-outFilename = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\metrics\\slope_flag2.csv'
+outFilename = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z28\\metrics\\slope_flag0.csv'   
 
-def customFunction(a):
-    a = np.asarray(a)
-    for i in range(0, len(a)-1):
-        b.append((a[i+1]-a[i]))
-    return np.mean(b) 
+# LOG
+logFile = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\logs\\addSlopeMetrics.log'
+buffSize = 1
+log = open(logFile, "a", buffering=buffSize)
+log.write("\n")
+log.write("PROCESS addMetrics.py STARTED AT: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S")+'\n')
+
 
 # Agreggate segments (unique zone and number), using a custom function that calculates the slope of the regression line using 'YEA' 
 # as the 'x axis' values and each metric as the 'y axis' values
-data = data.groupby(['D1_HUS','D2_NUM']).agg(customFunction)
+grouped = data.groupby(['D1_HUS','D2_NUM'])
+slopeMetrics = grouped.apply(functions.getEvolutionMetrics)
+slopeMetrics.reset_index(inplace=True)
+
+# Save as csv
+log.write("Writing file..."+outFilename+'\n')
+slopeMetrics.to_csv(outFilename, index=False)
+log.write("FINISHED... Data saved... " + outFilename+'\n')
+log.close()
