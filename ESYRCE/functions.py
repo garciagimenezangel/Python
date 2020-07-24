@@ -6,11 +6,9 @@ Created on Mon Apr  6 16:56:21 2020
 """
 import numpy as np
 import geopandas as gpd
-import logging
 from sklearn import linear_model
 from os.path import expanduser
 home = expanduser("~")
-logging.basicConfig(filename=home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\logs\\addMetrics.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
 dictDemandValues = { ''           :     0,
                    'no increase':       0, 
                    'increase':          0.5,
@@ -26,7 +24,7 @@ dictDemandValues = { ''           :     0,
 INPUT: subset of ESYRCE data corresponding to one segment number
 OUTPUT: polygon corresponding to the data of the year with the smallest spatial coverage
 """
-def getPolygonToClip(dataSegmentNr):
+def getPolygonToClip(dataSegmentNr, log):
     years = np.unique(dataSegmentNr.YEA)
     cont = 0
     for year in years:
@@ -37,7 +35,7 @@ def getPolygonToClip(dataSegmentNr):
         try:
             dissolved = dataSegmentYear.dissolve(by='YEA')    
         except:
-            logging.warning("Problems dissolving segment "+str(dataSegmentNr.iloc[0]['D2_NUM']))
+            log.write("Problems dissolving segment "+str(dataSegmentNr.iloc[0]['D2_NUM']))
             return gpd.GeoDataFrame()
             
         if (cont == 0):  
@@ -47,7 +45,7 @@ def getPolygonToClip(dataSegmentNr):
             try:
                 intersection = gpd.overlay(intersection, dissolved, how='intersection')
             except:
-                logging.warning("Problems performing intersection "+str(dataSegmentNr.iloc[0]['D2_NUM']))
+                log.write("Problems performing intersection "+str(dataSegmentNr.iloc[0]['D2_NUM']))
                 return gpd.GeoDataFrame()
     
     return gpd.GeoDataFrame(intersection.geometry)
@@ -85,9 +83,9 @@ def getSegmentQualityFlag(dataSegmentNr, tol):
             lastMaxY = minBBox.iloc[0][3];            
             newMaxX  = newBBox.iloc[0][2];
             newMaxY  = newBBox.iloc[0][3];      
-            if (not(np.isclose(lastMinX, newMinX, rtol=tol)) or not(np.isclose(lastMinY, newMinY, rtol=tol))):
+            if (not(np.isclose(lastMinX, newMinX, atol=tol)) or not(np.isclose(lastMinY, newMinY, atol=tol))):
                 return 2
-            elif (not(np.isclose(lastMaxX, newMaxX, rtol=tol)) or not(np.isclose(lastMaxY, newMaxY, rtol=tol))):
+            elif (not(np.isclose(lastMaxX, newMaxX, atol=tol)) or not(np.isclose(lastMaxY, newMaxY, atol=tol))):
                 flag = 1
                 minBBox = newBBox
             else:
@@ -107,7 +105,7 @@ OUTPUT: dictionary with the porportion of each land cover type within the segmen
 
 Note: water is ignored in the calculations
 """
-def calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes):
+def calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes, log):
     
     # Read codes from dictionary landCoverTypes
     keys     = list(landCoverTypes.keys())
@@ -139,7 +137,7 @@ def calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes)
             polyGrc = dataSegmentYear.loc[index].D4_GRC[0:2]       
             polyCul = dataSegmentYear.loc[index].D5_CUL[0:2]
         except:
-            logging.warning("Problem with land cover codes:"+str(dataSegmentYear.loc[index].D2_NUM)+
+            log.write("Problem with land cover codes:"+str(dataSegmentYear.loc[index].D2_NUM)+
                   "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
                   "...Year:"+str(dataSegmentYear.loc[index].YEA))
             continue            
@@ -165,7 +163,7 @@ def calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes)
                 ind = ii[0]
             
             else: 
-                logging.warning("Alternative land cover codes not working:"+str(dataSegmentYear.loc[index].D2_NUM)+
+                log.write("Alternative land cover codes not working:"+str(dataSegmentYear.loc[index].D2_NUM)+
                   "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
                   "...Year:"+str(dataSegmentYear.loc[index].YEA)+
                   "...D4_GRC:"+str(polyGrc)+
@@ -179,7 +177,7 @@ def calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes)
             totalArea = totalArea + areaPolygon 
             
         else: 
-            logging.warning("Index not found in calculateLandCoverPercentages. Parcel IGNORED"+
+            log.write("Index not found in calculateLandCoverPercentages. Parcel IGNORED"+
                   "...Segment:" +str(dataSegmentYear.loc[index].D2_NUM)+
                   "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
                   "...Year:"  +str(dataSegmentYear.loc[index].YEA)+
@@ -205,7 +203,7 @@ OUTPUT: dictionary with the porportion of each soil management technique within 
 
 Note: proportion is computed only with regard to codes present in the input dictionary. If no code present, then returns 0.
 """
-def calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, ignoreCodes):
+def calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, ignoreCodes, log):
     # Read codes from dictionary landCoverTypes
     keys     = list(soilCodes.keys())
     codes    = list(soilCodes.values())
@@ -238,7 +236,7 @@ def calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, ignoreCodes):
                 soilAcc[ind] = soilAcc[ind] + areaPolygon
                 totalArea    = totalArea + areaPolygon
             else: 
-                logging.warning("Index not found in calculateSoilTechniqueProportion. Parcel IGNORED"+
+                log.write("Index not found in calculateSoilTechniqueProportion. Parcel IGNORED"+
                   "...Segment:" +str(dataSegmentYear.loc[index].D2_NUM)+
                   "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
                   "...Year:"  +str(dataSegmentYear.loc[index].YEA)+
@@ -260,7 +258,7 @@ INPUT:
     
 OUTPUT: average size of the crop fields
 """
-def calculateAvgFieldSize(dataSegmentYear, dictIsCrop):
+def calculateAvgFieldSize(dataSegmentYear, dictIsCrop, log):
     
     # Iterate through the polygons in dataSegmentYear
     accArea     = 0
@@ -273,7 +271,7 @@ def calculateAvgFieldSize(dataSegmentYear, dictIsCrop):
         try:
             polyGrc = dataSegmentYear.loc[index].D4_GRC[0:2]       
         except:
-            logging.warning("Problem with land cover codes:"+str(dataSegmentYear.loc[index].D2_NUM)+
+            log.write("Problem with land cover codes:"+str(dataSegmentYear.loc[index].D2_NUM)+
                   "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
                   "...Year:"+str(dataSegmentYear.loc[index].YEA))
             continue            
@@ -300,7 +298,7 @@ INPUT:
     
 OUTPUT: number of crop types, per km^2
 """
-def calculateHeterogeneity(dataSegmentYear, dictIsCrop):   
+def calculateHeterogeneity(dataSegmentYear, dictIsCrop, log):   
     
     # Ignore water codes for the total area
     ignoreGrc = np.array(['AG','MO'])
@@ -316,7 +314,7 @@ def calculateHeterogeneity(dataSegmentYear, dictIsCrop):
         try:
             polyGrc = dataSegmentYear.loc[index].D4_GRC[0:2]       
         except:
-            logging.warning("Problem with land cover codes:"+str(dataSegmentYear.loc[index].D2_NUM)+
+            log.write("Problem with land cover codes:"+str(dataSegmentYear.loc[index].D2_NUM)+
                   "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
                   "...Year:"+str(dataSegmentYear.loc[index].YEA))
             continue            
@@ -348,7 +346,7 @@ INPUT:
     
 OUTPUT: demand value for the segment, using an average weighted by the area of the polygons 
 """
-def calculateDemand(dataSegmentYear, dictCultivarDemand):
+def calculateDemand(dataSegmentYear, dictCultivarDemand, log):
     
     # Ignore water codes for the total area
     ignoreCul = np.array(['AG','MO'])
@@ -368,7 +366,7 @@ def calculateDemand(dataSegmentYear, dictCultivarDemand):
         try:
             assocElts = polyCul.split("-")
         except:
-            logging.warning("Problem with land cover codes:"+str(dataSegmentYear.loc[index].D2_NUM)+
+            log.write("Problem with land cover codes:"+str(dataSegmentYear.loc[index].D2_NUM)+
                   "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
                   "...Year:"+str(dataSegmentYear.loc[index].YEA))
             continue
@@ -397,7 +395,7 @@ INPUT:
     
 OUTPUT: average yield of each crop within the segment 
 """
-def calculateCropYield(dataSegmentYear, cropCodes):
+def calculateCropYield(dataSegmentYear, cropCodes, log):
     # Read codes from dictionary landCoverTypes
     keys     = list(cropCodes.keys())
     codes    = list(cropCodes.values())
@@ -422,7 +420,7 @@ def calculateCropYield(dataSegmentYear, cropCodes):
         try:
             polyCul = dataSegmentYear.loc[index].D5_CUL[0:2]
         except:
-            logging.warning("Problem with land cover codes:"+str(dataSegmentYear.loc[index].D2_NUM)+
+            log.write("Problem with land cover codes:"+str(dataSegmentYear.loc[index].D2_NUM)+
                   "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
                   "...Year:"+str(dataSegmentYear.loc[index].YEA))
             continue            
@@ -437,7 +435,7 @@ def calculateCropYield(dataSegmentYear, cropCodes):
             areaAcc[ind]  = areaAcc[ind]  + areaPolygon
             
         else: 
-            logging.warning("Index not found in calculateCropYield. Parcel IGNORED"+
+            log.write("Index not found in calculateCropYield. Parcel IGNORED"+
                   "...Segment:" +str(dataSegmentYear.loc[index].D2_NUM)+
                   "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
                   "...Year:"  +str(dataSegmentYear.loc[index].YEA)+
