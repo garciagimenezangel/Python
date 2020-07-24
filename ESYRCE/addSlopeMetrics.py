@@ -13,18 +13,18 @@ home = expanduser("~")
 
 # The functions used to calculate the metrics are stored in a different file, to make this script cleaner 
 import sys
-sys.path.append(home + '\\Documents\\REPOSITORIES\\Python\\ESYRCE\\')
+sys.path.append(home + '/Documents/REPOSITORIES/Python/ESYRCE/')
 import functions
 
 # INPUT
-metrics = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z28\\metrics\\flag0.csv'
+metrics = home + '/Documents/DATA/OBServ/ESYRCE/PROCESSED/z28/metrics/flag0.csv'
 data = pd.read_csv(metrics)
 
 # OUTPUT
-outFilename = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z28\\metrics\\slope_flag0.csv'   
+outFilename = home + '/Documents/DATA/OBServ/ESYRCE/PROCESSED/z28/metrics/slope_flag0.csv'   
 
 # LOG
-logFile = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\logs\\addSlopeMetrics.log'
+logFile = home + '/Documents/DATA/OBServ/ESYRCE/PROCESSED/logs/addSlopeMetrics.log'
 buffSize = 1
 log = open(logFile, "a", buffering=buffSize)
 log.write("\n")
