@@ -33,7 +33,8 @@ processedFilename0 = rootFilename + '_flag0.shp'
 processedFilename1 = rootFilename + '_flag1.shp'
 processedFilename2 = rootFilename + '_flag2.shp'
 logFile = home + '/Documents/DATA/OBServ/ESYRCE/PROCESSED/logs/flagDataSegments.log'
-log = open(logFile, "a", buffering=0)
+log = open(logFile, "a", buffering=1)
+log.write("\n")
 log.write("PROCESS flagDataSegments.py STARTED AT: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S")+'\n')
 
 # load files from local path, concatenate the data and sort the rows in order to iterate through them faster, using numpy.where (which seems to work better than dataframe.where for very large dataframes like these ones)

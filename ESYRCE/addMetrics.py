@@ -76,6 +76,7 @@ OUTPUT: csv file with ESYRCE identificator (segment number + year) and the metri
 import csv
 import geopandas as gpd
 import numpy as np
+from datetime import datetime
 from os.path import expanduser
 home = expanduser("~")
 
@@ -89,9 +90,12 @@ inputESYRCE = home + '/Documents/DATA/OBServ/ESYRCE/PROCESSED/z28/flagged/data_f
 data = gpd.read_file(inputESYRCE)
 
 # OUTPUT
-outFilename = home + '/Documents/DATA/OBServ/ESYRCE/PROCESSED/z30/metrics/flag0.csv'
+outFilename = home + '/Documents/DATA/OBServ/ESYRCE/PROCESSED/z28/metrics/flag0.csv'
 logFile = home + '/Documents/DATA/OBServ/ESYRCE/PROCESSED/logs/addMetrics.log'
-log = open(logFile, "a", buffering=0)
+buffSize = 1
+log = open(logFile, "a", buffering=buffSize)
+log.write("\n")
+log.write("PROCESS addMetrics.py STARTED AT: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S")+'\n')
 
 # Select columns, sort and reset indices
 data.Shape_Area = data.geometry.area
@@ -219,13 +223,12 @@ cropCodes = {'hardWheat':     ['TD'],
              'olive':         ['OD'],
              'oliveMill':     ['OT']}
 
-# TODO: ¿cómo hago para luego guardar varianzas del yield tb?
-
 # Init new columns with NaN data
 for x in landCoverTypes.keys(): data[x] = np.repeat(np.nan, len(data))
 for x in soilCodes.keys():      data[x] = np.repeat(np.nan, len(data))
 for x in sowCodes.keys():       data[x] = np.repeat(np.nan, len(data))
 for x in cropCodes.keys():      data[x] = np.repeat(np.nan, len(data))
+for x in cropCodes.keys():      data['var_'+x] = np.repeat(np.nan, len(data)) # variance of the yields
 data['avgFieldSize']                    = np.repeat(np.nan, len(data))
 data['heterogeneity']                   = np.repeat(np.nan, len(data))
 data['demand']                          = np.repeat(np.nan, len(data))
@@ -253,7 +256,7 @@ for zoneNr in zoneNrs:
     iM = ii[0][len(ii[0])-1]
     dataZoneNr = data[i0:(iM+1)]
     if (iM-i0+1)!=len(ii[0]): # sanity check
-        log.write("Error... Exit loop in zone nr:", zoneNr) # sanity check
+        log.write("Error... Exit loop in zone nr:"+str(zoneNr)+'\n') # sanity check
         break
     
     # Loop plot numbers
@@ -270,7 +273,7 @@ for zoneNr in zoneNrs:
         iM = ii[0][len(ii[0])-1]
         dataSegmentNr = dataZoneNr[i0:(iM+1)]
         if (iM-i0+1)!=len(ii[0]): # sanity check
-            log.write("Error... Exit loop in Segment nr:", segmentNr) # sanity check
+            log.write("Error... Exit loop in Segment nr:"+str(segmentNr)+'\n') # sanity check
             break
     
         years = np.unique(dataSegmentNr.YEA)
@@ -282,7 +285,7 @@ for zoneNr in zoneNrs:
             iM = ii[0][len(ii[0])-1]
             dataSegmentYear = dataSegmentNr[i0:(iM+1)]
             if (iM-i0+1)!=len(ii[0]): # sanity check
-                log.write("Error... Exit loop in Segment nr:", segmentNr, "...Year:",year)  
+                log.write("Error... Exit loop in Segment nr:"+ str(segmentNr)+ "...Year:"+str(year)+'\n')  
                 break
         
             # Calculate metrics
@@ -290,6 +293,7 @@ for zoneNr in zoneNrs:
             soilTechnProportion = functions.calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, sowCodes, log) 
             sowTechnProportion  = functions.calculateSoilTechniqueProportion(dataSegmentYear, sowCodes, soilCodes, log) 
             cropYield           = functions.calculateCropYield(dataSegmentYear, cropCodes, log)
+            varYield            = functions.calculateVarianceYield(dataSegmentYear, cropCodes, cropYield, log)
             avgFieldSize        = functions.calculateAvgFieldSize(dataSegmentYear, dictIsCrop, log)
             heterogeneity       = functions.calculateHeterogeneity(dataSegmentYear, dictIsCrop, log)
             demand              = functions.calculateDemand(dataSegmentYear, dictCultivarDemand, log)
@@ -299,6 +303,7 @@ for zoneNr in zoneNrs:
             for x in soilCodes.keys():      data.loc[dataSegmentYear.index, x] = np.repeat(soilTechnProportion[x], len(dataSegmentYear))
             for x in sowCodes.keys():       data.loc[dataSegmentYear.index, x] = np.repeat(sowTechnProportion[x], len(dataSegmentYear))
             for x in cropYield.keys():      data.loc[dataSegmentYear.index, x] = np.repeat(cropYield[x], len(dataSegmentYear))
+            for x in cropYield.keys():      data.loc[dataSegmentYear.index, 'var_'+x] = np.repeat(varYield[x], len(dataSegmentYear))
             data.loc[dataSegmentYear.index, 'avgFieldSize']                    = np.repeat(avgFieldSize, len(dataSegmentYear))
             data.loc[dataSegmentYear.index, 'heterogeneity']                   = np.repeat(heterogeneity, len(dataSegmentYear))
             data.loc[dataSegmentYear.index, 'demand']                          = np.repeat(demand, len(dataSegmentYear))
@@ -306,12 +311,12 @@ for zoneNr in zoneNrs:
         contNr = contNr+1
         if np.mod(contNr, 100) == 0:
             times = contNr / totalNr 
-            log.write("Processing data Zone...", int(zoneNr), "Percentage completed...", np.floor(times*100))
+            log.write("Processing data Zone..."+str(int(zoneNr))+"Percentage completed..."+str(np.floor(times*100))+'\n')
 
 # Group by number of the segment and year, drop not useful columns, and save to csv
 data = data.drop(columns=['D3_PAR','D4_GRC','D5_CUL','D9_RTO','DE_CS','Shape_Area'])
 data = data.groupby(['D1_HUS','D2_NUM','YEA']).first().reset_index()
-log.write("Writing file...", outFilename)
+log.write("Writing file..."+outFilename+'\n')
 data.to_csv(outFilename, index=False)
-log.write("FINISHED... Data saved... " + outFilename)
+log.write("FINISHED... Data saved... " + outFilename+'\n')
 log.close()
