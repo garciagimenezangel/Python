@@ -81,16 +81,16 @@ home = expanduser("~")
 
 # The functions used to calculate the metrics are stored in a different file, to make this script cleaner 
 import sys
-sys.path.append(home + '\\Documents\\REPOSITORIES\\Python\\ESYRCE\\')
+sys.path.append(home + '/Documents/REPOSITORIES/Python/ESYRCE/')
 import functions
 
 # INPUT
-inputESYRCE = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z28\\flagged\\data_flag0.shp'
+inputESYRCE = home + '/Documents/DATA/OBServ/ESYRCE/PROCESSED/z28/flagged/data_flag0.shp'
 data = gpd.read_file(inputESYRCE)
 
 # OUTPUT
-outFilename = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\metrics\\flag0.csv'
-logFile = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\logs\\addMetrics.log'
+outFilename = home + '/Documents/DATA/OBServ/ESYRCE/PROCESSED/z30/metrics/flag0.csv'
+logFile = home + '/Documents/DATA/OBServ/ESYRCE/PROCESSED/logs/addMetrics.log'
 log = open(logFile, "a", buffering=0)
 
 # Select columns, sort and reset indices
@@ -103,8 +103,8 @@ data.sort_values(by=['D1_HUS','D2_NUM','YEA'], inplace = True)
 data.reset_index(drop=True, inplace=True)
 
 # Define dictionaries:
-tableCultivarDemand = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
-tableIsCrop         = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCrop.csv'
+tableCultivarDemand = home + '/Google Drive/PROJECTS/OBSERV/Lookup Tables/ESYRCE/Cultivar-Demand.csv'
+tableIsCrop         = home + '/Google Drive/PROJECTS/OBSERV/Lookup Tables/ESYRCE/isCrop.csv'
 
 # Land cover types (associating to esyrce codes, add more or remove if needed), to calculate proportion in every segment for each year
 landCoverTypes = {'cerealGrain':        ['CE','*'],     

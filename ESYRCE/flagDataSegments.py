@@ -18,21 +18,21 @@ from os.path import expanduser
 home = expanduser("~")
 
 import sys
-sys.path.append(home + '\\Documents\\REPOSITORIES\\Python\\ESYRCE\\')
+sys.path.append(home + '/Documents/REPOSITORIES/Python/ESYRCE/')
 import functions 
 
 # INPUT
-inputESYRCE_2001_2016 = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\Esyrce2001_2016.gdb'
-inputESYRCE_2017_2019 = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\Esyrce2017_2019\\Z30.shp'
+inputESYRCE_2001_2016 = home + '/Documents/DATA/OBServ/ESYRCE/Esyrce2001_2016.gdb'
+inputESYRCE_2017_2019 = home + '/Documents/DATA/OBServ/ESYRCE/Esyrce2017_2019/Z30.shp'
 layer = 'z30'
 tol  = 10.0 # tolerance, in meters, to check whether the segments are aligned
 
 # OUTPUT
-rootFilename = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\'+layer+'\\flagged\\data'
+rootFilename = home + '/Documents/DATA/OBServ/ESYRCE/PROCESSED/'+layer+'/flagged/data'
 processedFilename0 = rootFilename + '_flag0.shp'
 processedFilename1 = rootFilename + '_flag1.shp'
 processedFilename2 = rootFilename + '_flag2.shp'
-logFile = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\logs\\flagDataSegments.log'
+logFile = home + '/Documents/DATA/OBServ/ESYRCE/PROCESSED/logs/flagDataSegments.log'
 log = open(logFile, "a", buffering=0)
 log.write("PROCESS flagDataSegments.py STARTED AT: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S")+'\n')
 
