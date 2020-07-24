@@ -91,7 +91,7 @@ data = gpd.read_file(inputESYRCE)
 # OUTPUT
 outFilename = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\metrics\\flag0.csv'
 logFile = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\logs\\addMetrics.log'
-log = open(logFile, "w")
+log = open(logFile, "a", buffering=0)
 
 # Select columns, sort and reset indices
 data.Shape_Area = data.geometry.area
@@ -286,13 +286,13 @@ for zoneNr in zoneNrs:
                 break
         
             # Calculate metrics
-            landCoverProportion = functions.calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes)
-            soilTechnProportion = functions.calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, sowCodes) 
-            sowTechnProportion  = functions.calculateSoilTechniqueProportion(dataSegmentYear, sowCodes, soilCodes) 
-            cropYield           = functions.calculateCropYield(dataSegmentYear, cropCodes)
-            avgFieldSize        = functions.calculateAvgFieldSize(dataSegmentYear, dictIsCrop)
-            heterogeneity       = functions.calculateHeterogeneity(dataSegmentYear, dictIsCrop)
-            demand              = functions.calculateDemand(dataSegmentYear, dictCultivarDemand)
+            landCoverProportion = functions.calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes, log)
+            soilTechnProportion = functions.calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, sowCodes, log) 
+            sowTechnProportion  = functions.calculateSoilTechniqueProportion(dataSegmentYear, sowCodes, soilCodes, log) 
+            cropYield           = functions.calculateCropYield(dataSegmentYear, cropCodes, log)
+            avgFieldSize        = functions.calculateAvgFieldSize(dataSegmentYear, dictIsCrop, log)
+            heterogeneity       = functions.calculateHeterogeneity(dataSegmentYear, dictIsCrop, log)
+            demand              = functions.calculateDemand(dataSegmentYear, dictCultivarDemand, log)
         
             # Assign values
             for x in landCoverTypes.keys(): data.loc[dataSegmentYear.index, x] = np.repeat(landCoverProportion[x], len(dataSegmentYear))              

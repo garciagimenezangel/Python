@@ -24,7 +24,7 @@ dictDemandValues = { ''           :     0,
 INPUT: subset of ESYRCE data corresponding to one segment number
 OUTPUT: polygon corresponding to the data of the year with the smallest spatial coverage
 """
-def getPolygonToClip(dataSegmentNr):
+def getPolygonToClip(dataSegmentNr, log):
     years = np.unique(dataSegmentNr.YEA)
     cont = 0
     for year in years:
@@ -105,7 +105,7 @@ OUTPUT: dictionary with the porportion of each land cover type within the segmen
 
 Note: water is ignored in the calculations
 """
-def calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes):
+def calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes, log):
     
     # Read codes from dictionary landCoverTypes
     keys     = list(landCoverTypes.keys())
@@ -203,7 +203,7 @@ OUTPUT: dictionary with the porportion of each soil management technique within 
 
 Note: proportion is computed only with regard to codes present in the input dictionary. If no code present, then returns 0.
 """
-def calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, ignoreCodes):
+def calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, ignoreCodes, log):
     # Read codes from dictionary landCoverTypes
     keys     = list(soilCodes.keys())
     codes    = list(soilCodes.values())
@@ -258,7 +258,7 @@ INPUT:
     
 OUTPUT: average size of the crop fields
 """
-def calculateAvgFieldSize(dataSegmentYear, dictIsCrop):
+def calculateAvgFieldSize(dataSegmentYear, dictIsCrop, log):
     
     # Iterate through the polygons in dataSegmentYear
     accArea     = 0
@@ -298,7 +298,7 @@ INPUT:
     
 OUTPUT: number of crop types, per km^2
 """
-def calculateHeterogeneity(dataSegmentYear, dictIsCrop):   
+def calculateHeterogeneity(dataSegmentYear, dictIsCrop, log):   
     
     # Ignore water codes for the total area
     ignoreGrc = np.array(['AG','MO'])
@@ -346,7 +346,7 @@ INPUT:
     
 OUTPUT: demand value for the segment, using an average weighted by the area of the polygons 
 """
-def calculateDemand(dataSegmentYear, dictCultivarDemand):
+def calculateDemand(dataSegmentYear, dictCultivarDemand, log):
     
     # Ignore water codes for the total area
     ignoreCul = np.array(['AG','MO'])
@@ -395,7 +395,7 @@ INPUT:
     
 OUTPUT: average yield of each crop within the segment 
 """
-def calculateCropYield(dataSegmentYear, cropCodes):
+def calculateCropYield(dataSegmentYear, cropCodes, log):
     # Read codes from dictionary landCoverTypes
     keys     = list(cropCodes.keys())
     codes    = list(cropCodes.values())
