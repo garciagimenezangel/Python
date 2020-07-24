@@ -286,13 +286,13 @@ for zoneNr in zoneNrs:
                 break
         
             # Calculate metrics
-            landCoverProportion = functions.calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes, log)
-            soilTechnProportion = functions.calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, sowCodes, log) 
-            sowTechnProportion  = functions.calculateSoilTechniqueProportion(dataSegmentYear, sowCodes, soilCodes, log) 
-            cropYield           = functions.calculateCropYield(dataSegmentYear, cropCodes, log)
-            avgFieldSize        = functions.calculateAvgFieldSize(dataSegmentYear, dictIsCrop, log)
-            heterogeneity       = functions.calculateHeterogeneity(dataSegmentYear, dictIsCrop, log)
-            demand              = functions.calculateDemand(dataSegmentYear, dictCultivarDemand, log)
+            landCoverProportion = functions.calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes)
+            soilTechnProportion = functions.calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, sowCodes) 
+            sowTechnProportion  = functions.calculateSoilTechniqueProportion(dataSegmentYear, sowCodes, soilCodes) 
+            cropYield           = functions.calculateCropYield(dataSegmentYear, cropCodes)
+            avgFieldSize        = functions.calculateAvgFieldSize(dataSegmentYear, dictIsCrop)
+            heterogeneity       = functions.calculateHeterogeneity(dataSegmentYear, dictIsCrop)
+            demand              = functions.calculateDemand(dataSegmentYear, dictCultivarDemand)
         
             # Assign values
             for x in landCoverTypes.keys(): data.loc[dataSegmentYear.index, x] = np.repeat(landCoverProportion[x], len(dataSegmentYear))              
