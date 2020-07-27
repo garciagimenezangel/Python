@@ -18,20 +18,20 @@ from os.path import expanduser
 home = expanduser("~")
 
 import sys
-sys.path.append(home + '/Documents/REPOSITORIES/Python/ESYRCE/')
+sys.path.append(home + '/Python/ESYRCE/')
 import functions 
 
 # INPUT
-inputESYRCE_2001_2016 = home + '/Documents/DATA/OBServ/ESYRCE/Esyrce2001_2016.gdb'
-inputESYRCE_2017_2019 = home + '/Documents/DATA/OBServ/ESYRCE/Esyrce2017_2019/Z30.shp'
+inputESYRCE_2001_2016 = home + '/DATA/OBServ/ESYRCE/Esyrce2001_2016.gdb'
+inputESYRCE_2017_2019 = home + '/DATA/OBServ/ESYRCE/Esyrce2017_2019/Z30.shp'
 layer = 'z30'
 tol  = 10.0 # tolerance, in meters, to check whether the segments are aligned
 if layer == 'z28': crs = "EPSG:23028"
 if layer == 'z30': crs = "EPSG:23030"
 
 # OUTPUT
-rootFilename = home + '/Documents/DATA/OBServ/ESYRCE/PROCESSED/'+layer+'/flagged/data'
-logFile = home + '/Documents/DATA/OBServ/ESYRCE/PROCESSED/logs/flagDataSegments.log'
+rootFilename = home + '/DATA/OBServ/ESYRCE/PROCESSED/'+layer+'/flagged/data'
+logFile = home + '/DATA/OBServ/ESYRCE/PROCESSED/logs/flagDataSegments.log'
 log = open(logFile, "a", buffering=1)
 log.write("\n")
 log.write("PROCESS flagDataSegments.py STARTED AT: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S")+'\n')
