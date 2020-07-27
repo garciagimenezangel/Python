@@ -103,22 +103,22 @@ for zoneNr in zoneNrs:
         
         # If input data is very large, save file every certain number of blocks processed, e.g. 1000
         if np.mod(contNr, 1000) == 0:
-            log.write("Writing files...")
+            log.write("Writing files... Zone nr:"+str(zoneNr)+"... Segment nr:"+str(segmentNr)+'\n')
             dataFlag0 = gpd.GeoDataFrame(dataFlag0)
             dataFlag0.crs = crs
             processedFilename = rootFilename + '_flag0_'+str(contSavedFiles)+'.shp'
             dataFlag0.to_file(filename = processedFilename, driver="ESRI Shapefile")
-            log.write("Saved file:"+processedFilename)
+            log.write("Saved file:"+processedFilename+'\n')
             dataFlag1 = gpd.GeoDataFrame(dataFlag1)
             dataFlag1.crs = crs
             processedFilename = rootFilename + '_flag1_'+str(contSavedFiles)+'.shp'
             dataFlag1.to_file(filename = processedFilename, driver="ESRI Shapefile")
-            log.write("Saved file:"+processedFilename)
+            log.write("Saved file:"+processedFilename+'\n')
             dataFlag2 = gpd.GeoDataFrame(dataFlag2)
             dataFlag2.crs = crs
             processedFilename = rootFilename + '_flag2_'+str(contSavedFiles)+'.shp'
             dataFlag2.to_file(filename = processedFilename, driver="ESRI Shapefile")
-            log.write("Saved file:"+processedFilename)
+            log.write("Saved file:"+processedFilename+'\n')
             dataFlag0 = pd.DataFrame()
             dataFlag1 = pd.DataFrame()
             dataFlag2 = pd.DataFrame()
@@ -130,16 +130,16 @@ dataFlag0 = gpd.GeoDataFrame(dataFlag0)
 dataFlag0.crs = crs
 processedFilename = rootFilename + '_flag0_'+str(contSavedFiles)+'.shp'
 dataFlag0.to_file(filename = processedFilename, driver="ESRI Shapefile")
-print("Saved file:", processedFilename)
+log.write("Saved file:"+processedFilename+'\n')
 dataFlag1 = gpd.GeoDataFrame(dataFlag1)
 dataFlag1.crs = crs
 processedFilename = rootFilename + '_flag1_'+str(contSavedFiles)+'.shp'
 dataFlag1.to_file(filename = processedFilename, driver="ESRI Shapefile")
-print("Saved file:", processedFilename)
+log.write("Saved file:"+processedFilename+'\n')
 dataFlag2 = gpd.GeoDataFrame(dataFlag2)
 dataFlag2.crs = crs
 processedFilename = rootFilename + '_flag2_'+str(contSavedFiles)+'.shp'
 dataFlag2.to_file(filename = processedFilename, driver="ESRI Shapefile")
-print("Saved file:", processedFilename)
+log.write("Saved file:"+processedFilename+'\n')
 log.close()
 
