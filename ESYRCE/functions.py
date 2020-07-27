@@ -48,7 +48,8 @@ def getPolygonToClip(dataSegmentNr, log):
             except:
                 log.write("Problems performing intersection "+str(dataSegmentNr.iloc[0]['D2_NUM'])+'\n')
                 return gpd.GeoDataFrame()
-    
+    polygon = gpd.GeoDataFrame(intersection.geometry)
+    polygon.crs = dataSegmentNr.crs
     return gpd.GeoDataFrame(intersection.geometry)
 
 

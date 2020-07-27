@@ -26,12 +26,11 @@ inputESYRCE_2001_2016 = home + '/Documents/DATA/OBServ/ESYRCE/Esyrce2001_2016.gd
 inputESYRCE_2017_2019 = home + '/Documents/DATA/OBServ/ESYRCE/Esyrce2017_2019/Z30.shp'
 layer = 'z30'
 tol  = 10.0 # tolerance, in meters, to check whether the segments are aligned
+if layer == 'z28': crs = "EPSG:23028"
+if layer == 'z30': crs = "EPSG:23030"
 
 # OUTPUT
 rootFilename = home + '/Documents/DATA/OBServ/ESYRCE/PROCESSED/'+layer+'/flagged/data'
-processedFilename0 = rootFilename + '_flag0.shp'
-processedFilename1 = rootFilename + '_flag1.shp'
-processedFilename2 = rootFilename + '_flag2.shp'
 logFile = home + '/Documents/DATA/OBServ/ESYRCE/PROCESSED/logs/flagDataSegments.log'
 log = open(logFile, "a", buffering=1)
 log.write("\n")
@@ -102,24 +101,45 @@ for zoneNr in zoneNrs:
             times = contNr / totalNr 
             log.write("Processing data Zone..."+str(int(zoneNr))+" Percentage completed..."+str(np.floor(times*100))+'\n')
         
+        # If input data is very large, save file every certain number of blocks processed, e.g. 1000
+        if np.mod(contNr, 1000) == 0:
+            log.write("Writing files...")
+            dataFlag0 = gpd.GeoDataFrame(dataFlag0)
+            dataFlag0.crs = crs
+            processedFilename = rootFilename + '_flag0_'+str(contSavedFiles)+'.shp'
+            dataFlag0.to_file(filename = processedFilename, driver="ESRI Shapefile")
+            log.write("Saved file:"+processedFilename)
+            dataFlag1 = gpd.GeoDataFrame(dataFlag1)
+            dataFlag1.crs = crs
+            processedFilename = rootFilename + '_flag1_'+str(contSavedFiles)+'.shp'
+            dataFlag1.to_file(filename = processedFilename, driver="ESRI Shapefile")
+            log.write("Saved file:"+processedFilename)
+            dataFlag2 = gpd.GeoDataFrame(dataFlag2)
+            dataFlag2.crs = crs
+            processedFilename = rootFilename + '_flag2_'+str(contSavedFiles)+'.shp'
+            dataFlag2.to_file(filename = processedFilename, driver="ESRI Shapefile")
+            log.write("Saved file:"+processedFilename)
+            dataFlag0 = pd.DataFrame()
+            dataFlag1 = pd.DataFrame()
+            dataFlag2 = pd.DataFrame()
+            contSavedFiles = contSavedFiles + 1        
 
-## To shapefiles
-if layer == 'z28': crs = "EPSG:23028"
-if layer == 'z30': crs = "EPSG:23030"
-log.write("Writing file..."+processedFilename0+'\n')
+# Save remaining data
+log.write("Writing files...")
 dataFlag0 = gpd.GeoDataFrame(dataFlag0)
 dataFlag0.crs = crs
-dataFlag0.to_file(filename = processedFilename0, driver="ESRI Shapefile")
-log.write("Saved file: "+processedFilename0+'\n')
-log.write("Writing file..."+processedFilename1+'\n')
+processedFilename = rootFilename + '_flag0_'+str(contSavedFiles)+'.shp'
+dataFlag0.to_file(filename = processedFilename, driver="ESRI Shapefile")
+print("Saved file:", processedFilename)
 dataFlag1 = gpd.GeoDataFrame(dataFlag1)
 dataFlag1.crs = crs
-dataFlag1.to_file(filename = processedFilename1, driver="ESRI Shapefile")
-log.write("Saved file: "+processedFilename1+'\n')
-log.write("Writing file..."+processedFilename2+'\n')
+processedFilename = rootFilename + '_flag1_'+str(contSavedFiles)+'.shp'
+dataFlag1.to_file(filename = processedFilename, driver="ESRI Shapefile")
+print("Saved file:", processedFilename)
 dataFlag2 = gpd.GeoDataFrame(dataFlag2)
 dataFlag2.crs = crs
-dataFlag2.to_file(filename = processedFilename2, driver="ESRI Shapefile")
-log.write("Saved file: "+processedFilename2+'\n')
+processedFilename = rootFilename + '_flag2_'+str(contSavedFiles)+'.shp'
+dataFlag2.to_file(filename = processedFilename, driver="ESRI Shapefile")
+print("Saved file:", processedFilename)
 log.close()
 
