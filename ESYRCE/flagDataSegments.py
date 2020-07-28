@@ -53,6 +53,7 @@ dataFlag1 = pd.DataFrame()
 dataFlag2 = pd.DataFrame()
 zoneNrs = np.unique(data.D1_HUS)
 zoneNrs = zoneNrs[~np.isnan(zoneNrs)]
+contSavedFiles = 0
 for zoneNr in zoneNrs:
     # Select zone data 
     ii = np.where(data.D1_HUS == zoneNr) 
@@ -67,7 +68,6 @@ for zoneNr in zoneNrs:
     segmentNrs = np.unique(dataZoneNr.D2_NUM)
     totalNr = len(segmentNrs)
     contNr  = 0
-    contSavedFiles = 0
     for segmentNr in segmentNrs:  #skip first one because it is equal to zero and it has no information
     
         # Select segment data (not very elegant way, but using numpy seems to be the fastest option)
@@ -126,20 +126,23 @@ for zoneNr in zoneNrs:
 
 # Save remaining data
 log.write("Writing files...")
-dataFlag0 = gpd.GeoDataFrame(dataFlag0)
-dataFlag0.crs = crs
-processedFilename = rootFilename + '_flag0_'+str(contSavedFiles)+'.shp'
-dataFlag0.to_file(filename = processedFilename, driver="ESRI Shapefile")
-log.write("Saved file:"+processedFilename+'\n')
-dataFlag1 = gpd.GeoDataFrame(dataFlag1)
-dataFlag1.crs = crs
-processedFilename = rootFilename + '_flag1_'+str(contSavedFiles)+'.shp'
-dataFlag1.to_file(filename = processedFilename, driver="ESRI Shapefile")
-log.write("Saved file:"+processedFilename+'\n')
-dataFlag2 = gpd.GeoDataFrame(dataFlag2)
-dataFlag2.crs = crs
-processedFilename = rootFilename + '_flag2_'+str(contSavedFiles)+'.shp'
-dataFlag2.to_file(filename = processedFilename, driver="ESRI Shapefile")
-log.write("Saved file:"+processedFilename+'\n')
+if np.invert(dataFlag0.empty):
+    dataFlag0 = gpd.GeoDataFrame(dataFlag0)
+    dataFlag0.crs = crs
+    processedFilename = rootFilename + '_flag0_'+str(contSavedFiles)+'.shp'
+    dataFlag0.to_file(filename = processedFilename, driver="ESRI Shapefile")
+    log.write("Saved file:"+processedFilename+'\n')
+if np.invert(dataFlag1.empty):
+    dataFlag1 = gpd.GeoDataFrame(dataFlag1)
+    dataFlag1.crs = crs
+    processedFilename = rootFilename + '_flag1_'+str(contSavedFiles)+'.shp'
+    dataFlag1.to_file(filename = processedFilename, driver="ESRI Shapefile")
+    log.write("Saved file:"+processedFilename+'\n')
+if np.invert(dataFlag2.empty):
+    dataFlag2 = gpd.GeoDataFrame(dataFlag2)
+    dataFlag2.crs = crs
+    processedFilename = rootFilename + '_flag2_'+str(contSavedFiles)+'.shp'
+    dataFlag2.to_file(filename = processedFilename, driver="ESRI Shapefile")
+    log.write("Saved file:"+processedFilename+'\n')
 log.close()
 
