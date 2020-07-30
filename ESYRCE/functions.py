@@ -11,6 +11,7 @@ from sklearn import linear_model
 from os.path import expanduser
 home = expanduser("~")
 dictDemandValues = { ''           :     0,
+                   'unknown':       0, 
                    'no increase':       0, 
                    'increase':          0.5,
                    'increase-breeding': 0.5,
@@ -103,7 +104,7 @@ INPUT:
     - dictionary with land cover types that can be associated with other combinations of ESYRCE codes 
     (because, unfortunately, some land cover types can be identified with more than one combination of codes) 
     
-OUTPUT: dictionary with the porportion of each land cover type within the segment
+OUTPUT: dictionary with the proportion of each land cover type within the segment
 
 Note: water is ignored in the calculations
 """
@@ -522,7 +523,7 @@ def getEvolutionMetrics(segment):
     out={}
     segmMetrics = segment.drop(columns=['D1_HUS','D2_NUM','YEA'])
     for column in segmMetrics:
-        if (column.find('var_') == 0): continue # Skip columns with the variance of the yields
+       #if (column.find('var_') == 0): continue # Skip columns with the variance of the yields
         yaxis = np.array(segmMetrics[column])
         valid = ~np.isnan(years) & ~np.isnan(yaxis)
         xaxis = years[valid]
