@@ -7,9 +7,11 @@ Created on Mon Apr  6 16:56:21 2020
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+import csv
+from dbfread import DBF
 from sklearn import linear_model
-from os.path import expanduser
-home = expanduser("~")
+import glob
+
 dictDemandValues = { ''           :     0,
                    'unknown':       0, 
                    'no increase':       0, 
@@ -523,7 +525,6 @@ def getEvolutionMetrics(segment):
     out={}
     segmMetrics = segment.drop(columns=['D1_HUS','D2_NUM','YEA'])
     for column in segmMetrics:
-       #if (column.find('var_') == 0): continue # Skip columns with the variance of the yields
         yaxis = np.array(segmMetrics[column])
         valid = ~np.isnan(years) & ~np.isnan(yaxis)
         xaxis = years[valid]
@@ -546,3 +547,27 @@ def getSegmentArea(segment):
         areaPolygon = segment.loc[index].Shape_Area
         totalArea = totalArea + areaPolygon
     return totalArea*1e-6; # m^2 to km^2
+
+"""
+INPUT: a dbf
+OUTPUT: a csv, same name, same path, except extension
+"""
+def dbf_to_csv(dbf_table_pth):
+    csv_fn = dbf_table_pth[:-4]+ ".csv" #Set the csv file name
+    table = DBF(dbf_table_pth, encoding="latin-1")# table variable is a DBF object, encoding latin-1
+    with open(csv_fn, 'w', newline = '', encoding="latin-1") as f:# create a csv file, fill it with dbf content
+        writer = csv.writer(f)
+        writer.writerow(table.field_names)# write the column name
+        for record in table:# write the rows
+            writer.writerow(list(record.values()))
+    return csv_fn
+
+"""
+INPUT: directory and extension
+OUTPUT: list of files in the directory and subdirs (recursive) with that extension
+"""
+def allFiles(root, ext):
+    files = []
+    for x in glob.glob(root+'**\\*.'+ext, recursive=True):
+        files.append(x)
+    return files
