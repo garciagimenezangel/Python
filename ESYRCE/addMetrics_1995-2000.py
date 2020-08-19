@@ -44,21 +44,7 @@ MO	    * 	    mar, lagunas litorales, estuarios, etc.
 
 4) Demand: demand in a segment, averaged over the area of the polygons
     
-5) Soil maintenance (for woody crops, fallows, cereal, sunflower, fodder corn and fodder cereals): 
-DE_CS
-For woody crops and fallows:
-LT    laboreo tradicional
-LM    laboreo mínimo
-CE    cubiertas vegetales espontáneas
-CS    cubiertas vegetales sembradas
-CP    cubiertas inertes
-SM    sin mantenimiento
-NL    no laboreo (caso de cultivos leñosos)
-For cereals, sunflower, fodder corn and fodder cereals:
-D     siembra directa
-N     siembra tradicional
-
-6) Average yield of crops (see variable 'cropCodes') 
+5) Average yield of crops (see variable 'cropCodes') 
     
 
 INPUT: 
@@ -66,15 +52,13 @@ INPUT:
     - table with values of crops' demand of pollinators
     - table of classification of ESYRCE codes as crop or not
     - land cover types to measure their percentage
-    - soil management techniques
-    - sowing technique options
     - crop codes that have available measurements of yield 
     
 OUTPUT: csv file with ESYRCE identificator (segment number + year) and the metrics 
 """
 
 import csv
-import geopandas as gpd
+import pandas as pd
 import numpy as np
 from datetime import datetime
 from os.path import expanduser
@@ -88,16 +72,16 @@ sys.path.append(home + '/Python/ESYRCE/')
 import functions
 
 # INPUT folder
-#inputESYRCE = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\flagged\\'
-inputESYRCE = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/flagged/'
+#inputESYRCE = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\Esyrce1992_2000\\parcelas1995-2000\\'
+inputESYRCE = home + '/DATA/OBServ/ESYRCE/parcelas1995-2000/'
 
 # OUTPUT folder
 #outFolder = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\metrics\\'
 outFolder = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/metrics/'
 
 # Log file
-#logFile = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\logs\\addMetrics.log'
-logFile = home + '/DATA/OBServ/ESYRCE/PROCESSED/logs/addMetrics.log'
+#logFile = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\logs\\addMetrics1995-2000.log'
+logFile = home + '/DATA/OBServ/ESYRCE/PROCESSED/logs/addMetrics1995-2000.log'
 buffSize = 1
 log = open(logFile, "a", buffering=buffSize)
 log.write("\n")
@@ -120,7 +104,7 @@ landCoverTypes = {'cerealGrain':        ['CE','*'],
                   'citric':             ['CI','*'],     
                   'fruitNoCitric':      ['FR','*'],   
                   'vineyard':           ['VI','*'],  
-                  'olive':              ['OL','*'],  
+                  'oliveTrees':         ['OL','*'],  
                   'otherWoodyCrop':     ['OC','*'],  
                   'nursery':            ['VV','*'],  
                   'association':        ['AS','*'],  
@@ -149,19 +133,6 @@ landCoverTypes = {'cerealGrain':        ['CE','*'],
 # I define another dictionary to deal with this issue
 alternatCodes = {'improductive': ['IM','*'], 
                  'notAgri':      ['NA','*']}
-
-# Soil codes. Apply to land cover types of woody crops and fallow: 
-soilCodes = {'traditional':   ['LT'],
-             'minimal':       ['LM'],
-             'spontVegCover': ['CE'],
-             'sowedVegCover': ['CS'],
-             'inertCover':    ['CP'],
-             'noMainten':     ['SM'],
-             'noTillage':     ['NL']}
-
-# Sowing codes. Apply to cereals, sunflower, fodder corn and fodder cereals: 
-sowCodes = { 'directSowing':  ['D'],
-             'traditSowing':  ['N']} 
 
 # Crop codes. Crops that might have a yield estimation (only some of the fields, have a yield estimation, and theoretically this is done only for these crops, according to the ESYRCE manual 2017)
 cropCodes = {'hardWheat':     ['TD'],
@@ -237,20 +208,36 @@ with open(tableCultivarDemand, mode='r') as infile:
 
 ##################
 # Loop files
-for file in glob.glob(inputESYRCE + "*.shp"):
+for file in glob.glob(inputESYRCE + "*.csv"):
     
     # OUTPUT
     filename = file.split(inputESYRCE)[1]
-    filename = filename.split(".shp")[0]
-    outFilename = outFolder+filename+".csv"
+    outFilename = outFolder+filename
+    
+    # Get year from filename
+    year = int(filename.split('parcelas')[1].split('.csv')[0])
 
     log.write("Processing file..."+filename+'\n')
     
     # Read data, select columns, sort and reset indices
-    data = gpd.read_file(file)
-    data.Shape_Area = data.geometry.area
-    data = data[['D1_HUS','D2_NUM','D3_PAR','D4_GRC','D5_CUL','D9_RTO','DE_CS','YEA','Shape_Area']]
-    data = data.dropna(thresh=1)
+    # Read data, select columns, sort and reset indices
+    data = pd.read_csv(file, encoding="latin-1")
+    data = data[['HUS','NUM','PAR','GRC','CUL','RTO','SUD']]
+    data['YEA'] = year
+
+    # Rename columns to accommodate the names of ESYRCE attributes since 2001
+    data.rename(columns={"HUS": "D1_HUS", 
+                         "NUM": "D2_NUM",
+                         "PAR": "D3_PAR",
+                         "GRC": "D4_GRC",
+                         "CUL": "D5_CUL",
+                         "RTO": "D9_RTO",
+                         "SUD": "Shape_Area"}, inplace=True)
+
+    # Transform area units (hectares) into squared meters 
+    data.Shape_Area = data.Shape_Area*10000
+    
+    # Sort indices
     data = data.where(data['D1_HUS'] != 0)
     data = data.where(data['D2_NUM'] != 0)
     data.sort_values(by=['D1_HUS','D2_NUM','YEA'], inplace = True)
@@ -258,8 +245,6 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     
     # Init new columns with NaN data
     for x in landCoverTypes.keys(): data[x] = np.repeat(np.nan, len(data))
-    for x in soilCodes.keys():      data[x] = np.repeat(np.nan, len(data))
-    for x in sowCodes.keys():       data[x] = np.repeat(np.nan, len(data))
     for x in cropCodes.keys():      data[x] = np.repeat(np.nan, len(data))
     for x in cropCodes.keys():      data['var_'+x] = np.repeat(np.nan, len(data)) # variance of the yields
     data['avgFieldSize']                    = np.repeat(np.nan, len(data))
@@ -311,9 +296,7 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                     break
             
                 # Calculate metrics
-                landCoverProportion = functions.calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes, log)
-                soilTechnProportion = functions.calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, sowCodes, log) 
-                sowTechnProportion  = functions.calculateSoilTechniqueProportion(dataSegmentYear, sowCodes, soilCodes, log) 
+                landCoverProportion = functions.calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes, log) 
                 cropYield           = functions.calculateCropYield(dataSegmentYear, cropCodes, log)
                 varYield            = functions.calculateVarianceYield(dataSegmentYear, cropCodes, cropYield, log)
                 avgFieldSize        = functions.calculateAvgFieldSize(dataSegmentYear, dictIsCrop, log)
@@ -322,8 +305,6 @@ for file in glob.glob(inputESYRCE + "*.shp"):
             
                 # Assign values
                 for x in landCoverTypes.keys(): data.loc[dataSegmentYear.index, x] = np.repeat(landCoverProportion[x], len(dataSegmentYear))              
-                for x in soilCodes.keys():      data.loc[dataSegmentYear.index, x] = np.repeat(soilTechnProportion[x], len(dataSegmentYear))
-                for x in sowCodes.keys():       data.loc[dataSegmentYear.index, x] = np.repeat(sowTechnProportion[x], len(dataSegmentYear))
                 for x in cropYield.keys():      data.loc[dataSegmentYear.index, x] = np.repeat(cropYield[x], len(dataSegmentYear))
                 for x in cropYield.keys():      data.loc[dataSegmentYear.index, 'var_'+x] = np.repeat(varYield[x], len(dataSegmentYear))
                 data.loc[dataSegmentYear.index, 'avgFieldSize']                    = np.repeat(avgFieldSize, len(dataSegmentYear))
@@ -336,7 +317,7 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                 log.write("Processing File..."+filename+" Data Zone..."+str(int(zoneNr))+"Percentage completed..."+str(np.floor(times*100))+'\n')
     
     # Group by number of the segment and year, drop not useful columns, and save to csv
-    data = data.drop(columns=['D3_PAR','D4_GRC','D5_CUL','D9_RTO','DE_CS','Shape_Area'])
+    data = data.drop(columns=['D3_PAR','D4_GRC','D5_CUL','D9_RTO','Shape_Area'])
     data = data.groupby(['D1_HUS','D2_NUM','YEA']).first().reset_index()
     log.write("Writing file..."+outFilename+'\n')
     data.to_csv(outFilename, index=False)
