@@ -7,17 +7,15 @@ Created on Mon Apr  6 16:56:21 2020
 import numpy as np
 import pandas as pd
 import geopandas as gpd
-import csv
-from dbfread import DBF
 from sklearn import linear_model
 import glob
 
 dictDemandValues = { ''           :     0,
-                   'unknown':       0, 
+                   'unknown':           0, 
                    'no increase':       0, 
                    'increase':          0.5,
-                   'increase-breeding': 0.5,
-                   'increase-seed production': 0.5,
+                   'increase-breeding': 0,
+                   'increase-seed production': 0,
                    'little': 0.05,
                    'modest': 0.25,
                    'great':  0.65,
@@ -299,6 +297,46 @@ def calculateAvgFieldSize(dataSegmentYear, dictIsCrop, log):
 """
 INPUT: 
     - a subset of ESYRCE data corresponding to a segment for a particular year 
+    - dictionary to find out whether a given ESYRCE code is classified as seminatural area
+    
+OUTPUT: average size of the seminatural patches
+"""
+def calculateAvgSeminaturalSize(dataSegmentYear, dictIsSeminatural, log):   
+    
+    # Iterate through the polygons in dataSegmentYear
+    accArea     = 0
+    nSeminaturalPatches = 0
+    for index in dataSegmentYear.index:  
+        # area of the polygon
+        areaPolygon = dataSegmentYear.loc[index].Shape_Area
+
+        # landcover codes (2 first characteres)
+        try:
+            polyGrc = dataSegmentYear.loc[index].D5_CUL[0:2]       
+        except:
+            log.write("Problem with land cover codes:"+str(dataSegmentYear.loc[index].D2_NUM)+
+                  "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
+                  "...Year:"+str(dataSegmentYear.loc[index].YEA)+'\n')
+            continue            
+        
+        try:
+            isSeminatural = dictIsSeminatural[polyGrc] == 'YES'
+        except:
+            isSeminatural = False     
+            
+        if isSeminatural:   
+            nSeminaturalPatches = nSeminaturalPatches + 1
+            accArea  = accArea + areaPolygon
+            
+    if nSeminaturalPatches > 0:
+        return accArea / nSeminaturalPatches  
+    else:
+        return 0    
+    
+
+"""
+INPUT: 
+    - a subset of ESYRCE data corresponding to a segment for a particular year 
     - dictionary to find out whether a given ESYRCE code correspond to a crop or not
     
 OUTPUT: number of crop types, per km^2
@@ -548,19 +586,6 @@ def getSegmentArea(segment):
         totalArea = totalArea + areaPolygon
     return totalArea*1e-6; # m^2 to km^2
 
-"""
-INPUT: a dbf
-OUTPUT: a csv, same name, same path, except extension
-"""
-def dbf_to_csv(dbf_table_pth):
-    csv_fn = dbf_table_pth[:-4]+ ".csv" #Set the csv file name
-    table = DBF(dbf_table_pth, encoding="latin-1")# table variable is a DBF object, encoding latin-1
-    with open(csv_fn, 'w', newline = '', encoding="latin-1") as f:# create a csv file, fill it with dbf content
-        writer = csv.writer(f)
-        writer.writerow(table.field_names)# write the column name
-        for record in table:# write the rows
-            writer.writerow(list(record.values()))
-    return csv_fn
 
 """
 INPUT: directory and extension

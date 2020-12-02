@@ -244,11 +244,11 @@ for file in glob.glob(inputESYRCE + "*.csv"):
     data.reset_index(drop=True, inplace=True)
     
     # Init new columns with NaN data
-    for x in landCoverTypes.keys(): data[x] = np.repeat(np.nan, len(data))
-    for x in cropCodes.keys():      data[x] = np.repeat(np.nan, len(data))
-    for x in cropCodes.keys():      data['var_'+x] = np.repeat(np.nan, len(data)) # variance of the yields
-    data['avgFieldSize']                    = np.repeat(np.nan, len(data))
-    data['heterogeneity']                   = np.repeat(np.nan, len(data))
+#    for x in landCoverTypes.keys(): data[x] = np.repeat(np.nan, len(data))
+#    for x in cropCodes.keys():      data[x] = np.repeat(np.nan, len(data))
+#    for x in cropCodes.keys():      data['var_'+x] = np.repeat(np.nan, len(data)) # variance of the yields
+#    data['avgFieldSize']                    = np.repeat(np.nan, len(data))
+#    data['heterogeneity']                   = np.repeat(np.nan, len(data))
     data['demand']                          = np.repeat(np.nan, len(data))
     
     
@@ -296,19 +296,19 @@ for file in glob.glob(inputESYRCE + "*.csv"):
                     break
             
                 # Calculate metrics
-                landCoverProportion = functions.calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes, log) 
-                cropYield           = functions.calculateCropYield(dataSegmentYear, cropCodes, log)
-                varYield            = functions.calculateVarianceYield(dataSegmentYear, cropCodes, cropYield, log)
-                avgFieldSize        = functions.calculateAvgFieldSize(dataSegmentYear, dictIsCrop, log)
-                heterogeneity       = functions.calculateHeterogeneity(dataSegmentYear, dictIsCrop, log)
+#                landCoverProportion = functions.calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes, log) 
+#                cropYield           = functions.calculateCropYield(dataSegmentYear, cropCodes, log)
+#                varYield            = functions.calculateVarianceYield(dataSegmentYear, cropCodes, cropYield, log)
+#                avgFieldSize        = functions.calculateAvgFieldSize(dataSegmentYear, dictIsCrop, log)
+#                heterogeneity       = functions.calculateHeterogeneity(dataSegmentYear, dictIsCrop, log)
                 demand              = functions.calculateDemand(dataSegmentYear, dictCultivarDemand, log)
             
                 # Assign values
-                for x in landCoverTypes.keys(): data.loc[dataSegmentYear.index, x] = np.repeat(landCoverProportion[x], len(dataSegmentYear))              
-                for x in cropYield.keys():      data.loc[dataSegmentYear.index, x] = np.repeat(cropYield[x], len(dataSegmentYear))
-                for x in cropYield.keys():      data.loc[dataSegmentYear.index, 'var_'+x] = np.repeat(varYield[x], len(dataSegmentYear))
-                data.loc[dataSegmentYear.index, 'avgFieldSize']                    = np.repeat(avgFieldSize, len(dataSegmentYear))
-                data.loc[dataSegmentYear.index, 'heterogeneity']                   = np.repeat(heterogeneity, len(dataSegmentYear))
+#                for x in landCoverTypes.keys(): data.loc[dataSegmentYear.index, x] = np.repeat(landCoverProportion[x], len(dataSegmentYear))              
+#                for x in cropYield.keys():      data.loc[dataSegmentYear.index, x] = np.repeat(cropYield[x], len(dataSegmentYear))
+#                for x in cropYield.keys():      data.loc[dataSegmentYear.index, 'var_'+x] = np.repeat(varYield[x], len(dataSegmentYear))
+#                data.loc[dataSegmentYear.index, 'avgFieldSize']                    = np.repeat(avgFieldSize, len(dataSegmentYear))
+#                data.loc[dataSegmentYear.index, 'heterogeneity']                   = np.repeat(heterogeneity, len(dataSegmentYear))
                 data.loc[dataSegmentYear.index, 'demand']                          = np.repeat(demand, len(dataSegmentYear))
         
             contNr = contNr+1

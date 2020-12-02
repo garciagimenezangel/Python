@@ -65,6 +65,7 @@ INPUT:
     - folder with shapefiles with the ESYRCE data, and csv's: 
     - table with values of crops' demand of pollinators
     - table of classification of ESYRCE codes as crop or not
+    - table of classification of ESYRCE codes as seminatural area or not
     - land cover types to measure their percentage
     - soil management techniques
     - sowing technique options
@@ -106,8 +107,10 @@ log.write("PROCESS addMetrics.py STARTED AT: " + datetime.now().strftime("%d/%m/
 # Define dictionaries:
 #tableCultivarDemand = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
 #tableIsCrop         = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCrop.csv'
+#tableIsSeminatural  = home + '\\Google Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isSeminatural.csv'
 tableCultivarDemand = home + '/lookup/Cultivar-Demand.csv'
 tableIsCrop         = home + '/lookup/isCrop.csv'
+tableIsSeminatural  = home + '/lookup/isSeminatural.csv'
 
 # Land cover types (associating to esyrce codes, add more or remove if needed), to calculate proportion in every segment for each year
 landCoverTypes = {'cerealGrain':        ['CE','*'],     
@@ -227,6 +230,11 @@ cropCodes = {'hardWheat':     ['TD'],
 with open(tableIsCrop, mode='r') as infile:
     reader     = csv.reader(infile)
     dictIsCrop = {rows[0]:rows[1] for rows in reader} # keys: esyrce codes; values: 'YES' or 'NO'
+    
+# Dictionary to associate codes with seminatural category
+with open(tableIsSeminatural, mode='r') as infile:
+    reader     = csv.reader(infile)
+    dictIsSeminatural = {rows[0]:rows[1] for rows in reader} # keys: esyrce codes; values: 'YES' or 'NO'
 
 # Dictionary to associate crop codes with demand
 # In ubuntu you may need to change encoding of this file: iconv -f ISO-8859-1 -t utf-8 Cultivar-Demand.csv > Cultivar-Demand-utf8.csv
@@ -265,7 +273,7 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     data['avgFieldSize']                    = np.repeat(np.nan, len(data))
     data['heterogeneity']                   = np.repeat(np.nan, len(data))
     data['demand']                          = np.repeat(np.nan, len(data))
-    
+    data['avgSeminatSize'] = np.repeat(np.nan, len(data))
     
     
     ##################
@@ -317,6 +325,7 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                 cropYield           = functions.calculateCropYield(dataSegmentYear, cropCodes, log)
                 varYield            = functions.calculateVarianceYield(dataSegmentYear, cropCodes, cropYield, log)
                 avgFieldSize        = functions.calculateAvgFieldSize(dataSegmentYear, dictIsCrop, log)
+                avgSeminatSize        = functions.calculateAvgSeminaturalSize(dataSegmentYear, dictIsSeminatural, log)
                 heterogeneity       = functions.calculateHeterogeneity(dataSegmentYear, dictIsCrop, log)
                 demand              = functions.calculateDemand(dataSegmentYear, dictCultivarDemand, log)
             
@@ -327,13 +336,14 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                 for x in cropYield.keys():      data.loc[dataSegmentYear.index, x] = np.repeat(cropYield[x], len(dataSegmentYear))
                 for x in cropYield.keys():      data.loc[dataSegmentYear.index, 'var_'+x] = np.repeat(varYield[x], len(dataSegmentYear))
                 data.loc[dataSegmentYear.index, 'avgFieldSize']                    = np.repeat(avgFieldSize, len(dataSegmentYear))
+                data.loc[dataSegmentYear.index, 'avgSeminatSize']                    = np.repeat(avgSeminatSize, len(dataSegmentYear))
                 data.loc[dataSegmentYear.index, 'heterogeneity']                   = np.repeat(heterogeneity, len(dataSegmentYear))
                 data.loc[dataSegmentYear.index, 'demand']                          = np.repeat(demand, len(dataSegmentYear))
         
             contNr = contNr+1
             if np.mod(contNr, 100) == 0:
                 times = contNr / totalNr 
-                log.write("Processing File..."+filename+" Data Zone..."+str(int(zoneNr))+"Percentage completed..."+str(np.floor(times*100))+'\n')
+                log.write("Processing File..."+filename+" Data Zone..."+str(int(zoneNr))+" Percentage completed..."+str(np.floor(times*100))+'\n')
     
     # Group by number of the segment and year, drop not useful columns, and save to csv
     data = data.drop(columns=['D3_PAR','D4_GRC','D5_CUL','D9_RTO','DE_CS','Shape_Area'])
