@@ -4,11 +4,13 @@ Created on Mon Apr  6 16:56:21 2020
 
 @author: angel.gimenez
 """
+
 import numpy as np
 import pandas as pd
 import geopandas as gpd
 from sklearn import linear_model
 import glob
+import sys
 
 dictDemandValues = { ''           :     0,
                    'unknown':           0, 
@@ -126,10 +128,6 @@ def calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes,
     lcAcc = np.zeros(len(lcGrc)) # accumulated area of each land cover type
     totalArea = 0
     
-    # Ignore water codes
-    ignoreGrc = np.array(['AG','MO'])
-    ignoreCul = np.array(['AG','MO'])
-    
     # Iterate through the polygons in dataSegmentYear
     for index in dataSegmentYear.index:
         # area of the polygon
@@ -146,9 +144,12 @@ def calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes,
             continue            
         
         # Ignore water codes
-        if np.isin(polyGrc, ignoreGrc): continue
-        if np.isin(polyCul, ignoreCul): continue
-    
+        try:
+            if isWaterPolygon(dataSegmentYear.loc[index]): continue    
+        except:
+            log.write(sys.exc_info()[0])
+            continue    
+        
         # identify landcover index
         ii = np.where(lcGrc == polyGrc)[0]
         if (len(ii)>1): 
@@ -224,7 +225,7 @@ def calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, ignoreCodes, lo
         # soil management technique code
         polyCS = dataSegmentYear.loc[index].DE_CS       
         
-        # Ignore water codes
+        # Codes to be ignored
         if np.isin(polyCS, np.array(list(ignoreCodes.values()))): continue
     
         # If code found (polyCS != None), add area to the corresponding soil management technique
@@ -257,39 +258,21 @@ def calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, ignoreCodes, lo
 """
 INPUT: 
     - a subset of ESYRCE data corresponding to a segment for a particular year 
-    - dictionary to find out whether a given ESYRCE code correspond to a crop or not
     
-OUTPUT: average size of the crop fields
+OUTPUT: average size of the crop fields (in hectares)
 """
-def calculateAvgFieldSize(dataSegmentYear, dictIsCrop, log):
+def calculateAvgFieldSize(dataSegmentYear, log):
     
     # Iterate through the polygons in dataSegmentYear
     accArea     = 0
     nCropfields = 0
     for index in dataSegmentYear.index:  
-        # area of the polygon
-        areaPolygon = dataSegmentYear.loc[index].Shape_Area
-
-        # landcover codes (2 first characteres)
-        try:
-            polyGrc = dataSegmentYear.loc[index].D4_GRC[0:2]       
-        except:
-            log.write("Problem with land cover codes:"+str(dataSegmentYear.loc[index].D2_NUM)+
-                  "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
-                  "...Year:"+str(dataSegmentYear.loc[index].YEA)+'\n')
-            continue            
-        
-        try:
-            isCropfield = dictIsCrop[polyGrc] == 'YES'
-        except:
-            isCropfield = False       
-
-        if isCropfield:   
+        if dataSegmentYear.loc[index].isCropfield:   
             nCropfields = nCropfields + 1
-            accArea  = accArea + areaPolygon
+            accArea  = accArea + dataSegmentYear.loc[index].Shape_Area
     
     if nCropfields > 0:
-        return accArea / nCropfields  
+        return accArea * 1e-4 / nCropfields # convert m^2 into hectares
     else:
         return 0
     
@@ -299,37 +282,20 @@ INPUT:
     - a subset of ESYRCE data corresponding to a segment for a particular year 
     - dictionary to find out whether a given ESYRCE code is classified as seminatural area
     
-OUTPUT: average size of the seminatural patches
+OUTPUT: average size of the seminatural patches (in hectares)
 """
-def calculateAvgSeminaturalSize(dataSegmentYear, dictIsSeminatural, log):   
+def calculateAvgSeminaturalSize(dataSegmentYear, log):   
     
     # Iterate through the polygons in dataSegmentYear
     accArea     = 0
     nSeminaturalPatches = 0
     for index in dataSegmentYear.index:  
-        # area of the polygon
-        areaPolygon = dataSegmentYear.loc[index].Shape_Area
-
-        # landcover codes (2 first characteres)
-        try:
-            polyGrc = dataSegmentYear.loc[index].D5_CUL[0:2]       
-        except:
-            log.write("Problem with land cover codes:"+str(dataSegmentYear.loc[index].D2_NUM)+
-                  "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
-                  "...Year:"+str(dataSegmentYear.loc[index].YEA)+'\n')
-            continue            
-        
-        try:
-            isSeminatural = dictIsSeminatural[polyGrc] == 'YES'
-        except:
-            isSeminatural = False     
-            
-        if isSeminatural:   
+        if dataSegmentYear.loc[index].isSeminatural:   
             nSeminaturalPatches = nSeminaturalPatches + 1
-            accArea  = accArea + areaPolygon
+            accArea  = accArea + dataSegmentYear.loc[index].Shape_Area
             
     if nSeminaturalPatches > 0:
-        return accArea / nSeminaturalPatches  
+        return accArea * 1e-4 / nSeminaturalPatches # convert m^2 into hectares
     else:
         return 0    
     
@@ -339,42 +305,26 @@ INPUT:
     - a subset of ESYRCE data corresponding to a segment for a particular year 
     - dictionary to find out whether a given ESYRCE code correspond to a crop or not
     
-OUTPUT: number of crop types, per km^2
+OUTPUT: number of crop types, per hectare
 """
-def calculateHeterogeneity(dataSegmentYear, dictIsCrop, log):   
-    
-    # Ignore water codes for the total area
-    ignoreGrc = np.array(['AG','MO'])
+def calculateHeterogeneity(dataSegmentYear, log):   
     
     # Iterate through the polygons in dataSegmentYear
     crops     = []
     totalArea = 0
-    for index in dataSegmentYear.index:      
-        # area of the polygon
-        areaPolygon = dataSegmentYear.loc[index].Shape_Area
-        
-        # landcover codes (2 first characteres)
-        try:
-            polyGrc = dataSegmentYear.loc[index].D4_GRC[0:2]       
-        except:
-            log.write("Problem with land cover codes:"+str(dataSegmentYear.loc[index].D2_NUM)+
-                  "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
-                  "...Year:"+str(dataSegmentYear.loc[index].YEA)+'\n')
-            continue            
-        
+    for index in dataSegmentYear.index:            
         # Ignore water codes
-        if np.isin(polyGrc, ignoreGrc): continue
-        
         try:
-            isCropfield = dictIsCrop[polyGrc] == 'YES'
+            if isWaterPolygon(dataSegmentYear.loc[index]): continue    
         except:
-            isCropfield = False    
+            log.write(sys.exc_info()[0])
+            continue  
 
-        if isCropfield:   
+        if dataSegmentYear.loc[index].isCropfield:   
             crops = np.append(crops, dataSegmentYear.loc[index].D5_CUL)
         
-        # add up area of the polygon (convert m^2 into km^2)
-        totalArea = totalArea + areaPolygon*1e-6
+        # add up area of the polygon (convert m^2 into hectares)
+        totalArea = totalArea + dataSegmentYear.loc[index].Shape_Area*1e-4
 
     if totalArea > 0:
         return len(np.unique(crops)) / totalArea
@@ -390,21 +340,21 @@ INPUT:
 OUTPUT: demand value for the segment, using an average weighted by the area of the polygons 
 """
 def calculateDemand(dataSegmentYear, dictCultivarDemand, log):
-    
-    # Ignore water codes for the total area
-    ignoreCul = np.array(['AG','MO'])
 
     # Iterate through the polygons in dataSegmentYear
     totalArea = 0
     accDemand = 0
-    for index in dataSegmentYear.index:  
-        # area of the polygon
-        areaPolygon = dataSegmentYear.loc[index].Shape_Area
-                  
-        # Ignore water codes
+    for index in dataSegmentYear.index:                  
         polyCul = dataSegmentYear.loc[index].D5_CUL
-        if np.isin(polyCul, ignoreCul): continue 
-       
+        # area of the polygon
+        areaPolygon = dataSegmentYear.loc[index].Shape_Area        
+        # Ignore water codes
+        try:
+            if isWaterPolygon(dataSegmentYear.loc[index]): continue    
+        except:
+            log.write(sys.exc_info()[0])
+            continue         
+        
         # Calculate demand. If association of cultivars, calculate average
         try:
             assocElts = polyCul.split("-")
@@ -413,7 +363,6 @@ def calculateDemand(dataSegmentYear, dictCultivarDemand, log):
                   "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
                   "...Year:"+str(dataSegmentYear.loc[index].YEA)+'\n')
             continue
-        
         demand    = 0
         if len(assocElts) > 0:
             for elt in assocElts: # average over all elements
@@ -554,6 +503,101 @@ def calculateVarianceYield(dataSegmentYear, cropCodes, weightedMeans, log):
 
 
 """
+INPUT: 
+    - a subset of ESYRCE data corresponding to a segment for a particular year 
+    
+OUTPUT: edge density (meters per hectare), defined as (see manual FRAGSTATS) the 
+sum of the lengths (m) of all edge segments, divided by the total area (hectares).
+
+Notes: 
+    - Edges of the segment are not considered. 
+    - Water polygons are skipped.
+"""
+def calculateEdgeDensity(dataSegmentYear, log):   
+    # Iterate through the polygons in dataSegmentYear
+    accArea       = 0
+    accEdgeLength = 0
+    for index in dataSegmentYear.index:  
+        # Ignore water codes
+        try:
+            if isWaterPolygon(dataSegmentYear.loc[index]): continue    
+        except:
+            log.write(sys.exc_info()[0])
+            continue          
+            
+        accArea = accArea + dataSegmentYear.loc[index].Shape_Area             # area
+        accEdgeLength = accEdgeLength + dataSegmentYear.loc[index].Shape_Leng # perimeter
+    if accArea > 0:
+        return accEdgeLength / (accArea*1e-4) # m2 to hectares
+    else:
+        return 0   
+
+
+"""
+INPUT: 
+    - a subset of ESYRCE data corresponding to a segment for a particular year 
+    
+OUTPUT: edge density of seminatural areas (meters per hectare), defined as 
+(see manual FRAGSTATS) the sum of the lengths (m) of all edge segments, 
+divided by the total area (hectares).
+"""
+def calculateEdgeDensitySeminatural(dataSegmentYear, log):   
+    
+    # Iterate through the polygons in dataSegmentYear
+    accArea       = 0
+    accEdgeLength = 0
+    for index in dataSegmentYear.index:  
+        # Ignore water codes
+        try:
+            if isWaterPolygon(dataSegmentYear.loc[index]): continue    
+        except:
+            log.write(sys.exc_info()[0])
+            continue  
+        
+        accArea  = accArea + dataSegmentYear.loc[index].Shape_Area  # area
+                       
+        if dataSegmentYear.loc[index].isSeminatural:   
+            accEdgeLength = accEdgeLength + dataSegmentYear.loc[index].Shape_Leng  # perimeter
+            
+    if accArea > 0:
+        return accEdgeLength / (accArea*1e-4)
+    else:
+        return 0  
+
+
+"""
+INPUT: 
+    - a subset of ESYRCE data corresponding to a segment for a particular year 
+    
+OUTPUT: edge density of agricultural areas (meters per hectare), defined as 
+(see manual FRAGSTATS) the sum of the lengths (m) of all edge segments, 
+divided by the total area (hectares).
+"""
+def calculateEdgeDensityFields(dataSegmentYear, log):   
+    
+    # Iterate through the polygons in dataSegmentYear
+    accArea       = 0
+    accEdgeLength = 0
+    for index in dataSegmentYear.index:  
+        # Ignore water codes
+        try:
+            if isWaterPolygon(dataSegmentYear.loc[index]): continue    
+        except:
+            log.write(sys.exc_info()[0])
+            continue  
+        
+        accArea  = accArea + dataSegmentYear.loc[index].Shape_Area  # area
+            
+        if dataSegmentYear.loc[index].isCropfield:   
+            accEdgeLength = accEdgeLength + dataSegmentYear.loc[index].Shape_Leng  # perimeter
+            
+    if accArea > 0:
+        return accEdgeLength / (accArea*1e-4)
+    else:
+        return 0  
+
+
+"""
 INPUT: a slice of a dataframe from a groupBy operation, corresponding to one segment in ESYRCE data in different years
 OUTPUT: the slope of the line derived from a linear regression using the values in each column
 """
@@ -576,17 +620,35 @@ def getEvolutionMetrics(segment):
 
 
 """
-INPUT: a segment from ESYRCE data (squares of 700x700m or 500x500m) 
+INPUT: a segment from ESYRCE data (squares of 25 or 49 ha) 
 OUTPUT: the area of the segment
 """
-def getSegmentArea(segment):
+def calculateSegmentArea(segment):
     totalArea = 0
     for index in segment.index:
         areaPolygon = segment.loc[index].Shape_Area
         totalArea = totalArea + areaPolygon
-    return totalArea*1e-6; # m^2 to km^2
+    return totalArea*1e-4; # m^2 to hectares
 
 
+"""
+INPUT: a segment from ESYRCE data
+OUTPUT: the area of the segment ignoring the polygons with water codes
+"""
+def calculateSegmentAreaWithoutWater(segment, log):
+    totalArea = 0
+    for index in segment.index: 
+        # Ignore water codes
+        try:
+            if isWaterPolygon(segment.loc[index]): continue    
+        except:
+            log.write(sys.exc_info()[0])
+            continue
+        areaPolygon = segment.loc[index].Shape_Area
+        totalArea = totalArea + areaPolygon
+    return totalArea*1e-4; # m^2 to hectares
+
+    
 """
 INPUT: directory and extension
 OUTPUT: list of files in the directory and subdirs (recursive) with that extension
@@ -596,3 +658,40 @@ def allFiles(root, ext):
     for x in glob.glob(root+'**\\*.'+ext, recursive=True):
         files.append(x)
     return files
+
+
+"""
+INPUT: polygon from ESYRCE segment
+OUTPUT: is water? yes or no
+"""
+def isWaterPolygon(esyrcePoly):
+    waterCodes = np.array(['AG','MO'])
+    try:
+        polyGrc = esyrcePoly.D4_GRC[0:2]       
+        polyCul = esyrcePoly.D5_CUL[0:2]
+    except:
+        errorMsg = "Warning in isWaterPolygon...Segment:"+str(esyrcePoly.D2_NUM)+"...Parcel:"+str(esyrcePoly.D3_PAR)+"...Year:"+str(esyrcePoly.YEA)+"\n"
+        raise Exception(errorMsg)  
+    isWater = np.isin(polyGrc, waterCodes) or np.isin(polyCul, waterCodes)
+    return isWater
+
+"""
+INPUT: array of ESYRCE codes
+OUTPUT: is classified as seminatural? yes or no
+"""
+def isSeminatural(code, dictIsSeminatural):
+    if code[0:2] in dictIsSeminatural: 
+        return dictIsSeminatural[code[0:2]] == "YES"
+    else:
+        return False
+
+
+"""
+INPUT: array of ESYRCE codes
+OUTPUT: is classified as cropfield? yes or no
+"""
+def isCropfield(code, dictIsCrop):
+    if code[0:2] in dictIsCrop: 
+        return dictIsCrop[code[0:2]] == "YES"
+    else:
+        return False
