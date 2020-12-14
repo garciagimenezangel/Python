@@ -57,7 +57,7 @@ inputESYRCE = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/flagged/'
 
 # OUTPUT folder
 #outFolder = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test2\\'
-outFolder = home + '/DATA/OBServ/ESYRCE/PROCESSED - local testing/z30/metrics/'
+outFolder = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/metrics/'
 
 # Log file
 #logFile = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\logs\\addMetrics.log'
