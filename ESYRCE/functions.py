@@ -517,21 +517,14 @@ def calculateEdgeDensity(dataSegmentYear, log):
     # Iterate through the polygons in dataSegmentYear
     accArea       = 0
     accEdgeLength = 0
-    for index in dataSegmentYear.index:  
-        # Ignore water codes
-        try:
-            if isWaterPolygon(dataSegmentYear.loc[index]): continue    
-        except:
-            log.write(sys.exc_info()[0])
-            continue          
-            
+    for index in dataSegmentYear.index:                  
         accArea = accArea + dataSegmentYear.loc[index].Shape_Area             # area
         accEdgeLength = accEdgeLength + dataSegmentYear.loc[index].Shape_Leng # perimeter
     if accArea > 0:
         return accEdgeLength / (accArea*1e-4) # m2 to hectares
     else:
         return 0   
-
+    
 
 """
 INPUT: 
@@ -546,19 +539,10 @@ def calculateEdgeDensitySeminatural(dataSegmentYear, log):
     # Iterate through the polygons in dataSegmentYear
     accArea       = 0
     accEdgeLength = 0
-    for index in dataSegmentYear.index:  
-        # Ignore water codes
-        try:
-            if isWaterPolygon(dataSegmentYear.loc[index]): continue    
-        except:
-            log.write(sys.exc_info()[0])
-            continue  
-        
+    for index in dataSegmentYear.index:   
         accArea  = accArea + dataSegmentYear.loc[index].Shape_Area  # area
-                       
         if dataSegmentYear.loc[index].isSeminatural:   
-            accEdgeLength = accEdgeLength + dataSegmentYear.loc[index].Shape_Leng  # perimeter
-            
+            accEdgeLength = accEdgeLength + dataSegmentYear.loc[index].Shape_Leng  # perimeter      
     if accArea > 0:
         return accEdgeLength / (accArea*1e-4)
     else:
@@ -579,23 +563,37 @@ def calculateEdgeDensityFields(dataSegmentYear, log):
     accArea       = 0
     accEdgeLength = 0
     for index in dataSegmentYear.index:  
-        # Ignore water codes
-        try:
-            if isWaterPolygon(dataSegmentYear.loc[index]): continue    
-        except:
-            log.write(sys.exc_info()[0])
-            continue  
-        
-        accArea  = accArea + dataSegmentYear.loc[index].Shape_Area  # area
-            
+        accArea  = accArea + dataSegmentYear.loc[index].Shape_Area  # area          
         if dataSegmentYear.loc[index].isCropfield:   
-            accEdgeLength = accEdgeLength + dataSegmentYear.loc[index].Shape_Leng  # perimeter
-            
+            accEdgeLength = accEdgeLength + dataSegmentYear.loc[index].Shape_Leng  # perimeter           
     if accArea > 0:
         return accEdgeLength / (accArea*1e-4)
     else:
         return 0  
 
+
+"""
+INPUT: 
+    - a subset of ESYRCE data corresponding to a segment for a particular year 
+    
+OUTPUT: edge density of non agricultural and non seminatural areas, defined as 
+(see manual FRAGSTATS) the sum of the lengths (m) of all edge segments, 
+divided by the total area (hectares).
+"""
+def calculateEdgeDensityOther(dataSegmentYear, log):   
+    
+    # Iterate through the polygons in dataSegmentYear
+    accArea       = 0
+    accEdgeLength = 0
+    for index in dataSegmentYear.index:         
+        accArea  = accArea + dataSegmentYear.loc[index].Shape_Area  # area            
+        if not dataSegmentYear.loc[index].isCropfield and not dataSegmentYear.loc[index].isSeminatural:   
+            accEdgeLength = accEdgeLength + dataSegmentYear.loc[index].Shape_Leng  # perimeter            
+    if accArea > 0:
+        return accEdgeLength / (accArea*1e-4)
+    else:
+        return 0
+    
 
 """
 INPUT: a slice of a dataframe from a groupBy operation, corresponding to one segment in ESYRCE data in different years
@@ -680,9 +678,12 @@ INPUT: array of ESYRCE codes
 OUTPUT: is classified as seminatural? yes or no
 """
 def isSeminatural(code, dictIsSeminatural):
-    if code[0:2] in dictIsSeminatural: 
-        return dictIsSeminatural[code[0:2]] == "YES"
-    else:
+    try:
+        if code[0:2] in dictIsSeminatural: 
+            return dictIsSeminatural[code[0:2]] == "YES"
+        else:
+            return False
+    except:
         return False
 
 
@@ -691,7 +692,11 @@ INPUT: array of ESYRCE codes
 OUTPUT: is classified as cropfield? yes or no
 """
 def isCropfield(code, dictIsCrop):
-    if code[0:2] in dictIsCrop: 
-        return dictIsCrop[code[0:2]] == "YES"
-    else:
+    try:
+        if code[0:2] in dictIsCrop: 
+           return dictIsCrop[code[0:2]] == "YES"
+        else:
+           return False
+    except:
         return False
+    

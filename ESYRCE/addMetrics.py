@@ -10,8 +10,8 @@ home = expanduser("~")
 
 # The functions used to calculate the metrics are stored in a different file, to make this script cleaner 
 import sys
-#sys.path.append(home + '\\git\\Python\\ESYRCE\\')
-sys.path.append(home + '/git/Python/ESYRCE/')
+sys.path.append(home + '\\git\\Python\\ESYRCE\\')
+#sys.path.append(home + '/git/Python/ESYRCE/')
 import functions
 
 """
@@ -38,42 +38,49 @@ getLandCoverProportion     = True # Percentage of the land cover types (see vari
 getSoilTechniqueProportion = True # Soil maintenance technique proportion (see variable 'soilCodes' below)
 getSowTechniqueProportion  = True # Sowing technique proportion (direct or traditional)
 getCropYield               = True # Average and variance of the yield of each crop within the segments (see variable 'cropCodes' below) 
-getAvgFieldSize            = True  # Average size of the fields identified as crops (in the table 'tableIsCrop' below) 
-getAvgSeminatSize          = True  # Average size of the fields identified as seminatural area (in the table 'tableIsSeminatural' below) 
-getHeterogeneity           = True  # Heterogeneity, as number of crop types per unit area
-getDemand                  = True  # Average demand, weighted by the area of the polygons 
-getSegmentArea             = True  # Total area of the segments
-getSegmentAreaWithoutWater = True  # Area of the segments, ignoring water 
-getEdgeDensity             = True  # Density of edges (length/area)
-getEdgeDensitySeminatural  = True  # Density of edges from seminatural area (length/area)
-getEdgeDensityCropfields   = True  # Density of edges from crop fields (length/area)
+getAvgFieldSize            = True # Average size of the fields identified as crops (in the table 'tableIsCrop' below) 
+getAvgSeminatSize          = True # Average size of the fields identified as seminatural area (in the table 'tableIsSeminatural' below) 
+getAvgFieldSizeDiss        = True # Average size of the fields identified as crops (in the table 'tableIsCrop' below) dissolving by 'isCropfield' and 'isSeminatural'
+getAvgSeminatSizeDiss      = True # Average size of the fields identified as seminatural area (in the table 'tableIsSeminatural' below) dissolving by 'isCropfield' and 'isSeminatural'
+getHeterogeneity           = True # Heterogeneity, as number of crop types per unit area
+getDemand                  = True # Average demand, weighted by the area of the polygons 
+getSegmentArea             = True # Total area of the segments
+getSegmentAreaWithoutWater = True # Area of the segments, ignoring water 
+getEdgeDensity             = True # Density of edges (length/area)
+getEdgeDensitySeminatural  = True # Density of edges from seminatural area (length/area)
+getEdgeDensityCropfields   = True # Density of edges from crop fields (length/area)
+getEdgeDensDissolved       = True # Density of edges (total) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensitySeminatDiss  = True # Density of edges (seminatural) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensityCropDiss     = True # Density of edges (cropfields) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensityOtherDiss    = True # Density of edges (others) dissolving by 'isCropfield' and 'isSeminatural'
+
 
 # Final output
 finalFilename = "test2"
 
 # INPUT folder
-#inputESYRCE = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test2\\'
-inputESYRCE = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/flagged/'
+inputESYRCE = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test2\\'
+#inputESYRCE = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/flagged/'
 
 # OUTPUT folder
-#outFolder = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test2\\'
-outFolder = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/metrics/'
+outFolder = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test2\\'
+#outFolder = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/metrics/'
 
 # Log file
-#logFile = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\logs\\addMetrics.log'
-logFile = home + '/DATA/OBServ/ESYRCE/PROCESSED/logs/addMetrics.log'
+logFile = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\logs\\addMetrics.log'
+#logFile = home + '/DATA/OBServ/ESYRCE/PROCESSED/logs/addMetrics.log'
 buffSize = 1
 log = open(logFile, "a", buffering=buffSize)
 log.write("\n")
 log.write("PROCESS addMetrics.py STARTED AT: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S")+'\n')
 
 # Define dictionaries:
-#tableCultivarDemand = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
-#tableIsCrop         = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCrop.csv'
-#tableIsSeminatural  = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isSeminatural.csv'
-tableCultivarDemand = home + '/lookup/Cultivar-Demand.csv'
-tableIsCrop         = home + '/lookup/isCrop.csv'
-tableIsSeminatural  = home + '/lookup/isSeminatural.csv'
+tableCultivarDemand = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
+tableIsCrop         = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCrop.csv'
+tableIsSeminatural  = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isSeminatural.csv'
+#tableCultivarDemand = home + '/lookup/Cultivar-Demand.csv'
+#tableIsCrop         = home + '/lookup/isCrop.csv'
+#tableIsSeminatural  = home + '/lookup/isSeminatural.csv'
 
 # Land cover types (associating to esyrce codes, add more or remove if needed), to calculate proportion in every segment for each year
 landCoverTypes = {'cerealGrain':        ['CE','*'],     
@@ -227,13 +234,13 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     data['isCropfield']   = [functions.isCropfield(i, dictIsCrop) for i in data.D4_GRC] 
 
     # Select columns, sort and reset indices
-    data = data[['D1_HUS','D2_NUM','D3_PAR','D4_GRC','D5_CUL','D9_RTO','DE_CS','YEA','Shape_Area','Shape_Leng','isSeminatural','isCropfield']]
+    data = data[['D1_HUS','D2_NUM','D3_PAR','D4_GRC','D5_CUL','D9_RTO','DE_CS','YEA','Shape_Area','Shape_Leng','isSeminatural','isCropfield','geometry']]
     data = data.dropna(thresh=1)
     data = data.where(data['D1_HUS'] != 0)
     data = data.where(data['D2_NUM'] != 0)
     data.sort_values(by=['D1_HUS','D2_NUM','YEA'], inplace = True)
     data.reset_index(drop=True, inplace=True)
-    
+
     # Init new columns with NaN data
     if getLandCoverProportion:     
         for x in landCoverTypes.keys(): data[x] = np.repeat(np.nan, len(data))
@@ -245,15 +252,21 @@ for file in glob.glob(inputESYRCE + "*.shp"):
         for x in cropCodes.keys():      
             data[x] = np.repeat(np.nan, len(data))
             data['var_'+x] = np.repeat(np.nan, len(data)) 
-    if getAvgFieldSize:                 data['avgFieldSize']   = np.repeat(np.nan, len(data))
-    if getAvgSeminatSize:               data['avgSeminatSize'] = np.repeat(np.nan, len(data))
-    if getHeterogeneity:                data['heterogeneity']  = np.repeat(np.nan, len(data))
-    if getDemand:                       data['demand']         = np.repeat(np.nan, len(data))    
-    if getSegmentArea:                  data['segArea']        = np.repeat(np.nan, len(data))
-    if getSegmentAreaWithoutWater:      data['segAreaNoWater'] = np.repeat(np.nan, len(data))
-    if getEdgeDensity:                  data['edgeDensity']    = np.repeat(np.nan, len(data))
-    if getEdgeDensitySeminatural:       data['edgeDenSeminat'] = np.repeat(np.nan, len(data))
-    if getEdgeDensityCropfields:        data['edgeDenFields']  = np.repeat(np.nan, len(data))
+    if getAvgFieldSize:                 data['avgFieldSize']       = np.repeat(np.nan, len(data))
+    if getAvgSeminatSize:               data['avgSeminatSize']     = np.repeat(np.nan, len(data))
+    if getAvgFieldSizeDiss:             data['avgFieldSizeDiss']   = np.repeat(np.nan, len(data))
+    if getAvgSeminatSizeDiss:           data['avgSeminatSizeDiss'] = np.repeat(np.nan, len(data))
+    if getHeterogeneity:                data['heterogeneity']      = np.repeat(np.nan, len(data))
+    if getDemand:                       data['demand']             = np.repeat(np.nan, len(data))    
+    if getSegmentArea:                  data['segArea']            = np.repeat(np.nan, len(data))
+    if getSegmentAreaWithoutWater:      data['segAreaNoWater']     = np.repeat(np.nan, len(data))
+    if getEdgeDensity:                  data['edgeDensity']        = np.repeat(np.nan, len(data))
+    if getEdgeDensitySeminatural:       data['edgeDenSeminat']     = np.repeat(np.nan, len(data))
+    if getEdgeDensityCropfields:        data['edgeDenFields']      = np.repeat(np.nan, len(data))
+    if getEdgeDensDissolved:            data['edgeDensityDiss']    = np.repeat(np.nan, len(data))
+    if getEdgeDensitySeminatDiss:       data['edgeDenSemiDiss']    = np.repeat(np.nan, len(data))
+    if getEdgeDensityCropDiss:          data['edgeDenFielDiss']    = np.repeat(np.nan, len(data))
+    if getEdgeDensityOtherDiss:         data['edgeDenOtherDiss']   = np.repeat(np.nan, len(data))
 
     
     ##################
@@ -297,7 +310,16 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                 if (iM-i0+1)!=len(ii[0]): # sanity check
                     log.write("Error... Exit loop in Segment nr:"+ str(segmentNr)+ "...Year:"+str(year)+'\n')  
                     break
-            
+                
+                # Get dissolved segment if necessary
+                if getEdgeDensDissolved or getEdgeDensitySeminatDiss or getEdgeDensityCropDiss or getEdgeDensityOtherDiss or getAvgFieldSizeDiss or getAvgSeminatSizeDiss:
+                    dataSegmYearDiss = dataSegmentYear.dissolve(by=['isSeminatural','isCropfield'])
+                    dataSegmYearDiss['isSeminatural'] = np.array([i[0] for i in dataSegmYearDiss.index])
+                    dataSegmYearDiss['isCropfield']   = np.array([i[1] for i in dataSegmYearDiss.index])
+                    dataSegmYearDiss.Shape_Area = dataSegmYearDiss.geometry.area
+                    dataSegmYearDiss.Shape_Leng = dataSegmYearDiss.geometry.length
+                    
+                    
                 # Calculate metrics and assign values in 'data'
                 if getLandCoverProportion:     
                     landCoverProportion = functions.calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes, log)
@@ -319,6 +341,12 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                 if getAvgSeminatSize:               
                     avgSeminatSize      = functions.calculateAvgSeminaturalSize(dataSegmentYear, log)
                     data.loc[dataSegmentYear.index, 'avgSeminatSize'] = np.repeat(avgSeminatSize, len(dataSegmentYear))
+                if getAvgFieldSizeDiss:                 
+                    avgFieldSizeDiss    = functions.calculateAvgFieldSize(dataSegmYearDiss, log)
+                    data.loc[dataSegmentYear.index, 'avgFieldSizeDiss'] = np.repeat(avgFieldSizeDiss, len(dataSegmentYear))
+                if getAvgSeminatSizeDiss:               
+                    avgSeminatSizeDiss  = functions.calculateAvgSeminaturalSize(dataSegmYearDiss, log)
+                    data.loc[dataSegmentYear.index, 'avgSeminatSizeDiss'] = np.repeat(avgSeminatSizeDiss, len(dataSegmentYear))                    
                 if getHeterogeneity:                
                     heterogeneity       = functions.calculateHeterogeneity(dataSegmentYear, log)
                     data.loc[dataSegmentYear.index, 'heterogeneity'] = np.repeat(heterogeneity, len(dataSegmentYear))
@@ -340,6 +368,18 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                 if getEdgeDensityCropfields:                 
                     edgeDenFields      = functions.calculateEdgeDensityFields(dataSegmentYear, log)
                     data.loc[dataSegmentYear.index, 'edgeDenFields'] = np.repeat(edgeDenFields, len(dataSegmentYear))
+                if getEdgeDensDissolved:
+                    edgeDensityDiss    = functions.calculateEdgeDensity(dataSegmYearDiss, log)
+                    data.loc[dataSegmentYear.index, 'edgeDensityDiss'] = np.repeat(edgeDensityDiss, len(dataSegmentYear))   
+                if getEdgeDensitySeminatDiss:      
+                    edgeDenSemiDiss      = functions.calculateEdgeDensitySeminatural(dataSegmYearDiss, log)
+                    data.loc[dataSegmentYear.index, 'edgeDenSemiDiss'] = np.repeat(edgeDenSemiDiss, len(dataSegmentYear))  
+                if getEdgeDensityCropDiss:      
+                    edgeDenFielDiss      = functions.calculateEdgeDensityFields(dataSegmYearDiss, log)
+                    data.loc[dataSegmentYear.index, 'edgeDenFielDiss'] = np.repeat(edgeDenFielDiss, len(dataSegmentYear))                    
+                if getEdgeDensityOtherDiss:        
+                    edgeDenOtherDiss     = functions.calculateEdgeDensityOther(dataSegmYearDiss, log)
+                    data.loc[dataSegmentYear.index, 'edgeDenOtherDiss'] = np.repeat(edgeDenOtherDiss, len(dataSegmentYear)) 
 
 
             contNr = contNr+1
