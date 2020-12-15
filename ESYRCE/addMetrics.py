@@ -10,8 +10,8 @@ home = expanduser("~")
 
 # The functions used to calculate the metrics are stored in a different file, to make this script cleaner 
 import sys
-sys.path.append(home + '\\git\\Python\\ESYRCE\\')
-#sys.path.append(home + '/git/Python/ESYRCE/')
+#sys.path.append(home + '\\git\\Python\\ESYRCE\\')
+sys.path.append(home + '/git/Python/ESYRCE/')
 import functions
 
 """
@@ -56,31 +56,27 @@ getEdgeDensityOtherDiss    = True # Density of edges (others) dissolving by 'isC
 
 
 # Final output
-finalFilename = "test2"
+finalFilename = "metrics_20-12-15"
 
-# INPUT folder
-inputESYRCE = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test2\\'
-#inputESYRCE = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/flagged/'
+# Paths
+#inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test2\\'
+#outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test2\\'
+#logFile             = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\logs\\addMetrics.log'
+#tableCultivarDemand = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
+#tableIsCrop         = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCrop.csv'
+#tableIsSeminatural  = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isSeminatural.csv'
+inputESYRCE         = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/flagged/'
+outFolder           = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/metrics/'
+logFile             = home + '/DATA/OBServ/ESYRCE/PROCESSED/logs/addMetrics.log'
+tableCultivarDemand = home + '/lookup/Cultivar-Demand.csv'
+tableIsCrop         = home + '/lookup/isCrop.csv'
+tableIsSeminatural  = home + '/lookup/isSeminatural.csv'
 
-# OUTPUT folder
-outFolder = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test2\\'
-#outFolder = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/metrics/'
-
-# Log file
-logFile = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\logs\\addMetrics.log'
-#logFile = home + '/DATA/OBServ/ESYRCE/PROCESSED/logs/addMetrics.log'
+# Log
 buffSize = 1
 log = open(logFile, "a", buffering=buffSize)
 log.write("\n")
 log.write("PROCESS addMetrics.py STARTED AT: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S")+'\n')
-
-# Define dictionaries:
-tableCultivarDemand = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
-tableIsCrop         = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCrop.csv'
-tableIsSeminatural  = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isSeminatural.csv'
-#tableCultivarDemand = home + '/lookup/Cultivar-Demand.csv'
-#tableIsCrop         = home + '/lookup/isCrop.csv'
-#tableIsSeminatural  = home + '/lookup/isSeminatural.csv'
 
 # Land cover types (associating to esyrce codes, add more or remove if needed), to calculate proportion in every segment for each year
 landCoverTypes = {'cerealGrain':        ['CE','*'],     
