@@ -56,7 +56,7 @@ getEdgeDensityOtherDiss    = True # Density of edges (others) dissolving by 'isC
 
 
 # Final output
-finalFilename = "metrics_20-12-15"
+finalFilename = "metrics_20-12-16"
 
 # Paths
 #inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test2\\'
@@ -222,15 +222,17 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     
     # Read data
     data = gpd.read_file(file)
-    
+       
     # Modify or create useful columns
     data.Shape_Area = data.geometry.area
     data.Shape_Leng = data.geometry.length
-    data['isSeminatural'] = [functions.isSeminatural(i, dictIsSeminatural) for i in data.D5_CUL] 
-    data['isCropfield']   = [functions.isCropfield(i, dictIsCrop) for i in data.D4_GRC] 
-
+    data['aggClass'] = np.repeat(np.nan, len(data))
+    for i in data.index:
+        data.loc[i,'aggClass'] = functions.setAggregatedClass(data.loc[i], dictIsSeminatural, dictIsCrop)
+    data = data.loc[(data['aggClass'] != "Exception")]
+    
     # Select columns, sort and reset indices
-    data = data[['D1_HUS','D2_NUM','D3_PAR','D4_GRC','D5_CUL','D9_RTO','DE_CS','YEA','Shape_Area','Shape_Leng','isSeminatural','isCropfield','geometry']]
+    data = data[['D1_HUS','D2_NUM','D3_PAR','D4_GRC','D5_CUL','D9_RTO','DE_CS','YEA','Shape_Area','Shape_Leng','aggClass','geometry']]
     data = data.dropna(thresh=1)
     data = data.where(data['D1_HUS'] != 0)
     data = data.where(data['D2_NUM'] != 0)
@@ -309,12 +311,12 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                 
                 # Get dissolved segment if necessary
                 if getEdgeDensDissolved or getEdgeDensitySeminatDiss or getEdgeDensityCropDiss or getEdgeDensityOtherDiss or getAvgFieldSizeDiss or getAvgSeminatSizeDiss:
-                    dataSegmYearDiss = dataSegmentYear.dissolve(by=['isSeminatural','isCropfield'])
-                    dataSegmYearDiss['isSeminatural'] = np.array([i[0] for i in dataSegmYearDiss.index])
-                    dataSegmYearDiss['isCropfield']   = np.array([i[1] for i in dataSegmYearDiss.index])
+                    dataSegmYearDiss = dataSegmentYear.dissolve(by=['aggClass'])
+                    dataSegmYearDiss['aggClass'] = np.array(dataSegmYearDiss.index)
                     dataSegmYearDiss.Shape_Area = dataSegmYearDiss.geometry.area
                     dataSegmYearDiss.Shape_Leng = dataSegmYearDiss.geometry.length
-                    
+                    dataSegmYearDiss.sort_values(by=['D1_HUS','D2_NUM','YEA'], inplace = True)
+                    dataSegmYearDiss.reset_index(drop=True, inplace=True)
                     
                 # Calculate metrics and assign values in 'data'
                 if getLandCoverProportion:     
@@ -381,10 +383,14 @@ for file in glob.glob(inputESYRCE + "*.shp"):
             contNr = contNr+1
             if np.mod(contNr, 100) == 0:
                 times = contNr / totalNr 
+                now = datetime.now()
+                current_time = now.strftime("%H:%M:%S")
+                today = datetime.today()
+                log.write("Date: "+ today + "... Time: "+current_time)
                 log.write("Processing File..."+filename+" Data Zone..."+str(int(zoneNr))+" Percentage completed..."+str(np.floor(times*100))+'\n')
-    
+
     # Group by number of the segment and year, drop not useful columns, and save to csv
-    data = data.drop(columns=['D3_PAR','D4_GRC','D5_CUL','D9_RTO','DE_CS','Shape_Area','Shape_Leng','isSeminatural','isCropfield'])
+    data = data.drop(columns=['D3_PAR','D4_GRC','D5_CUL','D9_RTO','DE_CS','Shape_Area','Shape_Leng','aggClass','geometry'])
     data = data.groupby(['D1_HUS','D2_NUM','YEA']).first().reset_index()
     log.write("Writing file..."+outFilename+'\n')
     data.to_csv(outFilename, index=False)

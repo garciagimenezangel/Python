@@ -10,7 +10,6 @@ import pandas as pd
 import geopandas as gpd
 from sklearn import linear_model
 import glob
-import sys
 
 dictDemandValues = { ''           :     0,
                    'unknown':           0, 
@@ -145,9 +144,9 @@ def calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes,
         
         # Ignore water codes
         try:
-            if isWaterPolygon(dataSegmentYear.loc[index]): continue    
-        except:
-            log.write(sys.exc_info()[0])
+            if isWater(dataSegmentYear.loc[index]): continue    
+        except Exception as e:
+            log.write(str(e))
             continue    
         
         # identify landcover index
@@ -267,7 +266,7 @@ def calculateAvgFieldSize(dataSegmentYear, log):
     accArea     = 0
     nCropfields = 0
     for index in dataSegmentYear.index:  
-        if dataSegmentYear.loc[index].isCropfield:   
+        if isCropfield(dataSegmentYear.loc[index]):   
             nCropfields = nCropfields + 1
             accArea  = accArea + dataSegmentYear.loc[index].Shape_Area
     
@@ -290,7 +289,7 @@ def calculateAvgSeminaturalSize(dataSegmentYear, log):
     accArea     = 0
     nSeminaturalPatches = 0
     for index in dataSegmentYear.index:  
-        if dataSegmentYear.loc[index].isSeminatural:   
+        if isSeminatural(dataSegmentYear.loc[index]):   
             nSeminaturalPatches = nSeminaturalPatches + 1
             accArea  = accArea + dataSegmentYear.loc[index].Shape_Area
             
@@ -315,12 +314,12 @@ def calculateHeterogeneity(dataSegmentYear, log):
     for index in dataSegmentYear.index:            
         # Ignore water codes
         try:
-            if isWaterPolygon(dataSegmentYear.loc[index]): continue    
-        except:
-            log.write(sys.exc_info()[0])
+            if isWater(dataSegmentYear.loc[index]): continue    
+        except Exception as e:
+            log.write(str(e))
             continue  
 
-        if dataSegmentYear.loc[index].isCropfield:   
+        if isCropfield(dataSegmentYear.loc[index]):   
             crops = np.append(crops, dataSegmentYear.loc[index].D5_CUL)
         
         # add up area of the polygon (convert m^2 into hectares)
@@ -350,9 +349,9 @@ def calculateDemand(dataSegmentYear, dictCultivarDemand, log):
         areaPolygon = dataSegmentYear.loc[index].Shape_Area        
         # Ignore water codes
         try:
-            if isWaterPolygon(dataSegmentYear.loc[index]): continue    
-        except:
-            log.write(sys.exc_info()[0])
+            if isWater(dataSegmentYear.loc[index]): continue    
+        except Exception as e:
+            log.write(str(e))
             continue         
         
         # Calculate demand. If association of cultivars, calculate average
@@ -517,7 +516,13 @@ def calculateEdgeDensity(dataSegmentYear, log):
     # Iterate through the polygons in dataSegmentYear
     accArea       = 0
     accEdgeLength = 0
-    for index in dataSegmentYear.index:                  
+    for index in dataSegmentYear.index:      
+        # Ignore water codes
+        try:
+            if isWater(dataSegmentYear.loc[index]): continue    
+        except Exception as e:
+            log.write(str(e))
+            continue              
         accArea = accArea + dataSegmentYear.loc[index].Shape_Area             # area
         accEdgeLength = accEdgeLength + dataSegmentYear.loc[index].Shape_Leng # perimeter
     if accArea > 0:
@@ -533,6 +538,10 @@ INPUT:
 OUTPUT: edge density of seminatural areas (meters per hectare), defined as 
 (see manual FRAGSTATS) the sum of the lengths (m) of all edge segments, 
 divided by the total area (hectares).
+
+Notes: 
+    - Edges of the segment are not considered. 
+    - Water polygons are skipped.
 """
 def calculateEdgeDensitySeminatural(dataSegmentYear, log):   
     
@@ -540,8 +549,14 @@ def calculateEdgeDensitySeminatural(dataSegmentYear, log):
     accArea       = 0
     accEdgeLength = 0
     for index in dataSegmentYear.index:   
+        # Ignore water codes
+        try:
+            if isWater(dataSegmentYear.loc[index]): continue    
+        except Exception as e:
+            log.write(str(e))
+            continue  
         accArea  = accArea + dataSegmentYear.loc[index].Shape_Area  # area
-        if dataSegmentYear.loc[index].isSeminatural:   
+        if isSeminatural(dataSegmentYear.loc[index]):   
             accEdgeLength = accEdgeLength + dataSegmentYear.loc[index].Shape_Leng  # perimeter      
     if accArea > 0:
         return accEdgeLength / (accArea*1e-4)
@@ -556,6 +571,10 @@ INPUT:
 OUTPUT: edge density of agricultural areas (meters per hectare), defined as 
 (see manual FRAGSTATS) the sum of the lengths (m) of all edge segments, 
 divided by the total area (hectares).
+
+Notes: 
+    - Edges of the segment are not considered. 
+    - Water polygons are skipped.
 """
 def calculateEdgeDensityFields(dataSegmentYear, log):   
     
@@ -563,8 +582,14 @@ def calculateEdgeDensityFields(dataSegmentYear, log):
     accArea       = 0
     accEdgeLength = 0
     for index in dataSegmentYear.index:  
+        # Ignore water codes
+        try:
+            if isWater(dataSegmentYear.loc[index]): continue    
+        except Exception as e:
+            log.write(str(e))
+            continue  
         accArea  = accArea + dataSegmentYear.loc[index].Shape_Area  # area          
-        if dataSegmentYear.loc[index].isCropfield:   
+        if isCropfield(dataSegmentYear.loc[index]):   
             accEdgeLength = accEdgeLength + dataSegmentYear.loc[index].Shape_Leng  # perimeter           
     if accArea > 0:
         return accEdgeLength / (accArea*1e-4)
@@ -579,6 +604,10 @@ INPUT:
 OUTPUT: edge density of non agricultural and non seminatural areas, defined as 
 (see manual FRAGSTATS) the sum of the lengths (m) of all edge segments, 
 divided by the total area (hectares).
+
+Notes: 
+    - Edges of the segment are not considered. 
+    - Water polygons are skipped.
 """
 def calculateEdgeDensityOther(dataSegmentYear, log):   
     
@@ -586,8 +615,14 @@ def calculateEdgeDensityOther(dataSegmentYear, log):
     accArea       = 0
     accEdgeLength = 0
     for index in dataSegmentYear.index:         
+        # Ignore water codes
+        try:
+            if isWater(dataSegmentYear.loc[index]): continue    
+        except Exception as e:
+            log.write(str(e))
+            continue  
         accArea  = accArea + dataSegmentYear.loc[index].Shape_Area  # area            
-        if not dataSegmentYear.loc[index].isCropfield and not dataSegmentYear.loc[index].isSeminatural:   
+        if not isOther(dataSegmentYear.loc[index]):   
             accEdgeLength = accEdgeLength + dataSegmentYear.loc[index].Shape_Leng  # perimeter            
     if accArea > 0:
         return accEdgeLength / (accArea*1e-4)
@@ -638,9 +673,9 @@ def calculateSegmentAreaWithoutWater(segment, log):
     for index in segment.index: 
         # Ignore water codes
         try:
-            if isWaterPolygon(segment.loc[index]): continue    
-        except:
-            log.write(sys.exc_info()[0])
+            if isWater(segment.loc[index]): continue    
+        except Exception as e:
+            log.write(str(e))
             continue
         areaPolygon = segment.loc[index].Shape_Area
         totalArea = totalArea + areaPolygon
@@ -657,46 +692,61 @@ def allFiles(root, ext):
         files.append(x)
     return files
 
+"""
+INPUT: array of ESYRCE codes, and dictionaries to relate codes with seminatural and crop classes
+OUTPUT: aggregation class-> crop, seminatural, water or other (plus exception)
+"""
+def setAggregatedClass(dataRow, dictIsSeminatural, dictIsCrop):
+    waterCodes = np.array(['AG','MO'])
+    d4_grc     = dataRow.D4_GRC
+    d5_cul     = dataRow.D5_CUL
+    aggClass   = "Other" 
+    classSet   = False
+    try:
+        if (d5_cul[0:2] in dictIsSeminatural):
+            if (dictIsSeminatural[d5_cul[0:2]] == "YES"): 
+                aggClass = "Seminatural"
+                classSet = True
+        elif (not classSet) & (d4_grc[0:2] in dictIsCrop):
+            if (dictIsCrop[d4_grc[0:2]] == "YES"):
+                aggClass = "Crop"
+                classSet = True
+        elif (not classSet) & np.isin(d4_grc, waterCodes):
+            aggClass = "Water"
+        
+    except:
+        return "Exception"
+    return aggClass
+
 
 """
-INPUT: polygon from ESYRCE segment
+INPUT: ESYRCE data row
 OUTPUT: is water? yes or no
 """
-def isWaterPolygon(esyrcePoly):
-    waterCodes = np.array(['AG','MO'])
-    try:
-        polyGrc = esyrcePoly.D4_GRC[0:2]       
-        polyCul = esyrcePoly.D5_CUL[0:2]
-    except:
-        errorMsg = "Warning in isWaterPolygon...Segment:"+str(esyrcePoly.D2_NUM)+"...Parcel:"+str(esyrcePoly.D3_PAR)+"...Year:"+str(esyrcePoly.YEA)+"\n"
-        raise Exception(errorMsg)  
-    isWater = np.isin(polyGrc, waterCodes) or np.isin(polyCul, waterCodes)
-    return isWater
+def isWater(data):
+    return data.aggClass == "Water"
+
 
 """
-INPUT: array of ESYRCE codes
+INPUT: ESYRCE data row
 OUTPUT: is classified as seminatural? yes or no
 """
-def isSeminatural(code, dictIsSeminatural):
-    try:
-        if code[0:2] in dictIsSeminatural: 
-            return dictIsSeminatural[code[0:2]] == "YES"
-        else:
-            return False
-    except:
-        return False
+def isSeminatural(data):
+    return data.aggClass == "Seminatural"
 
 
 """
 INPUT: array of ESYRCE codes
-OUTPUT: is classified as cropfield? yes or no
+OUTPUT: is classified as crop field? yes or no
 """
-def isCropfield(code, dictIsCrop):
-    try:
-        if code[0:2] in dictIsCrop: 
-           return dictIsCrop[code[0:2]] == "YES"
-        else:
-           return False
-    except:
-        return False
-    
+def isCropfield(data):
+    return data.aggClass == "Crop"
+
+
+"""
+INPUT: array of ESYRCE codes
+OUTPUT: is classified as other? yes or no
+"""
+def isOther(data):
+    return data.aggClass == "Other"
+
