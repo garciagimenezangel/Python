@@ -51,7 +51,7 @@ getEdgeDensityOtherDiss    = True # Density of edges (others) dissolving by 'isC
 
 
 # Final output
-finalFilename = "test"
+finalFilename = "metrics_20-12-17"
 
 # Paths
 #inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test2\\'
@@ -215,7 +215,6 @@ landCoverTypes = {'hardWheat':          'TD',
                   'carobTree':          'AO',
                   'otherOtherWoody':    'NX',
                   'nursery':            'VV',
-                  'populus':            'CP',
                   'pawlonia':           'PZ',
                   'quercusIlexTruffle': 'ET',
                   'fallow':             'BA',  
