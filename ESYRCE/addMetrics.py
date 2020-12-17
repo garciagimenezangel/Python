@@ -252,12 +252,12 @@ sowCodes = { 'directSowing':  'D',
 
 # Define dictionaries from tables
 # Dictionary to associate codes with crop category
-with open(tableIsCropSeminat, mode='r') as infile:
+with open(tableIsCropSeminat, mode='r', encoding='latin-1') as infile:
     reader     = csv.reader(infile)
     dictIsCrop        = {rows[0]:rows[1] for rows in reader} # keys: esyrce codes; values: 'YES' or 'NO'
 
 # Dictionary to associate codes with seminatural category
-with open(tableIsCropSeminat, mode='r') as infile:
+with open(tableIsCropSeminat, mode='r', encoding='latin-1') as infile:
     reader     = csv.reader(infile)
     dictIsSeminatural = {rows[0]:rows[2] for rows in reader} # keys: esyrce codes; values: 'YES' or 'NO'
     
