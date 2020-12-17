@@ -679,7 +679,7 @@ def setAggregatedClass(dataRow, dictIsSeminatural, dictIsCrop):
             if (dictIsSeminatural[d5_cul[0:2]] == "YES"): 
                 aggClass = "Seminatural"
                 classSet = True
-        elif (not classSet) & (d4_grc[0:2] in dictIsCrop):
+        elif (not classSet) & (d5_cul[0:2] in dictIsCrop):
             if (dictIsCrop[d4_grc[0:2]] == "YES"):
                 aggClass = "Crop"
                 classSet = True

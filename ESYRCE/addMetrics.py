@@ -58,15 +58,13 @@ finalFilename = "metrics_20-12-17"
 #outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test2\\'
 #logFile             = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\logs\\addMetrics.log'
 #tableCultivarDemand = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
-#tableIsCrop         = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCrop.csv'
-#tableIsSeminatural  = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isSeminatural.csv'
+#tableIsCropSeminat  = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCropSeminatural.csv'
 #functionsFolder     = home + '\\git\\Python\\ESYRCE\\'
 inputESYRCE         = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/flagged/'
 outFolder           = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/metrics/'
 logFile             = home + '/DATA/OBServ/ESYRCE/PROCESSED/logs/addMetrics.log'
 tableCultivarDemand = home + '/lookup/Cultivar-Demand.csv'
-tableIsCrop         = home + '/lookup/isCrop.csv'
-tableIsSeminatural  = home + '/lookup/isSeminatural.csv'
+tableIsCropSeminat  = home + '/lookup/isCropSeminatural.csv'
 functionsFolder     = home + '/git/Python/ESYRCE/'
 
 
@@ -254,15 +252,15 @@ sowCodes = { 'directSowing':  'D',
 
 # Define dictionaries from tables
 # Dictionary to associate codes with crop category
-with open(tableIsCrop, mode='r') as infile:
+with open(tableIsCropSeminat, mode='r') as infile:
     reader     = csv.reader(infile)
-    dictIsCrop = {rows[0]:rows[1] for rows in reader} # keys: esyrce codes; values: 'YES' or 'NO'
-    
-# Dictionary to associate codes with seminatural category
-with open(tableIsSeminatural, mode='r') as infile:
-    reader     = csv.reader(infile)
-    dictIsSeminatural = {rows[0]:rows[1] for rows in reader} # keys: esyrce codes; values: 'YES' or 'NO'
+    dictIsCrop        = {rows[0]:rows[1] for rows in reader} # keys: esyrce codes; values: 'YES' or 'NO'
 
+# Dictionary to associate codes with seminatural category
+with open(tableIsCropSeminat, mode='r') as infile:
+    reader     = csv.reader(infile)
+    dictIsSeminatural = {rows[0]:rows[2] for rows in reader} # keys: esyrce codes; values: 'YES' or 'NO'
+    
 # Dictionary to associate crop codes with demand
 # In ubuntu you may need to change encoding of this file: iconv -f ISO-8859-1 -t utf-8 Cultivar-Demand.csv > Cultivar-Demand-utf8.csv
 with open(tableCultivarDemand, mode='r') as infile:
