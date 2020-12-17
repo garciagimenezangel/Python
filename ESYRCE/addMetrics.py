@@ -263,7 +263,7 @@ with open(tableIsCropSeminat, mode='r', encoding='latin-1') as infile:
     
 # Dictionary to associate crop codes with demand
 # In ubuntu you may need to change encoding of this file: iconv -f ISO-8859-1 -t utf-8 Cultivar-Demand.csv > Cultivar-Demand-utf8.csv
-with open(tableCultivarDemand, mode='r') as infile:
+with open(tableCultivarDemand, mode='r', encoding='latin-1') as infile:
     reader   = csv.reader(infile)       
     dictCultivarDemand = {rows[0]:rows[1] for rows in reader} # key: 'esyrce codes; value: demand estimation (see dictDemandValues defined at the beginning of this file)
 
