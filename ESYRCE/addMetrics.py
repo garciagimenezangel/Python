@@ -6,13 +6,8 @@ import numpy as np
 from datetime import datetime
 from os.path import expanduser
 import glob
-home = expanduser("~")
-
-# The functions used to calculate the metrics are stored in a different file, to make this script cleaner 
 import sys
-#sys.path.append(home + '\\git\\Python\\ESYRCE\\')
-sys.path.append(home + '/git/Python/ESYRCE/')
-import functions
+home = expanduser("~")
 
 """
 Calculate metrics from ESYRCE data.
@@ -56,7 +51,7 @@ getEdgeDensityOtherDiss    = True # Density of edges (others) dissolving by 'isC
 
 
 # Final output
-finalFilename = "metrics_20-12-16"
+finalFilename = "test"
 
 # Paths
 #inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test2\\'
@@ -65,12 +60,18 @@ finalFilename = "metrics_20-12-16"
 #tableCultivarDemand = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
 #tableIsCrop         = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCrop.csv'
 #tableIsSeminatural  = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isSeminatural.csv'
+#functionsFolder     = home + '\\git\\Python\\ESYRCE\\'
 inputESYRCE         = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/flagged/'
 outFolder           = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/metrics/'
 logFile             = home + '/DATA/OBServ/ESYRCE/PROCESSED/logs/addMetrics.log'
 tableCultivarDemand = home + '/lookup/Cultivar-Demand.csv'
 tableIsCrop         = home + '/lookup/isCrop.csv'
 tableIsSeminatural  = home + '/lookup/isSeminatural.csv'
+functionsFolder     = home + '/git/Python/ESYRCE/'
+
+# The functions used to calculate the metrics are stored in a different file, to make this script cleaner 
+sys.path.append(functionsFolder)
+import functions
 
 # Log
 buffSize = 1
@@ -78,118 +79,178 @@ log = open(logFile, "a", buffering=buffSize)
 log.write("\n")
 log.write("PROCESS addMetrics.py STARTED AT: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S")+'\n')
 
-# Land cover types (associating to esyrce codes, add more or remove if needed), to calculate proportion in every segment for each year
-landCoverTypes = {'cerealGrain':        ['CE','*'],     
-                  'legumeGrain':        ['LE','*'],    
-                  'tuber':              ['TU','*'],  
-                  'industrial':         ['IN','*'],     
-                  'fodder':             ['FO','*'],     
-                  'vegetable':          ['HO','*'],     
-                  'ornamental':         ['FL','*'],     
-                  'citric':             ['CI','*'],     
-                  'fruitNoCitric':      ['FR','*'],   
-                  'vineyard':           ['VI','*'],  
-                  'oliveTrees':         ['OL','*'],  
-                  'otherWoodyCrop':     ['OC','*'],  
-                  'nursery':            ['VV','*'],  
-                  'association':        ['AS','*'],  
-                  'fallow':             ['TC','BA'],  
-                  'emptyGreenh':        ['TC','VA'],     
-                  'orchard':            ['TC','HU'],  
-                  'posio':              ['TC','PO'],  
-                  'naturalMeadow':      ['PP','PR'],  
-                  'highMountainMeadow': ['PP','PH'],
-                  'pastureGrassland':   ['PP','PS'],
-                  'pastureShrub':       ['PP','PM'],
-                  'conifers':           ['SF','CO'],
-                  'broadleafFast':      ['SF','FR'],
-                  'broadleafSlow':      ['SF','FL'],
-                  'poplar':             ['SF','CP'],
-                  'mixedForest':        ['SF','CF'],
-                  'shrub':              ['SF','ML'],
-                  'wasteland':          ['OS','ER'],
-                  'spartizal':          ['OS','ES'],
-                  'abandoned':          ['OS','BL'],
-                  'improductive':       ['OS','IM'],
-                  'notAgri':            ['OS','NA']
+# Land cover types (associating to esyrce codes, add more or remove if needed), to calculate proportion in each segment and average yield
+# Notes: 
+# - Association of crops (e.g. MN-PE) are not considered as such (too many combinations). 
+#   We only take the 1st two characters of the attribute D5_CUL (e.g. 'MN-PE' will be treated as 'MN').
+landCoverTypes = {'hardWheat':          'TD',
+                  'softWheat':          'TB', 
+                  'barleyTwoRows':      'C2',
+                  'barleySixRows':      'C6',
+                  'oat':                'AV',
+                  'rye':                'CN',
+                  'triticale':          'TT',
+                  'rice':               'AR',
+                  'maize':              'MA',
+                  'sorghum':            'SR',
+                  'mixCerealGrain':     'MC',
+                  'otherCerealGrain':   'CX',
+                  'quinoa':             'QN',
+                  'frijol':             'JS',
+                  'fabaBean':           'HS',
+                  'lentil':             'LE',
+                  'chickpea':           'GA',
+                  'pea':                'GS',
+                  'commonVetch':        'VE',
+                  'lupine':             'AT',
+                  'carob':              'AL',
+                  'otherLegumeGrain':   'LX',
+                  'ervil':              'YE',
+                  'potato':             'PT',
+                  'sweetPotato':        'BT',
+                  'yellowNutsedge':     'CY',
+                  'otherTuber':         'TX',
+                  'sugarcane':          'CA',
+                  'sugarbeet':          'RM',
+                  'cotton':             'AD',
+                  'sunflower':          'GI',
+                  'soybean':            'SO',
+                  'rapeseed':           'CZ',
+                  'flax':               'LN',
+                  'peanut':             'CC',
+                  'camelina':           'KM',
+                  'safflower':          'KR',
+                  'otherOleaginous':    'OX',
+                  'tobacco':            'TA',
+                  'industTomato':       'TI',
+                  'capsicumPaprika':    'PD',
+                  'condiment':          'CD',
+                  'hops':               'LU',
+                  'finesHerbes':        'AA',
+                  'otherIndustrial':    'IX',
+                  'maizeFodder':        'MF',
+                  'alfalfa':            'AF',
+                  'vetchFodder':        'VF',
+                  'otherFodder':        'FV',
+                  'grasslandPolifite':  'PP',
+                  'turnipFodder':       'NF',
+                  'beetFodder':         'RF',
+                  'collard':            'CS',
+                  'otherWeedFodder':    'RX',
+                  'betaVulgarisCicla':  'AZ',
+                  'garlic':             'AJ',
+                  'artichoke':          'AC',
+                  'celery':             'AP',
+                  'eggplant':           'BE',
+                  'pumpkin':            'CW',
+                  'zucchini':           'CB',
+                  'agaricusBisporus':   'HP',
+                  'mushroom':           'ST',
+                  'onion':              'CL',
+                  'broccoli':           'CI',
+                  'cabbage':            'CM',
+                  'cauliflower':        'CK',
+                  'endive':             'EL',
+                  'aspargus':           'EP',
+                  'spinach':            'EI',
+                  'sweetCorn':          'MD',
+                  'strawberry':         'FN',
+                  'rapini':             'GE',
+                  'greenPea':           'GV',
+                  'greenBean':          'HV',
+                  'kidneyBean':         'JV',
+                  'lettuce':            'LC',
+                  'redCabbage':         'LO',
+                  'melon':              'MO',
+                  'cucumber':           'PI',
+                  'leek':               'PU',
+                  'beetTable':          'RW',
+                  'sweetPepper':        'PQ',
+                  'watermelon':         'SA',
+                  'carrot':             'CT',
+                  'otherVegetable':     'HX',
+                  'emptyGarden':        'VH',
+                  'ornamental':         'FO',     
+                  'orange':             'NR',
+                  'clementine':         'MR',
+                  'lemon':              'LI',
+                  'bitterOrange':       'NG',
+                  'grapefruit':         'PA',
+                  'otherCitrics':       'AX',
+                  'apple':              'MN',
+                  'pear':               'PE',
+                  'quince':             'MB',
+                  'loquat':             'NI',
+                  'apricot':            'AB',
+                  'cherry':             'CE',
+                  'peach':              'ME',
+                  'plum':               'CR',
+                  'fig':                'HI',
+                  'cherimoya':          'CH',
+                  'avocado':            'AU',
+                  'banana':             'PL',
+                  'persimmon':          'CQ',
+                  'papaya':             'PY',
+                  'pineapple':          'PÑ',
+                  'kiwi':               'KW',
+                  'barbaryFig':         'CU',
+                  'mango':              'MG',
+                  'pomegranate':        'GR',
+                  'almond':             'AM',
+                  'walnut':             'NU',
+                  'hazelnut':           'AE',
+                  'chestnut':           'CJ',
+                  'redRaspberry':       'FB',
+                  'pistachio':          'PX',
+                  'otherFruitNoCitric': 'FX',
+                  'whiteGrapeSeedless': 'V1',
+                  'whiteGrape':         'V2',
+                  'redGrapeSeedless':   'V3',
+                  'redGrape':           'V4',
+                  'transfGrape':        'VT',
+                  'oliveTable':         'OM',
+                  'olive':              'OD',
+                  'oliveMill':          'OT',
+                  'carobTree':          'AO',
+                  'otherOtherWoody':    'NX',
+                  'nursery':            'VV',
+                  'populus':            'CP',
+                  'pawlonia':           'PZ',
+                  'quercusIlexTruffle': 'ET',
+                  'fallow':             'BA',  
+                  'emptyGreenh':        'VA',     
+                  'orchard':            'HU',  
+                  'posio':              'PO',  
+                  'naturalMeadow':      'PR',  
+                  'highMountainMeadow': 'PH',
+                  'pastureGrassland':   'PS',
+                  'pastureShrub':       'PM',
+                  'conifers':           'CO',
+                  'broadleafFast':      'FR',
+                  'broadleafSlow':      'FL',
+                  'poplar':             'CP',
+                  'mixedForest':        'CF',
+                  'shrub':              'ML',
+                  'wasteland':          'ER',
+                  'spartizal':          'ES',
+                  'abandoned':          'BL',
+                  'improductive':       'IM',
+                  'notAgri':            'NA'
                  }                           
 
-# Some land cover types can be identified with other combination of codes (lamentable pero cierto). 
-# I define another dictionary to deal with this issue
-alternatCodes = {'improductive': ['IM','*'], 
-                 'notAgri':      ['NA','*']}
 
 # Soil codes. Apply to land cover types of woody crops and fallow: 
-soilCodes = {'traditional':   ['LT'],
-             'minimal':       ['LM'],
-             'spontVegCover': ['CE'],
-             'sowedVegCover': ['CS'],
-             'inertCover':    ['CP'],
-             'noMainten':     ['SM'],
-             'noTillage':     ['NL']}
+soilCodes = {'traditional':   'LT',
+             'minimal':       'LM',
+             'spontVegCover': 'CE',
+             'sowedVegCover': 'CS',
+             'inertCover':    'CP',
+             'noMainten':     'SM',
+             'noTillage':     'NL'}
 
 # Sowing codes. Apply to cereals, sunflower, fodder corn and fodder cereals: 
-sowCodes = { 'directSowing':  ['D'],
-             'traditSowing':  ['N']} 
-
-# Crop codes. Crops that might have a yield estimation (only some of the fields, have a yield estimation, and theoretically this is done only for these crops, according to the ESYRCE manual 2017)
-cropCodes = {'hardWheat':     ['TD'],
-             'softWheat':     ['TB'],
-             'barleyTwoRows': ['C2'],
-             'barleySixRows': ['C6'],
-             'oat':           ['AV'],
-             'rye':           ['CN'],
-             'rice':          ['AR'],
-             'maize':         ['MA'],
-             'quinoa':        ['QN'],
-             'frijol':        ['JS'],
-             'fabaBean':      ['HS'],
-             'lentil':        ['LE'],
-             'chickpea':      ['GA'],
-             'pea':           ['GS'],
-             'ervil':         ['YE'],
-             'potato':        ['PT'],
-             'sugarbeet':     ['RM'],
-             'cotton':        ['AD'],
-             'sunflower':     ['GI'],
-             'soybean':       ['SO'],
-             'rapeseed':      ['CZ'],
-             'industTomato':  ['TI'],
-             'fodderMaize':   ['MF'],
-             'garlic':        ['AJ'],
-             'artichoke':     ['AC'],
-             'eggplant':      ['BE'],
-             'zucchini':      ['CB'],
-             'onion':         ['CL'],
-             'strawberry':    ['FN'],
-             'greenPea':      ['GV'],
-             'greenBean':     ['HV'],
-             'kidneyBean':    ['JV'],
-             'melon':         ['MO'],
-             'cucumber':      ['PI'],
-             'sweetPepper':   ['PQ'],
-             'watermelon':    ['SA'],
-             'carrot':        ['CT'],
-             'orange':        ['NR'],
-             'clementine':    ['MR'],
-             'lemon':         ['LI'],
-             'apple':         ['MN'],
-             'pear':          ['PE'],
-             'apricot':       ['AB'],
-             'cherry':        ['CE'],
-             'peach':         ['ME'],
-             'plum':          ['CR'],
-             'banana':        ['PL'],
-             'almond':        ['AM'],
-             'walnut':        ['AE'],
-             'whiteGrapeSeedless':['V1'],
-             'whiteGrape':    ['V2'],
-             'redGrapeSeedless':['V3'],
-             'redGrape':      ['V4'],
-             'transfGrape':   ['VT'],
-             'oliveTable':    ['OM'],
-             'olive':         ['OD'],
-             'oliveMill':     ['OT']}
+sowCodes = { 'directSowing':  'D',
+             'traditSowing':  'N'} 
 
 # Define dictionaries from tables
 # Dictionary to associate codes with crop category
@@ -226,9 +287,7 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     # Modify or create useful columns
     data.Shape_Area = data.geometry.area
     data.Shape_Leng = data.geometry.length
-    data['aggClass'] = np.repeat(np.nan, len(data))
-    for i in data.index:
-        data.loc[i,'aggClass'] = functions.setAggregatedClass(data.loc[i], dictIsSeminatural, dictIsCrop)
+    data['aggClass'] = [functions.setAggregatedClass(data.loc[i], dictIsSeminatural, dictIsCrop) for i in data.index]
     data = data.loc[(data['aggClass'] != "Exception")]
     
     # Select columns, sort and reset indices
@@ -241,15 +300,16 @@ for file in glob.glob(inputESYRCE + "*.shp"):
 
     # Init new columns with NaN data
     if getLandCoverProportion:     
-        for x in landCoverTypes.keys(): data[x] = np.repeat(np.nan, len(data))
+        for x in landCoverTypes.keys(): 
+            data['prop_'+x] = np.repeat(np.nan, len(data))
+    if getCropYield:               
+        for x in landCoverTypes.keys():      
+            data['yield_'+x] = np.repeat(np.nan, len(data))
+            data['var_'+x]  = np.repeat(np.nan, len(data)) 
     if getSoilTechniqueProportion: 
         for x in soilCodes.keys():      data[x] = np.repeat(np.nan, len(data))
     if getSowTechniqueProportion:  
         for x in sowCodes.keys():       data[x] = np.repeat(np.nan, len(data))
-    if getCropYield:               
-        for x in cropCodes.keys():      
-            data[x] = np.repeat(np.nan, len(data))
-            data['var_'+x] = np.repeat(np.nan, len(data)) 
     if getAvgFieldSize:                 data['avgFieldSize']       = np.repeat(np.nan, len(data))
     if getAvgSeminatSize:               data['avgSeminatSize']     = np.repeat(np.nan, len(data))
     if getAvgFieldSizeDiss:             data['avgFieldSizeDiss']   = np.repeat(np.nan, len(data))
@@ -320,19 +380,19 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                     
                 # Calculate metrics and assign values in 'data'
                 if getLandCoverProportion:     
-                    landCoverProportion = functions.calculateLandCoverProportion(dataSegmentYear, landCoverTypes, alternatCodes, log)
-                    for x in landCoverTypes.keys(): data.loc[dataSegmentYear.index, x] = np.repeat(landCoverProportion[x], len(dataSegmentYear)) 
+                    landCoverProportion = functions.calculateLandCoverProportion(dataSegmentYear, landCoverTypes, log)
+                    for x in landCoverTypes.keys(): data.loc[dataSegmentYear.index, 'prop_'+x] = np.repeat(landCoverProportion[x], len(dataSegmentYear)) 
+                if getCropYield:               
+                    cropYield           = functions.calculateCropYield(dataSegmentYear, landCoverTypes, log)
+                    varYield            = functions.calculateVarianceYield(dataSegmentYear, landCoverTypes, cropYield, log)
+                    for x in cropYield.keys():      data.loc[dataSegmentYear.index, 'yield_'+x] = np.repeat(cropYield[x], len(dataSegmentYear))
+                    for x in cropYield.keys():      data.loc[dataSegmentYear.index, 'var_'+x] = np.repeat(varYield[x], len(dataSegmentYear))  
                 if getSoilTechniqueProportion: 
                     soilTechnProportion = functions.calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, sowCodes, log) 
                     for x in soilCodes.keys():      data.loc[dataSegmentYear.index, x] = np.repeat(soilTechnProportion[x], len(dataSegmentYear))
                 if getSowTechniqueProportion:  
                     sowTechnProportion  = functions.calculateSoilTechniqueProportion(dataSegmentYear, sowCodes, soilCodes, log) 
-                    for x in sowCodes.keys():       data.loc[dataSegmentYear.index, x] = np.repeat(sowTechnProportion[x], len(dataSegmentYear))
-                if getCropYield:               
-                    cropYield           = functions.calculateCropYield(dataSegmentYear, cropCodes, log)
-                    varYield            = functions.calculateVarianceYield(dataSegmentYear, cropCodes, cropYield, log)
-                    for x in cropYield.keys():      data.loc[dataSegmentYear.index, x] = np.repeat(cropYield[x], len(dataSegmentYear))
-                    for x in cropYield.keys():      data.loc[dataSegmentYear.index, 'var_'+x] = np.repeat(varYield[x], len(dataSegmentYear))                    
+                    for x in sowCodes.keys():       data.loc[dataSegmentYear.index, x] = np.repeat(sowTechnProportion[x], len(dataSegmentYear))                  
                 if getAvgFieldSize:                 
                     avgFieldSize        = functions.calculateAvgFieldSize(dataSegmentYear, log)
                     data.loc[dataSegmentYear.index, 'avgFieldSize'] = np.repeat(avgFieldSize, len(dataSegmentYear))
@@ -379,19 +439,16 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                     edgeDenOtherDiss     = functions.calculateEdgeDensityOther(dataSegmYearDiss, log)
                     data.loc[dataSegmentYear.index, 'edgeDenOtherDiss'] = np.repeat(edgeDenOtherDiss, len(dataSegmentYear)) 
 
-
             contNr = contNr+1
             if np.mod(contNr, 100) == 0:
                 times = contNr / totalNr 
-                now = datetime.now()
-                current_time = now.strftime("%H:%M:%S")
-                today = datetime.today()
-                log.write("Date: "+ today + "... Time: "+current_time)
+                log.write("Now: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S")+'\n')
                 log.write("Processing File..."+filename+" Data Zone..."+str(int(zoneNr))+" Percentage completed..."+str(np.floor(times*100))+'\n')
 
     # Group by number of the segment and year, drop not useful columns, and save to csv
     data = data.drop(columns=['D3_PAR','D4_GRC','D5_CUL','D9_RTO','DE_CS','Shape_Area','Shape_Leng','aggClass','geometry'])
     data = data.groupby(['D1_HUS','D2_NUM','YEA']).first().reset_index()
+    log.write("Now: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S")+'\n')
     log.write("Writing file..."+outFilename+'\n')
     data.to_csv(outFilename, index=False)
     log.write("Data saved... " + outFilename+'\n')
