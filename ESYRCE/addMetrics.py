@@ -69,6 +69,7 @@ tableIsCrop         = home + '/lookup/isCrop.csv'
 tableIsSeminatural  = home + '/lookup/isSeminatural.csv'
 functionsFolder     = home + '/git/Python/ESYRCE/'
 
+
 # The functions used to calculate the metrics are stored in a different file, to make this script cleaner 
 sys.path.append(functionsFolder)
 import functions
