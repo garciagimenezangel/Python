@@ -44,6 +44,7 @@ getSegmentAreaWithoutWater = True # Area of the segments, ignoring water
 getEdgeDensity             = True # Density of edges (length/area)
 getEdgeDensitySeminatural  = True # Density of edges from seminatural area (length/area)
 getEdgeDensityCropfields   = True # Density of edges from crop fields (length/area)
+getEdgeDensityOther        = True # Density of edges from other landcover types (length/area)
 getEdgeDensDissolved       = True # Density of edges (total) dissolving by 'isCropfield' and 'isSeminatural'
 getEdgeDensitySeminatDiss  = True # Density of edges (seminatural) dissolving by 'isCropfield' and 'isSeminatural'
 getEdgeDensityCropDiss     = True # Density of edges (cropfields) dissolving by 'isCropfield' and 'isSeminatural'
@@ -288,11 +289,12 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     data['aggClass'] = [functions.getAggregatedClass(data.loc[i], dictIsSeminatural, dictIsCrop) for i in data.index]
     data = data.loc[(data['aggClass'] != "Exception")]
     
-    # Select columns, sort and reset indices
+    # Select columns, remove duplicates (detected many times for 2019 data), sort and reset indices
     data = data[['D1_HUS','D2_NUM','D3_PAR','D4_GRC','D5_CUL','D9_RTO','DE_CS','YEA','Shape_Area','Shape_Leng','aggClass','geometry']]
     data = data.dropna(thresh=1)
     data = data.where(data['D1_HUS'] != 0)
     data = data.where(data['D2_NUM'] != 0)
+    data = data.groupby(['D1_HUS','D2_NUM','YEA','D3_PAR'], as_index=False).first() 
     data.sort_values(by=['D1_HUS','D2_NUM','YEA'], inplace = True)
     data.reset_index(drop=True, inplace=True)
 
@@ -319,6 +321,7 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     if getEdgeDensity:                  data['edgeDensity']        = np.repeat(np.nan, len(data))
     if getEdgeDensitySeminatural:       data['edgeDenSeminat']     = np.repeat(np.nan, len(data))
     if getEdgeDensityCropfields:        data['edgeDenFields']      = np.repeat(np.nan, len(data))
+    if getEdgeDensityOther:             data['edgeDenOther']       = np.repeat(np.nan, len(data))
     if getEdgeDensDissolved:            data['edgeDensityDiss']    = np.repeat(np.nan, len(data))
     if getEdgeDensitySeminatDiss:       data['edgeDenSemiDiss']    = np.repeat(np.nan, len(data))
     if getEdgeDensityCropDiss:          data['edgeDenFielDiss']    = np.repeat(np.nan, len(data))
@@ -424,6 +427,9 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                 if getEdgeDensityCropfields:                 
                     edgeDenFields      = functions.calculateEdgeDensityFields(dataSegmentYear, log)
                     data.loc[dataSegmentYear.index, 'edgeDenFields'] = np.repeat(edgeDenFields, len(dataSegmentYear))
+                if getEdgeDensityOther:                 
+                    edgeDenOther       = functions.calculateEdgeDensityOther(dataSegmentYear, log)
+                    data.loc[dataSegmentYear.index, 'edgeDenOther'] = np.repeat(edgeDenOther, len(dataSegmentYear))
                 if getEdgeDensDissolved:
                     edgeDensityDiss    = functions.calculateEdgeDensity(dataSegmYearDiss, log)
                     data.loc[dataSegmentYear.index, 'edgeDensityDiss'] = np.repeat(edgeDensityDiss, len(dataSegmentYear))   
