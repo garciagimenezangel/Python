@@ -51,11 +51,11 @@ getEdgeDensityOtherDiss    = True # Density of edges (others) dissolving by 'isC
 
 
 # Final output
-finalFilename = "metrics_20-12-17"
+finalFilename = "metrics_20-12-18"
 
 # Paths
-#inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test2\\'
-#outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test2\\'
+#inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test3\\'
+#outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test3\\'
 #logFile             = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\logs\\addMetrics.log'
 #tableCultivarDemand = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
 #tableIsCropSeminat  = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCropSeminatural.csv'
@@ -285,7 +285,7 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     # Modify or create useful columns
     data.Shape_Area = data.geometry.area
     data.Shape_Leng = data.geometry.length
-    data['aggClass'] = [functions.setAggregatedClass(data.loc[i], dictIsSeminatural, dictIsCrop) for i in data.index]
+    data['aggClass'] = [functions.getAggregatedClass(data.loc[i], dictIsSeminatural, dictIsCrop) for i in data.index]
     data = data.loc[(data['aggClass'] != "Exception")]
     
     # Select columns, sort and reset indices

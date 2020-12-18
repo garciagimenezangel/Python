@@ -668,7 +668,7 @@ def allFiles(root, ext):
 INPUT: array of ESYRCE codes, and dictionaries to relate codes with seminatural and crop classes
 OUTPUT: aggregation class-> crop, seminatural, water or other (plus exception)
 """
-def setAggregatedClass(dataRow, dictIsSeminatural, dictIsCrop):
+def getAggregatedClass(dataRow, dictIsSeminatural, dictIsCrop):
     waterCodes = np.array(['AG','MO'])
     d4_grc     = dataRow.D4_GRC
     d5_cul     = dataRow.D5_CUL
@@ -679,11 +679,11 @@ def setAggregatedClass(dataRow, dictIsSeminatural, dictIsCrop):
             if (dictIsSeminatural[d5_cul[0:2]] == "YES"): 
                 aggClass = "Seminatural"
                 classSet = True
-        elif (not classSet) & (d5_cul[0:2] in dictIsCrop):
-            if (dictIsCrop[d4_grc[0:2]] == "YES"):
+        if (not classSet) & (d5_cul[0:2] in dictIsCrop):
+            if (dictIsCrop[d5_cul[0:2]] == "YES"):
                 aggClass = "Crop"
                 classSet = True
-        elif (not classSet) & np.isin(d4_grc, waterCodes):
+        if (not classSet) & np.isin(d4_grc, waterCodes):
             aggClass = "Water"     
     except:
         return "Exception"
