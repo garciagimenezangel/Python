@@ -33,10 +33,14 @@ getLandCoverProportion     = True # Percentage of the land cover types (see vari
 getSoilTechniqueProportion = True # Soil maintenance technique proportion (see variable 'soilCodes' below)
 getSowTechniqueProportion  = True # Sowing technique proportion (direct or traditional)
 getCropYield               = True # Average and variance of the yield of each crop within the segments (see variable 'cropCodes' below) 
-getAvgFieldSize            = True # Average size of the fields identified as crops (in the table 'tableIsCrop' below) 
-getAvgSeminatSize          = True # Average size of the fields identified as seminatural area (in the table 'tableIsSeminatural' below) 
-getAvgFieldSizeDiss        = True # Average size of the fields identified as crops (in the table 'tableIsCrop' below) dissolving by 'isCropfield' and 'isSeminatural'
-getAvgSeminatSizeDiss      = True # Average size of the fields identified as seminatural area (in the table 'tableIsSeminatural' below) dissolving by 'isCropfield' and 'isSeminatural'
+getAvgSize                 = True # Average size of the polygons (water ignored)
+getAvgFieldSize            = True # Average size of the fields identified as crops 
+getAvgSeminatSize          = True # Average size of the fields identified as seminatural area 
+getAvgOtherSize            = True # Average size of the fields identified as other
+getAvgSizeDiss             = True # Average size of the polygons (water ignored) dissolving by group
+getAvgFieldSizeDiss        = True # Average size of the fields identified as crops dissolving by group
+getAvgSeminatSizeDiss      = True # Average size of the fields identified as seminatural area dissolving by group
+getAvgOtherSizeDiss        = True # Average size of the fields identified as other dissolving by group
 getHeterogeneity           = True # Heterogeneity, as number of crop types per unit area
 getDemand                  = True # Average demand, weighted by the area of the polygons 
 getSegmentArea             = True # Total area of the segments
@@ -55,8 +59,8 @@ getEdgeDensityOtherDiss    = True # Density of edges (others) dissolving by 'isC
 finalFilename = "metrics_20-12-18"
 
 # Paths
-#inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test1\\'
-#outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test1\\'
+#inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test2\\'
+#outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test2\\'
 #logFile             = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\logs\\addMetrics.log'
 #tableCultivarDemand = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
 #tableIsCropSeminat  = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCropSeminatural.csv'
@@ -312,10 +316,14 @@ for file in glob.glob(inputESYRCE + "*.shp"):
         for x in soilCodes.keys():      data[x] = np.repeat(np.nan, len(data))
     if getSowTechniqueProportion:  
         for x in sowCodes.keys():       data[x] = np.repeat(np.nan, len(data))
+    if getAvgSize:                      data['avgSize']            = np.repeat(np.nan, len(data))
     if getAvgFieldSize:                 data['avgFieldSize']       = np.repeat(np.nan, len(data))
     if getAvgSeminatSize:               data['avgSeminatSize']     = np.repeat(np.nan, len(data))
+    if getAvgOtherSize:                 data['avgOtherSize']       = np.repeat(np.nan, len(data))
     if getAvgFieldSizeDiss:             data['avgFieldSizeDiss']   = np.repeat(np.nan, len(data))
+    if getAvgSizeDiss:                  data['avgSizeDiss']        = np.repeat(np.nan, len(data))
     if getAvgSeminatSizeDiss:           data['avgSeminatSizeDiss'] = np.repeat(np.nan, len(data))
+    if getAvgOtherSizeDiss:             data['avgOtherSizeDiss']   = np.repeat(np.nan, len(data))
     if getHeterogeneity:                data['heterogeneity']      = np.repeat(np.nan, len(data))
     if getDemand:                       data['demand']             = np.repeat(np.nan, len(data))    
     if getSegmentArea:                  data['segArea']            = np.repeat(np.nan, len(data))
@@ -396,18 +404,30 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                 if getSowTechniqueProportion:  
                     sowTechnProportion  = functions.calculateSoilTechniqueProportion(dataSegmentYear, sowCodes, soilCodes, log) 
                     for x in sowCodes.keys():       data.loc[dataSegmentYear.index, x] = np.repeat(sowTechnProportion[x], len(dataSegmentYear))                  
+                if getAvgSize:                 
+                    avgSize             = functions.calculateAvgSize(dataSegmentYear, log)
+                    data.loc[dataSegmentYear.index, 'avgSize'] = np.repeat(avgSize, len(dataSegmentYear))
                 if getAvgFieldSize:                 
                     avgFieldSize        = functions.calculateAvgFieldSize(dataSegmentYear, log)
                     data.loc[dataSegmentYear.index, 'avgFieldSize'] = np.repeat(avgFieldSize, len(dataSegmentYear))
                 if getAvgSeminatSize:               
                     avgSeminatSize      = functions.calculateAvgSeminaturalSize(dataSegmentYear, log)
-                    data.loc[dataSegmentYear.index, 'avgSeminatSize'] = np.repeat(avgSeminatSize, len(dataSegmentYear))
+                    data.loc[dataSegmentYear.index, 'avgSeminatSize'] = np.repeat(avgSeminatSize, len(dataSegmentYear))                
+                if getAvgOtherSize:               
+                    avgOtherSize        = functions.calculateAvgOtherSize(dataSegmentYear, log)
+                    data.loc[dataSegmentYear.index, 'avgOtherSize'] = np.repeat(avgOtherSize, len(dataSegmentYear))
+                if getAvgSizeDiss:                 
+                    avgSizeDiss         = functions.calculateAvgSize(dataSegmYearDiss, log)
+                    data.loc[dataSegmentYear.index, 'avgSizeDiss'] = np.repeat(avgSizeDiss, len(dataSegmentYear))
                 if getAvgFieldSizeDiss:                 
                     avgFieldSizeDiss    = functions.calculateAvgFieldSize(dataSegmYearDiss, log)
                     data.loc[dataSegmentYear.index, 'avgFieldSizeDiss'] = np.repeat(avgFieldSizeDiss, len(dataSegmentYear))
                 if getAvgSeminatSizeDiss:               
                     avgSeminatSizeDiss  = functions.calculateAvgSeminaturalSize(dataSegmYearDiss, log)
                     data.loc[dataSegmentYear.index, 'avgSeminatSizeDiss'] = np.repeat(avgSeminatSizeDiss, len(dataSegmentYear))                    
+                if getAvgOtherSizeDiss:               
+                    avgOtherSizeDiss  = functions.calculateAvgOtherSize(dataSegmYearDiss, log)
+                    data.loc[dataSegmentYear.index, 'avgOtherSizeDiss'] = np.repeat(avgOtherSizeDiss, len(dataSegmentYear))                    
                 if getHeterogeneity:                
                     heterogeneity       = functions.calculateHeterogeneity(dataSegmentYear, log)
                     data.loc[dataSegmentYear.index, 'heterogeneity'] = np.repeat(heterogeneity, len(dataSegmentYear))

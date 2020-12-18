@@ -63,8 +63,8 @@ getEdgeDensityOtherDiss    = True # Density of edges (others) dissolving by 'isC
 finalFilename = "metrics_20-12-18"
 
 # Paths
-inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test1\\'
-outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test1\\'
+inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test2\\'
+outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test2\\'
 logFile             = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\logs\\addMetrics.log'
 tableCultivarDemand = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
 tableIsCropSeminat  = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCropSeminatural.csv'
@@ -353,8 +353,6 @@ totalNr = len(segmentNrs)
 contNr = 0
 segmentNr = segmentNrs[0]
         
-segmentNr = 5034782
-
 # Get the rows corresponding to segmentNr. This is not the safest way (it doesn't work if the rows are not sorted out by number of segment, which seems not to be the case), 
 # but it is the fastest way. A sanity check is included to make sure that this way works reasonably well. If the "Error..." message is prompted too much times, then 
 # this way of getting the rows for the segmentNr must be replaced by the slow way (see filterDataByExtent.py as an example)
@@ -365,8 +363,6 @@ dataSegmentNr = dataZoneNr[i0:(iM+1)]
 years = np.unique(dataSegmentNr.YEA)
 year = years[0]
             
-year=2014
-
 # Get the rows corresponding to a particular year. As above-mentioned, not the safest way, but the fastest (to my knowledge), so a sanity check is needed.
 ii = np.where(dataSegmentNr.YEA == year)
 i0 = ii[0][0]

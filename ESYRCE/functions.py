@@ -223,9 +223,33 @@ def calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, ignoreCodes, lo
 
 
 """
-INPUT: 
-    - a subset of ESYRCE data corresponding to a segment for a particular year 
+INPUT: a subset of ESYRCE data corresponding to a segment for a particular year 
+OUTPUT: average size of the polygons (in hectares)
+"""
+def calculateAvgSize(dataSegmentYear, log):
     
+    # Iterate through the polygons in dataSegmentYear
+    accArea     = 0
+    nParcels = 0
+    for index in dataSegmentYear.index:  
+        # Ignore water codes
+        try:
+            if isWater(dataSegmentYear.loc[index]): continue    
+        except Exception as e:
+            log.write(str(e))
+            continue  
+        
+        nParcels = nParcels + 1
+        accArea  = accArea + dataSegmentYear.loc[index].Shape_Area
+    
+    if nParcels > 0:
+        return accArea * 1e-4 / nParcels # convert m^2 into hectares
+    else:
+        return 0
+
+
+"""
+INPUT: a subset of ESYRCE data corresponding to a segment for a particular year 
 OUTPUT: average size of the crop fields (in hectares)
 """
 def calculateAvgFieldSize(dataSegmentYear, log):
@@ -245,10 +269,7 @@ def calculateAvgFieldSize(dataSegmentYear, log):
     
 
 """
-INPUT: 
-    - a subset of ESYRCE data corresponding to a segment for a particular year 
-    - dictionary to find out whether a given ESYRCE code is classified as seminatural area
-    
+INPUT: a subset of ESYRCE data corresponding to a segment for a particular year 
 OUTPUT: average size of the seminatural patches (in hectares)
 """
 def calculateAvgSeminaturalSize(dataSegmentYear, log):   
@@ -265,6 +286,26 @@ def calculateAvgSeminaturalSize(dataSegmentYear, log):
         return accArea * 1e-4 / nSeminaturalPatches # convert m^2 into hectares
     else:
         return 0    
+    
+
+"""
+INPUT: a subset of ESYRCE data corresponding to a segment for a particular year     
+OUTPUT: average size of the seminatural patches (in hectares)
+"""
+def calculateAvgOtherSize(dataSegmentYear, log):   
+    
+    # Iterate through the polygons in dataSegmentYear
+    accArea     = 0
+    nOther = 0
+    for index in dataSegmentYear.index:  
+        if isOther(dataSegmentYear.loc[index]):   
+            nOther = nOther + 1
+            accArea  = accArea + dataSegmentYear.loc[index].Shape_Area
+            
+    if nOther > 0:
+        return accArea * 1e-4 / nOther # convert m^2 into hectares
+    else:
+        return 0  
     
 
 """
