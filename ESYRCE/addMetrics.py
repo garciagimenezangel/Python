@@ -55,8 +55,8 @@ getEdgeDensityOtherDiss    = True # Density of edges (others) dissolving by 'isC
 finalFilename = "metrics_20-12-18"
 
 # Paths
-#inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test3\\'
-#outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test3\\'
+#inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test1\\'
+#outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test1\\'
 #logFile             = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\logs\\addMetrics.log'
 #tableCultivarDemand = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
 #tableIsCropSeminat  = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCropSeminatural.csv'
@@ -167,6 +167,7 @@ landCoverTypes = {'hardWheat':          'TD',
                   'beetTable':          'RW',
                   'sweetPepper':        'PQ',
                   'watermelon':         'SA',
+                  'tomato':             'TO',
                   'carrot':             'CT',
                   'otherVegetable':     'HX',
                   'emptyGarden':        'VH',
@@ -297,6 +298,7 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     data = data.groupby(['D1_HUS','D2_NUM','YEA','D3_PAR'], as_index=False).first() 
     data.sort_values(by=['D1_HUS','D2_NUM','YEA'], inplace = True)
     data.reset_index(drop=True, inplace=True)
+    data = gpd.GeoDataFrame(data, geometry=data.geometry)
 
     # Init new columns with NaN data
     if getLandCoverProportion:     

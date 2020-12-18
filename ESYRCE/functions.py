@@ -111,12 +111,13 @@ def calculateLandCoverProportion(dataSegmentYear, landCoverTypes, log):
     
     # Read codes from dictionary landCoverTypes
     keys     = list(landCoverTypes.keys())
-    lcCul    = np.array(list(landCoverTypes.values()))
-        
+    lcCul    = list(landCoverTypes.values())
+    lcGrc    = list(['IM','NA'])    
+    
     # Initialize variables to store accumulated area values 
     lcAcc = np.zeros(len(lcCul)) # accumulated area of each land cover type
     totalArea = 0
-    
+        
     # Iterate through the polygons in dataSegmentYear
     for index in dataSegmentYear.index:
         # Ignore water codes
@@ -129,13 +130,13 @@ def calculateLandCoverProportion(dataSegmentYear, landCoverTypes, log):
         # area of the polygon
         areaPolygon = dataSegmentYear.loc[index].Shape_Area
         
-        # First, see if D4_GRC correspond to a value in landCoverTypes (it may happen for IM and NA). If not, then use D5_CUL
+        # First, see if D4_GRC correspond to IM or NA. If not, then use D5_CUL
         polyGrc = dataSegmentYear.loc[index].D4_GRC
-        ii = np.where(lcCul == polyGrc)[0]
-        if (len(ii)==1):  # add area of the land cover type
-            ind = ii[0]
-            lcAcc[ind] = lcAcc[ind] + areaPolygon
-            totalArea = totalArea + areaPolygon 
+        if polyGrc in lcGrc:
+            if polyGrc in lcCul:
+                ind = lcCul.index(polyGrc)
+                lcAcc[ind] = lcAcc[ind] + areaPolygon
+                totalArea = totalArea + areaPolygon 
         # If not found with D4_GRC, use 2 first characteres of D5_CUL 
         else: 
             try:
@@ -146,14 +147,12 @@ def calculateLandCoverProportion(dataSegmentYear, landCoverTypes, log):
                       "...Year:"+str(dataSegmentYear.loc[index].YEA)+'\n')
                 continue            
             
-            # identify landcover index
-            ii = np.where(lcCul == polyCul)[0]
-            if (len(ii)==1): # add area of the land cover type
-                ind = ii[0]
+            if polyCul in lcCul:
+                ind = lcCul.index(polyCul)
                 lcAcc[ind] = lcAcc[ind] + areaPolygon
-                totalArea = totalArea + areaPolygon           
+                totalArea = totalArea + areaPolygon 
             else: 
-                log.write("Index not found in calculateLandCoverPercentages. Parcel IGNORED"+
+                log.write("Warning: Index not found in calculateLandCoverPercentages. Parcel IGNORED"+
                   "...Segment:" +str(dataSegmentYear.loc[index].D2_NUM)+
                   "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
                   "...Year:"  +str(dataSegmentYear.loc[index].YEA)+
@@ -180,10 +179,10 @@ OUTPUT: dictionary with the porportion of each soil management technique within 
 Note: proportion is computed only with regard to codes present in the input dictionary. If no code present, then returns 0.
 """
 def calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, ignoreCodes, log):
+        
     # Read codes from dictionary landCoverTypes
     keys     = list(soilCodes.keys())
-    codes    = list(soilCodes.values())
-    codesCS  = np.array([x[0] for x in codes])
+    codesCS  = list(soilCodes.values())
     
     # Initialize variables to store accumulated area values 
     soilAcc = np.zeros(len(codesCS)) # accumulated area of each soil management technique
@@ -195,20 +194,16 @@ def calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, ignoreCodes, lo
         areaPolygon = dataSegmentYear.loc[index].Shape_Area
         
         # soil management technique code
-        polyCS = dataSegmentYear.loc[index].DE_CS       
-        
-        # Codes to be ignored
-        if np.isin(polyCS, np.array(list(ignoreCodes.values()))): continue
+        polyCS = str(dataSegmentYear.loc[index].DE_CS)
     
         # If code found (polyCS != None), add area to the corresponding soil management technique
-        if polyCS:
+        if (polyCS != 'nan') and (polyCS != 'None'):
+            # Codes to be ignored
+            if polyCS in list(ignoreCodes.values()): continue
     
             # identify soil technique index
-            ii = np.where(codesCS == polyCS)[0]
-        
-            # add area of this soil technique
-            if (len(ii)==1): # it should find only one index
-                ind = ii[0]
+            if polyCS in codesCS:
+                ind = codesCS.index(polyCS)
                 soilAcc[ind] = soilAcc[ind] + areaPolygon
                 totalArea    = totalArea + areaPolygon
             else: 
@@ -362,7 +357,7 @@ OUTPUT: average yield of each crop within the segment
 def calculateCropYield(dataSegmentYear, landCoverTypes, log):
     # Read codes from dictionary landCoverTypes
     keys     = list(landCoverTypes.keys())
-    lcCul    = np.array(list(landCoverTypes.values()))
+    lcCul    = list(landCoverTypes.values())
     yieldVal = np.repeat(np.nan, len(keys)) 
 
     # Initialize variables to store accumulated yields and areas
@@ -390,11 +385,8 @@ def calculateCropYield(dataSegmentYear, landCoverTypes, log):
             continue            
     
         # identify landcover index
-        ii = np.where(lcCul == polyCul)[0]
-        
-        # accumulate weighted yield and area
-        if (len(ii)==1): # it should find only one index
-            ind = ii[0]
+        if polyCul in lcCul:
+            ind = lcCul.index(polyCul)
             yieldAcc[ind] = yieldAcc[ind] + fieldYield*areaPolygon
             areaAcc[ind]  = areaAcc[ind]  + areaPolygon
             
@@ -423,7 +415,7 @@ OUTPUT: weighted variance of the yield of each crop within the segment
 def calculateVarianceYield(dataSegmentYear, landCoverTypes, weightedMeans, log):
     # Read codes from dictionary landCoverTypes
     keys     = list(landCoverTypes.keys())
-    lcCul    = np.array(list(landCoverTypes.values()))
+    lcCul    = list(landCoverTypes.values())
     means    = list(weightedMeans.values())
     variance = np.repeat(np.nan, len(keys)) 
 
@@ -450,12 +442,9 @@ def calculateVarianceYield(dataSegmentYear, landCoverTypes, weightedMeans, log):
                   "...Year:"+str(dataSegmentYear.loc[index].YEA)+'\n')
             continue            
     
-        # identify landcover index
-        ii = np.where(lcCul == polyCul)[0]
-        
-        # accumulate weighted variance and area
-        if (len(ii)==1): # it should find only one index
-            ind = ii[0]
+        # identify landcover index and accumulate weighted variance and area
+        if polyCul in lcCul:
+            ind = lcCul.index(polyCul)
             sumSqAcc[ind] = sumSqAcc[ind] + areaPolygon*(fieldYield-means[ind])**2
             areaAcc[ind]  = areaAcc[ind]  + areaPolygon
             
@@ -594,7 +583,7 @@ def calculateEdgeDensityOther(dataSegmentYear, log):
             log.write(str(e))
             continue  
         accArea  = accArea + dataSegmentYear.loc[index].Shape_Area  # area            
-        if not isOther(dataSegmentYear.loc[index]):   
+        if isOther(dataSegmentYear.loc[index]):   
             accEdgeLength = accEdgeLength + dataSegmentYear.loc[index].Shape_Leng  # perimeter            
     if accArea > 0:
         return accEdgeLength / (accArea*1e-4)
