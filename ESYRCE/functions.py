@@ -223,6 +223,60 @@ def calculateSoilTechniqueProportion(dataSegmentYear, soilCodes, ignoreCodes, lo
 
 
 """
+INPUT: 
+    - a subset of ESYRCE data corresponding to a segment for a particular year 
+    - dictionary of crop systems with associated ESYRCE codes. 
+    
+OUTPUT: dictionary with the porportion of each system within the segment
+
+Note: proportion is computed only with regard to codes present in the input dictionary. If no code present, then returns 0.
+"""
+def calculateSystemProportion(dataSegmentYear, systemCodes, log):
+        
+    # Read codes from dictionary landCoverTypes
+    keys  = list(systemCodes.keys())
+    codes = list(systemCodes.values())
+    
+    # Initialize variables to store accumulated area values 
+    systemAcc = np.zeros(len(codes)) # accumulated area of each soil management technique
+    totalArea = 0
+    
+    # Iterate through the polygons in dataSegmentYear
+    for index in dataSegmentYear.index:
+        
+        if isCropfield(dataSegmentYear.loc[index]):
+            
+            # area of the polygon
+            areaPolygon = dataSegmentYear.loc[index].Shape_Area
+            
+            # system code
+            polySyst = str(dataSegmentYear.loc[index].D7_SRI)
+        
+            # If code found (polySyst != None), add area to the corresponding system
+            if (polySyst != 'None'):
+        
+                # identify system
+                if polySyst in codes:
+                    ind = codes.index(polySyst)
+                    systemAcc[ind] = systemAcc[ind] + areaPolygon
+                    totalArea    = totalArea + areaPolygon
+                else: 
+                    log.write("Index not found in calculateSystemProportion. Parcel IGNORED"+
+                      "...Segment:" +str(dataSegmentYear.loc[index].D2_NUM)+
+                      "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
+                      "...Year:"  +str(dataSegmentYear.loc[index].YEA)+
+                      "...D7_SRI:"+str(systemAcc)+'\n')
+                        
+    if totalArea != 0:
+        values = systemAcc/totalArea
+    else:
+        values = np.zeros(len(keys))
+        
+    # Output dictionary. Key: soil management technique; value: accumulated area in the segment
+    return dict((keys[ind], values[ind]) for ind in range(0,len(keys))) 
+
+
+"""
 INPUT: a subset of ESYRCE data corresponding to a segment for a particular year 
 OUTPUT: average size of the polygons (in hectares)
 """

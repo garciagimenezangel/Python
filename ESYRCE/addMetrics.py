@@ -29,38 +29,38 @@ OUTPUT: csv file with ESYRCE identificator (segment number + year) and the metri
 ## SETTINGS ##
 ##############
 # Metrics available
-getLandCoverProportion     = True # Percentage of the land cover types (see variable 'landCoverTypes' below)
-getSoilTechniqueProportion = True # Soil maintenance technique proportion (see variable 'soilCodes' below)
-getSowTechniqueProportion  = True # Sowing technique proportion (direct or traditional)
-getCropYield               = True # Average and variance of the yield of each crop within the segments (see variable 'cropCodes' below) 
-getAvgSize                 = True # Average size of the polygons (water ignored)
-getAvgFieldSize            = True # Average size of the fields identified as crops 
-getAvgSeminatSize          = True # Average size of the fields identified as seminatural area 
-getAvgOtherSize            = True # Average size of the fields identified as other
-getAvgSizeDiss             = True # Average size of the polygons (water ignored) dissolving by group
-getAvgFieldSizeDiss        = True # Average size of the fields identified as crops dissolving by group
-getAvgSeminatSizeDiss      = True # Average size of the fields identified as seminatural area dissolving by group
-getAvgOtherSizeDiss        = True # Average size of the fields identified as other dissolving by group
-getHeterogeneity           = True # Heterogeneity, as number of crop types per unit area
-getDemand                  = True # Average demand, weighted by the area of the polygons 
-getSegmentArea             = True # Total area of the segments
-getSegmentAreaWithoutWater = True # Area of the segments, ignoring water 
-getEdgeDensity             = True # Density of edges (length/area)
-getEdgeDensitySeminatural  = True # Density of edges from seminatural area (length/area)
-getEdgeDensityCropfields   = True # Density of edges from crop fields (length/area)
-getEdgeDensityOther        = True # Density of edges from other landcover types (length/area)
-getEdgeDensDissolved       = True # Density of edges (total) dissolving by 'isCropfield' and 'isSeminatural'
-getEdgeDensitySeminatDiss  = True # Density of edges (seminatural) dissolving by 'isCropfield' and 'isSeminatural'
-getEdgeDensityCropDiss     = True # Density of edges (cropfields) dissolving by 'isCropfield' and 'isSeminatural'
-getEdgeDensityOtherDiss    = True # Density of edges (others) dissolving by 'isCropfield' and 'isSeminatural'
-
+getLandCoverProportion     = False # Percentage of the land cover types (see variable 'landCoverTypes' below)
+getSoilTechniqueProportion = False # Soil maintenance technique proportion (see variable 'soilCodes' below)
+getSowTechniqueProportion  = False # Sowing technique proportion (direct or traditional)
+getCropYield               = False # Average and variance of the yield of each crop within the segments (see variable 'cropCodes' below) 
+getAvgSize                 = False # Average size of the polygons (water ignored)
+getAvgFieldSize            = False # Average size of the fields identified as crops 
+getAvgSeminatSize          = False # Average size of the fields identified as seminatural area 
+getAvgOtherSize            = False # Average size of the fields identified as other
+getAvgSizeDiss             = False # Average size of the polygons (water ignored) dissolving by group
+getAvgFieldSizeDiss        = False # Average size of the fields identified as crops dissolving by group
+getAvgSeminatSizeDiss      = False # Average size of the fields identified as seminatural area dissolving by group
+getAvgOtherSizeDiss        = False # Average size of the fields identified as other dissolving by group
+getHeterogeneity           = False # Heterogeneity, as number of crop types per unit area
+getDemand                  = False # Average demand, weighted by the area of the polygons 
+getSegmentArea             = False # Total area of the segments
+getSegmentAreaWithoutWater = False # Area of the segments, ignoring water 
+getEdgeDensity             = False # Density of edges (length/area)
+getEdgeDensitySeminatural  = False # Density of edges from seminatural area (length/area)
+getEdgeDensityCropfields   = False # Density of edges from crop fields (length/area)
+getEdgeDensityOther        = False # Density of edges from other landcover types (length/area)
+getEdgeDensDissolved       = False # Density of edges (total) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensitySeminatDiss  = False # Density of edges (seminatural) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensityCropDiss     = False # Density of edges (cropfields) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensityOtherDiss    = False # Density of edges (others) dissolving by 'isCropfield' and 'isSeminatural'
+getSystemProportion        = True  # Percentage of each crop system: dry, water scarce (normally irrigated but dry because of water scarcity), irrigation or greenhouse
 
 # Final output
-finalFilename = "metrics_20-12-18"
+finalFilename = "systemProportion"
 
 # Paths
-#inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test2\\'
-#outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test2\\'
+#inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test1\\'
+#outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test1\\'
 #logFile             = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\logs\\addMetrics.log'
 #tableCultivarDemand = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
 #tableIsCropSeminat  = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCropSeminatural.csv'
@@ -161,8 +161,8 @@ landCoverTypes = {'hardWheat':          'TD',
                   'strawberry':         'FN',
                   'rapini':             'GE',
                   'greenPea':           'GV',
-                  'greenBean':          'HV',
-                  'kidneyBean':         'JV',
+                  'broadBean':          'HV',
+                  'greenBean':          'JV',
                   'lettuce':            'LC',
                   'redCabbage':         'LO',
                   'melon':              'MO',
@@ -256,6 +256,12 @@ soilCodes = {'traditional':   'LT',
 sowCodes = { 'directSowing':  'D',
              'traditSowing':  'N'} 
 
+# Crop system codes: dry, water scarce (normally irrigated but dry because of water scarcity), irrigated or greenhouse
+systemCodes = {'dry': 'S',
+               'waterScarce': 'F',
+               'irrigated': 'R',
+               'greenhouse': 'I'}
+
 # Define dictionaries from tables
 # Dictionary to associate codes with crop category
 with open(tableIsCropSeminat, mode='r', encoding='latin-1') as infile:
@@ -295,7 +301,7 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     data = data.loc[(data['aggClass'] != "Exception")]
     
     # Select columns, remove duplicates (detected many times for 2019 data), sort and reset indices
-    data = data[['D1_HUS','D2_NUM','D3_PAR','D4_GRC','D5_CUL','D9_RTO','DE_CS','YEA','Shape_Area','Shape_Leng','aggClass','geometry']]
+    data = data[['D1_HUS','D2_NUM','D3_PAR','D4_GRC','D5_CUL','D7_SRI','D9_RTO','DE_CS','YEA','Shape_Area','Shape_Leng','aggClass','geometry']]
     data = data.dropna(thresh=1)
     data = data.where(data['D1_HUS'] != 0)
     data = data.where(data['D2_NUM'] != 0)
@@ -316,6 +322,8 @@ for file in glob.glob(inputESYRCE + "*.shp"):
         for x in soilCodes.keys():      data[x] = np.repeat(np.nan, len(data))
     if getSowTechniqueProportion:  
         for x in sowCodes.keys():       data[x] = np.repeat(np.nan, len(data))
+    if getSystemProportion:             
+        for x in systemCodes.keys():    data[x] = np.repeat(np.nan, len(data))
     if getAvgSize:                      data['avgSize']            = np.repeat(np.nan, len(data))
     if getAvgFieldSize:                 data['avgFieldSize']       = np.repeat(np.nan, len(data))
     if getAvgSeminatSize:               data['avgSeminatSize']     = np.repeat(np.nan, len(data))
@@ -336,7 +344,6 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     if getEdgeDensitySeminatDiss:       data['edgeDenSemiDiss']    = np.repeat(np.nan, len(data))
     if getEdgeDensityCropDiss:          data['edgeDenFielDiss']    = np.repeat(np.nan, len(data))
     if getEdgeDensityOtherDiss:         data['edgeDenOtherDiss']   = np.repeat(np.nan, len(data))
-
     
     ##################
     # Loop zones
@@ -403,7 +410,10 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                     for x in soilCodes.keys():      data.loc[dataSegmentYear.index, x] = np.repeat(soilTechnProportion[x], len(dataSegmentYear))
                 if getSowTechniqueProportion:  
                     sowTechnProportion  = functions.calculateSoilTechniqueProportion(dataSegmentYear, sowCodes, soilCodes, log) 
-                    for x in sowCodes.keys():       data.loc[dataSegmentYear.index, x] = np.repeat(sowTechnProportion[x], len(dataSegmentYear))                  
+                    for x in sowCodes.keys():       data.loc[dataSegmentYear.index, x] = np.repeat(sowTechnProportion[x], len(dataSegmentYear))     
+                if getSystemProportion:
+                    systemProportion    = functions.calculateSystemProportion(dataSegmentYear, systemCodes, log) 
+                    for x in systemCodes.keys():    data.loc[dataSegmentYear.index, x] = np.repeat(systemProportion[x], len(dataSegmentYear))     
                 if getAvgSize:                 
                     avgSize             = functions.calculateAvgSize(dataSegmentYear, log)
                     data.loc[dataSegmentYear.index, 'avgSize'] = np.repeat(avgSize, len(dataSegmentYear))
@@ -472,7 +482,7 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                 log.write("Processing File..."+filename+" Data Zone..."+str(int(zoneNr))+" Percentage completed..."+str(np.floor(times*100))+'\n')
 
     # Group by number of the segment and year, drop not useful columns, and save to csv
-    data = data.drop(columns=['D3_PAR','D4_GRC','D5_CUL','D9_RTO','DE_CS','Shape_Area','Shape_Leng','aggClass','geometry'])
+    data = data.drop(columns=['D3_PAR','D4_GRC','D5_CUL','D7_SRI','D9_RTO','DE_CS','Shape_Area','Shape_Leng','aggClass','geometry'])
     data = data.groupby(['D1_HUS','D2_NUM','YEA']).first().reset_index()
     log.write("Now: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S")+'\n')
     log.write("Writing file..."+outFilename+'\n')

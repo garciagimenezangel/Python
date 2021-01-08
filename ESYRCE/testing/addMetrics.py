@@ -9,7 +9,6 @@ Created on Fri Dec 18 10:25:50 2020
 # -*- coding: utf-8 -*-
 import csv
 import geopandas as gpd
-import pandas as pd
 import numpy as np
 from datetime import datetime
 from os.path import expanduser
@@ -37,30 +36,34 @@ OUTPUT: csv file with ESYRCE identificator (segment number + year) and the metri
 ## SETTINGS ##
 ##############
 # Metrics available
-getLandCoverProportion     = True # Percentage of the land cover types (see variable 'landCoverTypes' below)
-getSoilTechniqueProportion = True # Soil maintenance technique proportion (see variable 'soilCodes' below)
-getSowTechniqueProportion  = True # Sowing technique proportion (direct or traditional)
-getCropYield               = True # Average and variance of the yield of each crop within the segments (see variable 'cropCodes' below) 
-getAvgFieldSize            = True # Average size of the fields identified as crops (in the table 'tableIsCrop' below) 
-getAvgSeminatSize          = True # Average size of the fields identified as seminatural area (in the table 'tableIsSeminatural' below) 
-getAvgFieldSizeDiss        = True # Average size of the fields identified as crops (in the table 'tableIsCrop' below) dissolving by 'isCropfield' and 'isSeminatural'
-getAvgSeminatSizeDiss      = True # Average size of the fields identified as seminatural area (in the table 'tableIsSeminatural' below) dissolving by 'isCropfield' and 'isSeminatural'
-getHeterogeneity           = True # Heterogeneity, as number of crop types per unit area
-getDemand                  = True # Average demand, weighted by the area of the polygons 
-getSegmentArea             = True # Total area of the segments
-getSegmentAreaWithoutWater = True # Area of the segments, ignoring water 
-getEdgeDensity             = True # Density of edges (length/area)
-getEdgeDensitySeminatural  = True # Density of edges from seminatural area (length/area)
-getEdgeDensityCropfields   = True # Density of edges from crop fields (length/area)
-getEdgeDensityOther        = True # Density of edges from other landcover types (length/area)
-getEdgeDensDissolved       = True # Density of edges (total) dissolving by 'isCropfield' and 'isSeminatural'
-getEdgeDensitySeminatDiss  = True # Density of edges (seminatural) dissolving by 'isCropfield' and 'isSeminatural'
-getEdgeDensityCropDiss     = True # Density of edges (cropfields) dissolving by 'isCropfield' and 'isSeminatural'
-getEdgeDensityOtherDiss    = True # Density of edges (others) dissolving by 'isCropfield' and 'isSeminatural'
-
+getLandCoverProportion     = False # Percentage of the land cover types (see variable 'landCoverTypes' below)
+getSoilTechniqueProportion = False # Soil maintenance technique proportion (see variable 'soilCodes' below)
+getSowTechniqueProportion  = False # Sowing technique proportion (direct or traditional)
+getCropYield               = False # Average and variance of the yield of each crop within the segments (see variable 'cropCodes' below) 
+getAvgSize                 = False # Average size of the polygons (water ignored)
+getAvgFieldSize            = False # Average size of the fields identified as crops 
+getAvgSeminatSize          = False # Average size of the fields identified as seminatural area 
+getAvgOtherSize            = False # Average size of the fields identified as other
+getAvgSizeDiss             = False # Average size of the polygons (water ignored) dissolving by group
+getAvgFieldSizeDiss        = False # Average size of the fields identified as crops dissolving by group
+getAvgSeminatSizeDiss      = False # Average size of the fields identified as seminatural area dissolving by group
+getAvgOtherSizeDiss        = False # Average size of the fields identified as other dissolving by group
+getHeterogeneity           = False # Heterogeneity, as number of crop types per unit area
+getDemand                  = False # Average demand, weighted by the area of the polygons 
+getSegmentArea             = False # Total area of the segments
+getSegmentAreaWithoutWater = False # Area of the segments, ignoring water 
+getEdgeDensity             = False # Density of edges (length/area)
+getEdgeDensitySeminatural  = False # Density of edges from seminatural area (length/area)
+getEdgeDensityCropfields   = False # Density of edges from crop fields (length/area)
+getEdgeDensityOther        = False # Density of edges from other landcover types (length/area)
+getEdgeDensDissolved       = False # Density of edges (total) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensitySeminatDiss  = False # Density of edges (seminatural) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensityCropDiss     = False # Density of edges (cropfields) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensityOtherDiss    = False # Density of edges (others) dissolving by 'isCropfield' and 'isSeminatural'
+getSystemProportion        = True  # Percentage of each crop system: dry, water scarce (normally irrigated but dry because of water scarcity), irrigation or greenhouse
 
 # Final output
-finalFilename = "metrics_20-12-18"
+finalFilename = "systemProportion"
 
 # Paths
 inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test2\\'
@@ -165,8 +168,8 @@ landCoverTypes = {'hardWheat':          'TD',
                   'strawberry':         'FN',
                   'rapini':             'GE',
                   'greenPea':           'GV',
-                  'greenBean':          'HV',
-                  'kidneyBean':         'JV',
+                  'broadBean':          'HV',
+                  'greenBean':          'JV',
                   'lettuce':            'LC',
                   'redCabbage':         'LO',
                   'melon':              'MO',
@@ -175,6 +178,7 @@ landCoverTypes = {'hardWheat':          'TD',
                   'beetTable':          'RW',
                   'sweetPepper':        'PQ',
                   'watermelon':         'SA',
+                  'tomato':             'TO',
                   'carrot':             'CT',
                   'otherVegetable':     'HX',
                   'emptyGarden':        'VH',
@@ -259,6 +263,12 @@ soilCodes = {'traditional':   'LT',
 sowCodes = { 'directSowing':  'D',
              'traditSowing':  'N'} 
 
+# Crop system codes: dry, water scarce (normally irrigated but dry because of water scarcity), irrigated or greenhouse
+systemCodes = {'dry': 'S',
+               'waterScarce': 'F',
+               'irrigated': 'R',
+               'greenhouse': 'I'}
+
 # Define dictionaries from tables
 # Dictionary to associate codes with crop category
 with open(tableIsCropSeminat, mode='r', encoding='latin-1') as infile:
@@ -298,7 +308,7 @@ data['aggClass'] = [functions.getAggregatedClass(data.loc[i], dictIsSeminatural,
 data = data.loc[(data['aggClass'] != "Exception")]
 
 # Select columns, remove duplicates (detected many times for 2019 data), sort and reset indices
-data = data[['D1_HUS','D2_NUM','D3_PAR','D4_GRC','D5_CUL','D9_RTO','DE_CS','YEA','Shape_Area','Shape_Leng','aggClass','geometry']]
+data = data[['D1_HUS','D2_NUM','D3_PAR','D4_GRC','D5_CUL','D7_SRI','D9_RTO','DE_CS','YEA','Shape_Area','Shape_Leng','aggClass','geometry']]
 data = data.dropna(thresh=1)
 data = data.where(data['D1_HUS'] != 0)
 data = data.where(data['D2_NUM'] != 0)
@@ -335,7 +345,8 @@ if getEdgeDensDissolved:            data['edgeDensityDiss']    = np.repeat(np.na
 if getEdgeDensitySeminatDiss:       data['edgeDenSemiDiss']    = np.repeat(np.nan, len(data))
 if getEdgeDensityCropDiss:          data['edgeDenFielDiss']    = np.repeat(np.nan, len(data))
 if getEdgeDensityOtherDiss:         data['edgeDenOtherDiss']   = np.repeat(np.nan, len(data))
-
+if getSystemProportion:             
+    for x in systemCodes.keys():    data[x] = np.repeat(np.nan, len(data))
 
 ##################
 # Loop zones
