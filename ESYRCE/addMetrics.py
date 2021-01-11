@@ -59,18 +59,18 @@ getSystemProportion        = True  # Percentage of each crop system: dry, water 
 finalFilename = "systemProportion"
 
 # Paths
-#inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test1\\'
-#outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test1\\'
-#logFile             = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\logs\\addMetrics.log'
-#tableCultivarDemand = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
-#tableIsCropSeminat  = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCropSeminatural.csv'
-#functionsFolder     = home + '\\git\\Python\\ESYRCE\\'
-inputESYRCE         = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/flagged/'
-outFolder           = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/metrics/'
-logFile             = home + '/DATA/OBServ/ESYRCE/PROCESSED/logs/addMetrics.log'
-tableCultivarDemand = home + '/lookup/Cultivar-Demand.csv'
-tableIsCropSeminat  = home + '/lookup/isCropSeminatural.csv'
-functionsFolder     = home + '/git/Python/ESYRCE/'
+inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test1\\'
+outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test1\\'
+logFile             = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\logs\\addMetrics.log'
+tableCultivarDemand = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
+tableIsCropSeminat  = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCropSeminatural.csv'
+functionsFolder     = home + '\\git\\Python\\ESYRCE\\'
+#inputESYRCE         = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/flagged/'
+#outFolder           = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/metrics/'
+#logFile             = home + '/DATA/OBServ/ESYRCE/PROCESSED/logs/addMetrics.log'
+#tableCultivarDemand = home + '/lookup/Cultivar-Demand.csv'
+#tableIsCropSeminat  = home + '/lookup/isCropSeminatural.csv'
+#functionsFolder     = home + '/git/Python/ESYRCE/'
 
 
 # The functions used to calculate the metrics are stored in a different file, to make this script cleaner 
@@ -303,8 +303,8 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     # Select columns, remove duplicates (detected many times for 2019 data), sort and reset indices
     data = data[['D1_HUS','D2_NUM','D3_PAR','D4_GRC','D5_CUL','D7_SRI','D9_RTO','DE_CS','YEA','Shape_Area','Shape_Leng','aggClass','geometry']]
     data = data.dropna(thresh=1)
-    data = data.where(data['D1_HUS'] != 0)
-    data = data.where(data['D2_NUM'] != 0)
+    data = data.loc[data['D1_HUS'] != 0]
+    data = data.loc[data['D2_NUM'] != 0]
     data = data.groupby(['D1_HUS','D2_NUM','YEA','D3_PAR'], as_index=False).first() 
     data.sort_values(by=['D1_HUS','D2_NUM','YEA'], inplace = True)
     data.reset_index(drop=True, inplace=True)

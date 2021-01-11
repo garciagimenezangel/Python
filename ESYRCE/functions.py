@@ -265,7 +265,7 @@ def calculateSystemProportion(dataSegmentYear, systemCodes, log):
                       "...Segment:" +str(dataSegmentYear.loc[index].D2_NUM)+
                       "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
                       "...Year:"  +str(dataSegmentYear.loc[index].YEA)+
-                      "...D7_SRI:"+str(systemAcc)+'\n')
+                      "...D7_SRI:"+str(polySyst)+'\n')
                         
     if totalArea != 0:
         values = systemAcc/totalArea
