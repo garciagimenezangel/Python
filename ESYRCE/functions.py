@@ -717,7 +717,7 @@ def calculateSegmentArea(segment):
     for index in segment.index:
         areaPolygon = segment.loc[index].Shape_Area
         totalArea = totalArea + areaPolygon
-    return totalArea*1e-4; # m^2 to hectares
+    return totalArea*1e-4 # m^2 to hectares
 
 
 """
@@ -735,8 +735,70 @@ def calculateSegmentAreaWithoutWater(segment, log):
             continue
         areaPolygon = segment.loc[index].Shape_Area
         totalArea = totalArea + areaPolygon
-    return totalArea*1e-4; # m^2 to hectares
+    return totalArea*1e-4 # m^2 to hectares
 
+
+"""
+INPUT: 
+    - a segment from ESYRCE data
+    - centroids of every segment
+    - segment id's of Euskadi (they need special treatment, because georeferencing is not reliable)
+OUTPUT: control points to get land cover type
+"""
+def getControlPoints(dataSegmentYear, centroidPts, log): 
+    segmControlPts = []
+    d1Hus = dataSegmentYear.iloc[0]['D1_HUS']
+    d2Num = dataSegmentYear.iloc[0]['D2_NUM']
+    try:
+        if (dataSegmentYear.iloc[0]['isEuskadi']):
+            # if Euskadi, compute centroid of the segment and build control points
+            dissolved = dataSegmentYear.dissolve(by='YEA')
+            centroid = dissolved.centroid
+        else:
+            # if not Euskadi, use already calculated coordinates of the centroid
+            ii = np.where( (centroidPts.D1_HUS == d1Hus) & (centroidPts.D2_NUM == d2Num) )
+            i0 = ii[0][0]
+            centroid = centroidPts.loc[[i0]]
+            
+        segmControlPts.append(centroid.translate(-100,100))
+        segmControlPts.append(centroid.translate(0   ,100))
+        segmControlPts.append(centroid.translate(100 ,100))
+        segmControlPts.append(centroid.translate(-100,0))
+        segmControlPts.append(centroid.translate(0,0))
+        segmControlPts.append(centroid.translate(100 ,0))
+        segmControlPts.append(centroid.translate(-100,-100))
+        segmControlPts.append(centroid.translate(0,-100))
+        segmControlPts.append(centroid.translate(100,-100))
+            
+    except:
+        log.write("Problems at getControlPoints(): "+str(d1Hus)+" "+str(d2Num)+'\n')
+
+    return segmControlPts
+
+
+"""
+INPUT: 
+    - a segment from ESYRCE data
+    - centroids of every segment
+    - segment id's of Euskadi (they need special treatment, because georeferencing is not reliable)
+OUTPUT: land cover at control points
+"""
+def calculateLandCoverControlPoints(dataSegmentYear, centroidPts, landCoverTypes_reverse, log): 
+    lcAtControlPts = np.repeat('                            ', 9)
+    segmControlPts = getControlPoints(dataSegmentYear, centroidPts, log)
+    if (len(segmControlPts) == 9):
+        try:
+            for i in range(0,9):
+                pt = segmControlPts[i].iloc[0]
+                for index in dataSegmentYear.index:
+                    poly = dataSegmentYear.loc[index].geometry
+                    if (poly.contains(pt)):
+                        lcAtControlPts[i] = landCoverTypes_reverse[dataSegmentYear.loc[index].D5_CUL[0:2]]
+                        break
+        except:
+            log.write("Problems at calculateLandCoverControlPoints(): "+str(dataSegmentYear.D1_HUS)+" "+str(dataSegmentYear.D2_NUM)+'\n')
+    return lcAtControlPts
+    
     
 """
 INPUT: directory and extension
@@ -773,6 +835,19 @@ def getAggregatedClass(dataRow, dictIsSeminatural, dictIsCrop):
         return "Exception"
     return aggClass
 
+
+"""
+INPUT: 
+OUTPUT: 
+"""
+def isEuskadiSegment(dataRow, EuskadiSegments):
+    try:
+        d1Hus = dataRow['D1_HUS']
+        d2Num = dataRow['D2_NUM']
+        return any(d2Num == EuskadiSegments['D2_NUM']) & (d1Hus == 30)
+    except:
+        return False
+    
 
 """
 INPUT: ESYRCE data row

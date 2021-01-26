@@ -1,14 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Dec 18 10:25:50 2020
-
-@author: angel
-"""
-
-
-# -*- coding: utf-8 -*-
 import csv
 import geopandas as gpd
+import pandas as pd
 import numpy as np
 from datetime import datetime
 from os.path import expanduser
@@ -36,6 +29,7 @@ OUTPUT: csv file with ESYRCE identificator (segment number + year) and the metri
 ## SETTINGS ##
 ##############
 # Metrics available
+getLandCoverControlPoints  = True  # Get Land Cover at control points, to register trajectories (e.g. maize->barley->spartizal->maize)
 getLandCoverProportion     = False # Percentage of the land cover types (see variable 'landCoverTypes' below)
 getSoilTechniqueProportion = False # Soil maintenance technique proportion (see variable 'soilCodes' below)
 getSowTechniqueProportion  = False # Sowing technique proportion (direct or traditional)
@@ -60,19 +54,23 @@ getEdgeDensDissolved       = False # Density of edges (total) dissolving by 'isC
 getEdgeDensitySeminatDiss  = False # Density of edges (seminatural) dissolving by 'isCropfield' and 'isSeminatural'
 getEdgeDensityCropDiss     = False # Density of edges (cropfields) dissolving by 'isCropfield' and 'isSeminatural'
 getEdgeDensityOtherDiss    = False # Density of edges (others) dissolving by 'isCropfield' and 'isSeminatural'
-getSystemProportion        = True  # Percentage of each crop system: dry, water scarce (normally irrigated but dry because of water scarcity), irrigation or greenhouse
+getSystemProportion        = False  # Percentage of each crop system: dry, water scarce (normally irrigated but dry because of water scarcity), irrigation or greenhouse
 
 # Final output
 finalFilename = "systemProportion"
 
 # Paths
-inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test2\\'
-outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test2\\'
+inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\Euskadi\\'
+EuskadiSegmentsCsv  = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\Euskadi\\D1HUS_D2NUM_flag012_Euskadi.csv'
+centroidPtsShp      = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\centroidPoints.shp'
+outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\Euskadi\\'
 logFile             = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\logs\\addMetrics.log'
 tableCultivarDemand = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\Cultivar-Demand.csv'
 tableIsCropSeminat  = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCropSeminatural.csv'
 functionsFolder     = home + '\\git\\Python\\ESYRCE\\'
 #inputESYRCE         = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/flagged/'
+#EuskadiSegments     = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/flagged/Euskadi/D1HUS_D2NUM_flag012_Euskadi.csv'
+#centroidPts         = home + /DATA/OBServ/ESYRCE/PROCESSED/z30/flagged/centroidPoints.shp'
 #outFolder           = home + '/DATA/OBServ/ESYRCE/PROCESSED/z30/metrics/'
 #logFile             = home + '/DATA/OBServ/ESYRCE/PROCESSED/logs/addMetrics.log'
 #tableCultivarDemand = home + '/lookup/Cultivar-Demand.csv'
@@ -273,7 +271,7 @@ systemCodes = {'dry': 'S',
 # Dictionary to associate codes with crop category
 with open(tableIsCropSeminat, mode='r', encoding='latin-1') as infile:
     reader     = csv.reader(infile)
-    dictIsCrop        = {rows[0]:rows[1] for rows in reader} # keys: esyrce codes; values: 'YES' or 'NO'
+    dictIsCrop = {rows[0]:rows[1] for rows in reader} # keys: esyrce codes; values: 'YES' or 'NO'
 
 # Dictionary to associate codes with seminatural category
 with open(tableIsCropSeminat, mode='r', encoding='latin-1') as infile:
@@ -286,97 +284,122 @@ with open(tableCultivarDemand, mode='r', encoding='latin-1') as infile:
     reader   = csv.reader(infile)       
     dictCultivarDemand = {rows[0]:rows[1] for rows in reader} # key: 'esyrce codes; value: demand estimation (see dictDemandValues defined at the beginning of this file)
 
+# Control points for land cover change
+if getLandCoverControlPoints:      
+    centroidPts = gpd.read_file(centroidPtsShp).drop_duplicates()
 
 ##################
 # Loop files
-file = glob.glob(inputESYRCE + "*.shp")[0]
+for file in glob.glob(inputESYRCE + "*.shp"):
     
- # OUTPUT
-filename = file.split(inputESYRCE)[1]
-filename = filename.split(".shp")[0]
-outFilename = outFolder+filename+".csv"
+    # OUTPUT
+    filename = file.split(inputESYRCE)[1]
+    filename = filename.split(".shp")[0]
+    outFilename = outFolder+filename+".csv"
 
-log.write("Processing file..."+filename+'\n')
+    log.write("Processing file..."+filename+'\n')
+    
+    # Read data
+    data = gpd.read_file(file)
+       
+    # Modify or create useful columns
+    data.Shape_Area = data.geometry.area
+    data.Shape_Leng = data.geometry.length
+    data['aggClass'] = [functions.getAggregatedClass(data.loc[i], dictIsSeminatural, dictIsCrop) for i in data.index]
+    data = data.loc[(data['aggClass'] != "Exception")]
+    EuskadiSegments = pd.read_csv(EuskadiSegmentsCsv).drop_duplicates().round(decimals=0).astype('int64')
+    data['D2_NUM']  = data['D2_NUM'].round(decimals=0).astype('int64')
+    data['isEuskadi'] = [functions.isEuskadiSegment(data.loc[i], EuskadiSegments) for i in data.index]
+    
+    # Select columns, remove duplicates (detected many times for 2019 data), sort and reset indices
+    data = data[['D1_HUS','D2_NUM','D3_PAR','D4_GRC','D5_CUL','D7_SRI','D9_RTO','DE_CS','YEA','Shape_Area','Shape_Leng','aggClass','isEuskadi','geometry']]
+    data = data.dropna(thresh=1)
+    data = data.loc[data['D1_HUS'] != 0]
+    data = data.loc[data['D2_NUM'] != 0]
+    data = data.groupby(['D1_HUS','D2_NUM','YEA','D3_PAR'], as_index=False).first() 
+    data.sort_values(by=['D1_HUS','D2_NUM','YEA'], inplace = True)
+    data.reset_index(drop=True, inplace=True)
+    data = gpd.GeoDataFrame(data, geometry=data.geometry)
 
-# Read data
-data = gpd.read_file(file)
-   
-# Modify or create useful columns
-data.Shape_Area = data.geometry.area
-data.Shape_Leng = data.geometry.length
-data['aggClass'] = [functions.getAggregatedClass(data.loc[i], dictIsSeminatural, dictIsCrop) for i in data.index]
-data = data.loc[(data['aggClass'] != "Exception")]
-
-# Select columns, remove duplicates (detected many times for 2019 data), sort and reset indices
-data = data[['D1_HUS','D2_NUM','D3_PAR','D4_GRC','D5_CUL','D7_SRI','D9_RTO','DE_CS','YEA','Shape_Area','Shape_Leng','aggClass','geometry']]
-data = data.dropna(thresh=1)
-data = data.where(data['D1_HUS'] != 0)
-data = data.where(data['D2_NUM'] != 0)
-data = data.groupby(['D1_HUS','D2_NUM','YEA','D3_PAR'], as_index=False).first() 
-data.sort_values(by=['D1_HUS','D2_NUM','YEA'], inplace = True)
-data.reset_index(drop=True, inplace=True)
-data = gpd.GeoDataFrame(data, geometry=data.geometry)
-
-# Init new columns with NaN data
-if getLandCoverProportion:     
-    for x in landCoverTypes.keys(): 
-        data['prop_'+x] = np.repeat(np.nan, len(data))
-if getCropYield:               
-    for x in landCoverTypes.keys():      
-        data['yield_'+x] = np.repeat(np.nan, len(data))
-        data['var_'+x]  = np.repeat(np.nan, len(data)) 
-if getSoilTechniqueProportion: 
-    for x in soilCodes.keys():      data[x] = np.repeat(np.nan, len(data))
-if getSowTechniqueProportion:  
-    for x in sowCodes.keys():       data[x] = np.repeat(np.nan, len(data))
-if getAvgFieldSize:                 data['avgFieldSize']       = np.repeat(np.nan, len(data))
-if getAvgSeminatSize:               data['avgSeminatSize']     = np.repeat(np.nan, len(data))
-if getAvgFieldSizeDiss:             data['avgFieldSizeDiss']   = np.repeat(np.nan, len(data))
-if getAvgSeminatSizeDiss:           data['avgSeminatSizeDiss'] = np.repeat(np.nan, len(data))
-if getHeterogeneity:                data['heterogeneity']      = np.repeat(np.nan, len(data))
-if getDemand:                       data['demand']             = np.repeat(np.nan, len(data))    
-if getSegmentArea:                  data['segArea']            = np.repeat(np.nan, len(data))
-if getSegmentAreaWithoutWater:      data['segAreaNoWater']     = np.repeat(np.nan, len(data))
-if getEdgeDensity:                  data['edgeDensity']        = np.repeat(np.nan, len(data))
-if getEdgeDensitySeminatural:       data['edgeDenSeminat']     = np.repeat(np.nan, len(data))
-if getEdgeDensityCropfields:        data['edgeDenFields']      = np.repeat(np.nan, len(data))
-if getEdgeDensityOther:             data['edgeDenOther']       = np.repeat(np.nan, len(data))
-if getEdgeDensDissolved:            data['edgeDensityDiss']    = np.repeat(np.nan, len(data))
-if getEdgeDensitySeminatDiss:       data['edgeDenSemiDiss']    = np.repeat(np.nan, len(data))
-if getEdgeDensityCropDiss:          data['edgeDenFielDiss']    = np.repeat(np.nan, len(data))
-if getEdgeDensityOtherDiss:         data['edgeDenOtherDiss']   = np.repeat(np.nan, len(data))
-if getSystemProportion:             
-    for x in systemCodes.keys():    data[x] = np.repeat(np.nan, len(data))
-
-##################
-# Loop zones
-zoneNrs = np.unique(data.D1_HUS)
-zoneNr = zoneNrs[0]
-# Select zone data 
-ii = np.where(data.D1_HUS == zoneNr) 
-i0 = ii[0][0]
-iM = ii[0][len(ii[0])-1]
-dataZoneNr = data[i0:(iM+1)]
-
-# Loop plot numbers
-segmentNrs = np.unique(dataZoneNr.D2_NUM)
-totalNr = len(segmentNrs) 
-contNr = 0
-segmentNr = segmentNrs[0]
+    # Init new columns with NaN data
+    if getLandCoverProportion:     
+        for x in landCoverTypes.keys(): 
+            data['prop_'+x] = np.repeat(np.nan, len(data))
+    if getCropYield:               
+        for x in landCoverTypes.keys():      
+            data['yield_'+x] = np.repeat(np.nan, len(data))
+            data['var_'+x]  = np.repeat(np.nan, len(data)) 
+    if getSoilTechniqueProportion: 
+        for x in soilCodes.keys():      data[x] = np.repeat(np.nan, len(data))
+    if getSowTechniqueProportion:  
+        for x in sowCodes.keys():       data[x] = np.repeat(np.nan, len(data))
+    if getSystemProportion:             
+        for x in systemCodes.keys():    data[x] = np.repeat(np.nan, len(data))
+    if getAvgSize:                      data['avgSize']            = np.repeat(np.nan, len(data))
+    if getAvgFieldSize:                 data['avgFieldSize']       = np.repeat(np.nan, len(data))
+    if getAvgSeminatSize:               data['avgSeminatSize']     = np.repeat(np.nan, len(data))
+    if getAvgOtherSize:                 data['avgOtherSize']       = np.repeat(np.nan, len(data))
+    if getAvgFieldSizeDiss:             data['avgFieldSizeDiss']   = np.repeat(np.nan, len(data))
+    if getAvgSizeDiss:                  data['avgSizeDiss']        = np.repeat(np.nan, len(data))
+    if getAvgSeminatSizeDiss:           data['avgSeminatSizeDiss'] = np.repeat(np.nan, len(data))
+    if getAvgOtherSizeDiss:             data['avgOtherSizeDiss']   = np.repeat(np.nan, len(data))
+    if getHeterogeneity:                data['heterogeneity']      = np.repeat(np.nan, len(data))
+    if getDemand:                       data['demand']             = np.repeat(np.nan, len(data))    
+    if getSegmentArea:                  data['segArea']            = np.repeat(np.nan, len(data))
+    if getSegmentAreaWithoutWater:      data['segAreaNoWater']     = np.repeat(np.nan, len(data))
+    if getEdgeDensity:                  data['edgeDensity']        = np.repeat(np.nan, len(data))
+    if getEdgeDensitySeminatural:       data['edgeDenSeminat']     = np.repeat(np.nan, len(data))
+    if getEdgeDensityCropfields:        data['edgeDenFields']      = np.repeat(np.nan, len(data))
+    if getEdgeDensityOther:             data['edgeDenOther']       = np.repeat(np.nan, len(data))
+    if getEdgeDensDissolved:            data['edgeDensityDiss']    = np.repeat(np.nan, len(data))
+    if getEdgeDensitySeminatDiss:       data['edgeDenSemiDiss']    = np.repeat(np.nan, len(data))
+    if getEdgeDensityCropDiss:          data['edgeDenFielDiss']    = np.repeat(np.nan, len(data))
+    if getEdgeDensityOtherDiss:         data['edgeDenOtherDiss']   = np.repeat(np.nan, len(data))
+    if getLandCoverControlPoints:      
+        data['lccp1'] = np.repeat(np.nan, len(data))
+        data['lccp2'] = np.repeat(np.nan, len(data))
+        data['lccp3'] = np.repeat(np.nan, len(data))
+        data['lccp4'] = np.repeat(np.nan, len(data))
+        data['lccp5'] = np.repeat(np.nan, len(data))
+        data['lccp6'] = np.repeat(np.nan, len(data))
+        data['lccp7'] = np.repeat(np.nan, len(data))
+        data['lccp8'] = np.repeat(np.nan, len(data))
+        data['lccp9'] = np.repeat(np.nan, len(data))
+    
+    ##################
+    # Loop zones
+    zoneNr = np.unique(data.D1_HUS)[0]
+    if zoneNr > 0:
+        # Select zone data 
+        ii = np.where(data.D1_HUS == zoneNr) 
+        i0 = ii[0][0]
+        iM = ii[0][len(ii[0])-1]
+        dataZoneNr = data[i0:(iM+1)]
+        if (iM-i0+1)!=len(ii[0]): # sanity check
+            log.write("Error... Exit loop in zone nr:"+str(zoneNr)+'\n') # sanity check
         
-# Get the rows corresponding to segmentNr. This is not the safest way (it doesn't work if the rows are not sorted out by number of segment, which seems not to be the case), 
-# but it is the fastest way. A sanity check is included to make sure that this way works reasonably well. If the "Error..." message is prompted too much times, then 
-# this way of getting the rows for the segmentNr must be replaced by the slow way (see filterDataByExtent.py as an example)
-ii = np.where(dataZoneNr.D2_NUM == segmentNr) 
-i0 = ii[0][0]
-iM = ii[0][len(ii[0])-1]
-dataSegmentNr = dataZoneNr[i0:(iM+1)]
-years = np.unique(dataSegmentNr.YEA)
-year = years[0]
-            
-# Get the rows corresponding to a particular year. As above-mentioned, not the safest way, but the fastest (to my knowledge), so a sanity check is needed.
-ii = np.where(dataSegmentNr.YEA == year)
-i0 = ii[0][0]
-iM = ii[0][len(ii[0])-1]
-dataSegmentYear = dataSegmentNr[i0:(iM+1)]
+        # Loop plot numbers
+        segmentNr = np.unique(dataZoneNr.D2_NUM)[0]
+        if segmentNr > 0:
+            # Get the rows corresponding to segmentNr. This is not the safest way (it doesn't work if the rows are not sorted out by number of segment, which seems not to be the case), 
+            # but it is the fastest way. A sanity check is included to make sure that this way works reasonably well. If the "Error..." message is prompted too much times, then 
+            # this way of getting the rows for the segmentNr must be replaced by the slow way (see filterDataByExtent.py as an example)
+            ii = np.where(dataZoneNr.D2_NUM == segmentNr) 
+            i0 = ii[0][0]
+            iM = ii[0][len(ii[0])-1]
+            dataSegmentNr = dataZoneNr[i0:(iM+1)]
+            if (iM-i0+1)!=len(ii[0]): # sanity check
+                log.write("Error... Exit loop in Segment nr:"+str(segmentNr)+'\n') # sanity check
+        
+            year = np.unique(dataSegmentNr.YEA)[0]
+            if year >0:
+                # Get the rows corresponding to a particular year. As above-mentioned, not the safest way, but the fastest (to my knowledge), so a sanity check is needed.
+                ii = np.where(dataSegmentNr.YEA == year)
+                i0 = ii[0][0]
+                iM = ii[0][len(ii[0])-1]
+                dataSegmentYear = dataSegmentNr[i0:(iM+1)]
+                if (iM-i0+1)!=len(ii[0]): # sanity check
+                    log.write("Error... Exit loop in Segment nr:"+ str(segmentNr)+ "...Year:"+str(year)+'\n')  
+                
+
 

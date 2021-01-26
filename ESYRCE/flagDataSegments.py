@@ -18,12 +18,14 @@ from os.path import expanduser
 home = expanduser("~")
 
 import sys
-sys.path.append(home + '/Python/ESYRCE/')
+sys.path.append(home + '\\git\\Python\\ESYRCE\\')
 import functions 
 
 # INPUT
-inputESYRCE_2001_2016 = home + '/DATA/OBServ/ESYRCE/Esyrce2001_2016.gdb'
-inputESYRCE_2017_2019 = home + '/DATA/OBServ/ESYRCE/Esyrce2017_2019/Z30.shp'
+inputESYRCE_2001_2016 = home + '\\DATA\\ESYRCE\\Esyrce2001_2016\\Esyrce2001_2016.gdb'
+inputESYRCE_2017_2019 = home + '\\DATA\\ESYRCE\\Esyrce2017_2019\\Z30.shp'
+#inputESYRCE_2001_2016 = home + '/DATA/OBServ/ESYRCE/Esyrce2001_2016.gdb'
+#inputESYRCE_2017_2019 = home + '/DATA/OBServ/ESYRCE/Esyrce2017_2019/Z30.shp'
 layer = 'z30'
 tol  = 10.0 # tolerance, in meters, to check whether the segments are aligned
 if layer == 'z28': crs = "EPSG:23028"
