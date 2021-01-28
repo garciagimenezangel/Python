@@ -791,34 +791,42 @@ def calculateLandCoverControlPoints(dataSegmentYear, centroidPts, landCoverTypes
           pt = segmControlPts[i].iloc[0]
           for index in dataSegmentYear.index:
               poly = dataSegmentYear.loc[index].geometry
-              if (poly.contains(pt)):
-                  if dataSegmentYear.loc[index].D5_CUL[0:2] in landCoverTypes_reverse:
-                      lcAtControlPts[i] = landCoverTypes_reverse[dataSegmentYear.loc[index].D5_CUL[0:2]]
-                      break                
-                  elif isWater(dataSegmentYear.loc[index]): 
-                      lcAtControlPts[i] = 'water'
-                      break
-                  else:
-                      # In cul code not present, look d4grc 
-                      if dataSegmentYear.loc[index].D4_GRC in landCoverTypes_reverse:
-                          lcAtControlPts[i] = landCoverTypes_reverse[dataSegmentYear.loc[index].D4_GRC]
+              try:
+                  if (poly.contains(pt)):
+                      if dataSegmentYear.loc[index].D5_CUL[0:2] in landCoverTypes_reverse:
+                          lcAtControlPts[i] = landCoverTypes_reverse[dataSegmentYear.loc[index].D5_CUL[0:2]]
+                          break                
+                      elif isWater(dataSegmentYear.loc[index]): 
+                          lcAtControlPts[i] = 'water'
                           break
-                      else:                        
-                          lcAtControlPts[i] = 'other'
-                          log.write("Warning: Could not find lc at calculateLandCoverControlPoints(). Set lc as: other. "+
-                                    "...Grc:"+str(dataSegmentYear.loc[index].D4_GRC)+
-                                    "...Cul:"+str(dataSegmentYear.loc[index].D5_CUL[0:2])+'\n')
-                          break
-                  if isWater(dataSegmentYear.loc[index]): 
-                      lcAtControlPts[i] = 'water'
-                  elif isOther(dataSegmentYear.loc[index]): 
-                      impCodes = np.array(['IM'])
-                      notAgriCodes = np.array(['NA'])
-                      d4_grc = dataSegmentYear.loc[index].D4_GRC
-                      if np.isin(d4_grc, impCodes):
-                          lcAtControlPts[i] = 'improductive'
-                      elif np.isin(d4_grc, notAgriCodes):
-                          lcAtControlPts[i] = 'notAgri'                          
+                      else:
+                          # In cul code not present, look d4grc 
+                          if dataSegmentYear.loc[index].D4_GRC in landCoverTypes_reverse:
+                              lcAtControlPts[i] = landCoverTypes_reverse[dataSegmentYear.loc[index].D4_GRC]
+                              break
+                          else:                        
+                              lcAtControlPts[i] = 'other'
+                              log.write("Warning: Could not find lc at calculateLandCoverControlPoints(). Set lc as: other. "+
+                                        "...Grc:"+str(dataSegmentYear.loc[index].D4_GRC)+
+                                        "...Cul:"+str(dataSegmentYear.loc[index].D5_CUL[0:2])+'\n')
+                              break
+                      if isWater(dataSegmentYear.loc[index]): 
+                          lcAtControlPts[i] = 'water'
+                      elif isOther(dataSegmentYear.loc[index]): 
+                          impCodes = np.array(['IM'])
+                          notAgriCodes = np.array(['NA'])
+                          d4_grc = dataSegmentYear.loc[index].D4_GRC
+                          if np.isin(d4_grc, impCodes):
+                              lcAtControlPts[i] = 'improductive'
+                          elif np.isin(d4_grc, notAgriCodes):
+                              lcAtControlPts[i] = 'notAgri'    
+              except:
+                  log.write("Warning: Exception at calculateLandCoverControlPoints(). LC not set. "+    
+                  "...zone:"+str(dataSegmentYear.loc[index].D1_HUS)+
+                  "...Segment:" +str(dataSegmentYear.loc[index].D2_NUM)+
+                  "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
+                  "...Year:"  +str(dataSegmentYear.loc[index].YEA)+'\n')
+                        
     return lcAtControlPts
     
     
