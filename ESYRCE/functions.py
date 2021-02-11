@@ -321,6 +321,45 @@ def calculateAvgFieldSize(dataSegmentYear, log):
     else:
         return 0
     
+    
+"""
+INPUT: a subset of ESYRCE data corresponding to a segment for a particular year 
+OUTPUT: average size of the crop fields dependent on pollinators (in hectares)
+"""
+def calculateAvgFieldSizePollDep(dataSegmentYear, log):
+    
+    # Iterate through the polygons in dataSegmentYear
+    accArea     = 0
+    nCropfields = 0
+    for index in dataSegmentYear.index:  
+        if isAggClassPollinatorDependent(dataSegmentYear.loc[index]):   
+            nCropfields = nCropfields + 1
+            accArea  = accArea + dataSegmentYear.loc[index].Shape_Area
+    
+    if nCropfields > 0:
+        return accArea * 1e-4 / nCropfields # convert m^2 into hectares
+    else:
+        return 0
+
+"""
+INPUT: a subset of ESYRCE data corresponding to a segment for a particular year 
+OUTPUT: average size of the crop fields not dependent on pollinators (in hectares)
+"""
+def calculateAvgFieldSizePollInd(dataSegmentYear, log):
+    
+    # Iterate through the polygons in dataSegmentYear
+    accArea     = 0
+    nCropfields = 0
+    for index in dataSegmentYear.index:  
+        if not isAggClassPollinatorDependent(dataSegmentYear.loc[index]):   
+            nCropfields = nCropfields + 1
+            accArea  = accArea + dataSegmentYear.loc[index].Shape_Area
+    
+    if nCropfields > 0:
+        return accArea * 1e-4 / nCropfields # convert m^2 into hectares
+    else:
+        return 0
+
 
 """
 INPUT: a subset of ESYRCE data corresponding to a segment for a particular year 
@@ -828,8 +867,8 @@ def calculateLandCoverControlPoints(dataSegmentYear, centroidPts, landCoverTypes
                   "...Year:"  +str(dataSegmentYear.loc[index].YEA)+'\n')
                         
     return lcAtControlPts
-    
-    
+
+
 """
 INPUT: directory and extension
 OUTPUT: list of files in the directory and subdirs (recursive) with that extension
@@ -839,6 +878,7 @@ def allFiles(root, ext):
     for x in glob.glob(root+'**\\*.'+ext, recursive=True):
         files.append(x)
     return files
+
 
 """
 INPUT: array of ESYRCE codes, and dictionaries to relate codes with seminatural and crop classes
@@ -867,6 +907,24 @@ def getAggregatedClass(dataRow, dictIsSeminatural, dictIsCrop):
 
 
 """
+INPUT: ESYRCE data row, dictCultivarDemand
+OUTPUT: boolean class-> true, false
+"""
+def isPollintorDependent(dataRow, dictCultivarDemand):
+    d5_cul    = dataRow.D5_CUL
+    isCrop    = dataRow.aggClass == "Crop" 
+    isPollDep = False
+    if isCrop:
+        try:
+            if (d5_cul[0:2] in dictCultivarDemand):
+               increase = dictCultivarDemand[d5_cul[0:2]]
+               isPollDep = dictDemandValues[increase] > 0 
+        except:
+            return "Exception"
+    return isPollDep
+
+
+"""
 INPUT: 
 OUTPUT: 
 """
@@ -877,8 +935,16 @@ def isEuskadiSegment(dataRow, EuskadiSegments):
         return any(d2Num == EuskadiSegments['D2_NUM']) & (d1Hus == 30)
     except:
         return False
-    
+ 
 
+"""
+INPUT: 
+OUTPUT: 
+"""
+def isAggClassPollinatorDependent(data):
+    return data.aggClassPollDep == "Crop True"
+    
+    
 """
 INPUT: ESYRCE data row
 OUTPUT: is water? yes or no

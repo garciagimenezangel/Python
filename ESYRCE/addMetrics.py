@@ -29,7 +29,7 @@ OUTPUT: csv file with ESYRCE identificator (segment number + year) and the metri
 ## SETTINGS ##
 ##############
 # Metrics available
-getLandCoverControlPoints  = True  # Get Land Cover at control points, to register trajectories (e.g. maize->barley->spartizal->maize)
+getLandCoverControlPoints  = False # Get Land Cover at control points, to register trajectories (e.g. maize->barley->spartizal->maize)
 getLandCoverProportion     = False # Percentage of the land cover types (see variable 'landCoverTypes' below)
 getSoilTechniqueProportion = False # Soil maintenance technique proportion (see variable 'soilCodes' below)
 getSowTechniqueProportion  = False # Sowing technique proportion (direct or traditional)
@@ -38,26 +38,31 @@ getAvgSize                 = False # Average size of the polygons (water ignored
 getAvgFieldSize            = False # Average size of the fields identified as crops 
 getAvgSeminatSize          = False # Average size of the fields identified as seminatural area 
 getAvgOtherSize            = False # Average size of the fields identified as other
-getAvgSizeDiss             = False # Average size of the polygons (water ignored) dissolving by group
-getAvgFieldSizeDiss        = False # Average size of the fields identified as crops dissolving by group
-getAvgSeminatSizeDiss      = False # Average size of the fields identified as seminatural area dissolving by group
-getAvgOtherSizeDiss        = False # Average size of the fields identified as other dissolving by group
+getAvgFieldSizePollDep     = True # Average size of the fields identified as crops dependent on pollinators
+getAvgFieldSizePollInd     = True # Average size of the fields identified as crops not dependent on pollinators
+getAvgSizeDiss             = True # Average size of the polygons (water ignored) dissolving by group
+getAvgFieldSizeDiss        = True # Average size of the fields identified as crops dissolving by group
+getAvgSeminatSizeDiss      = True # Average size of the fields identified as seminatural area dissolving by group
+getAvgOtherSizeDiss        = True # Average size of the fields identified as other dissolving by group
+getAvgFieldSizePollDepDiss = True # Average size of the fields identified as crops dependent on pollinators dissolving by group
+getAvgFieldSizePollIndDiss = True # Average size of the fields identified as crops not dependent on pollinators dissolving by group
 getHeterogeneity           = False # Heterogeneity, as number of crop types per unit area
-getDemand                  = False # Average demand, weighted by the area of the polygons 
+getDemand                  = True # Average demand, weighted by the area of the polygons 
 getSegmentArea             = False # Total area of the segments
 getSegmentAreaWithoutWater = False # Area of the segments, ignoring water 
 getEdgeDensity             = False # Density of edges (length/area)
 getEdgeDensitySeminatural  = False # Density of edges from seminatural area (length/area)
-getEdgeDensityCropfields   = False # Density of edges from crop fields (length/area)
+getEdgeDensityCropfields   = True  # Density of edges from crop fields (length/area)
 getEdgeDensityOther        = False # Density of edges from other landcover types (length/area)
-getEdgeDensDissolved       = False # Density of edges (total) dissolving by 'isCropfield' and 'isSeminatural'
-getEdgeDensitySeminatDiss  = False # Density of edges (seminatural) dissolving by 'isCropfield' and 'isSeminatural'
-getEdgeDensityCropDiss     = False # Density of edges (cropfields) dissolving by 'isCropfield' and 'isSeminatural'
-getEdgeDensityOtherDiss    = False # Density of edges (others) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensDissolved       = True # Density of edges (total) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensitySeminatDiss  = True # Density of edges (seminatural) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensityCropDiss     = True # Density of edges (cropfields) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensityOtherDiss    = True # Density of edges (others) dissolving by 'isCropfield' and 'isSeminatural'
 getSystemProportion        = False  # Percentage of each crop system: dry, water scarce (normally irrigated but dry because of water scarcity), irrigation or greenhouse
+getFallowYears             = True
 
 # Final output
-finalFilename = "landCoverTransitions"
+finalFilename = "newMetrics_2021-02"
 
 # Paths
 #inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test3\\'
@@ -314,9 +319,11 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     EuskadiSegments = pd.read_csv(EuskadiSegmentsCsv).drop_duplicates().round(decimals=0).astype('int64')
     data['D2_NUM']  = data['D2_NUM'].round(decimals=0).astype('int64')
     data['isEuskadi'] = [functions.isEuskadiSegment(data.loc[i], EuskadiSegments) for i in data.index]
+    data['isPollDep'] = [functions.isPollintorDependent(data.loc[i], dictCultivarDemand) for i in data.index]
+    data['aggClassPollDep'] = data['aggClass'] +' '+ data['isPollDep'].astype(str)
     
     # Select columns, remove duplicates (detected many times for 2019 data), sort and reset indices
-    data = data[['D1_HUS','D2_NUM','D3_PAR','D4_GRC','D5_CUL','D7_SRI','D9_RTO','DE_CS','YEA','Shape_Area','Shape_Leng','aggClass','isEuskadi','geometry']]
+    data = data[['D1_HUS','D2_NUM','D3_PAR','D4_GRC','D5_CUL','D7_SRI','D9_RTO','DE_CS','YEA','Shape_Area','Shape_Leng','aggClass','isEuskadi','aggClassPollDep','geometry']]
     data = data.dropna(thresh=1)
     data = data.loc[data['D1_HUS'] != 0]
     data = data.loc[data['D2_NUM'] != 0]
@@ -343,7 +350,11 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     if getAvgFieldSize:                 data['avgFieldSize']       = np.repeat(np.nan, len(data))
     if getAvgSeminatSize:               data['avgSeminatSize']     = np.repeat(np.nan, len(data))
     if getAvgOtherSize:                 data['avgOtherSize']       = np.repeat(np.nan, len(data))
+    if getAvgFieldSizePollDep:          data['avgFieldSizePollDep']= np.repeat(np.nan, len(data))
+    if getAvgFieldSizePollInd:          data['avgFieldSizePollInd']= np.repeat(np.nan, len(data))
     if getAvgFieldSizeDiss:             data['avgFieldSizeDiss']   = np.repeat(np.nan, len(data))
+    if getAvgFieldSizePollDepDiss:      data['avgFieldSizePollDepDiss'] = np.repeat(np.nan, len(data))
+    if getAvgFieldSizePollIndDiss:      data['avgFieldSizePollIndDiss'] = np.repeat(np.nan, len(data))
     if getAvgSizeDiss:                  data['avgSizeDiss']        = np.repeat(np.nan, len(data))
     if getAvgSeminatSizeDiss:           data['avgSeminatSizeDiss'] = np.repeat(np.nan, len(data))
     if getAvgOtherSizeDiss:             data['avgOtherSizeDiss']   = np.repeat(np.nan, len(data))
@@ -421,6 +432,15 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                     dataSegmYearDiss.sort_values(by=['D1_HUS','D2_NUM','YEA'], inplace = True)
                     dataSegmYearDiss.reset_index(drop=True, inplace=True)
                     
+                # Get dissolved segment if necessary
+                if getAvgFieldSizePollDepDiss or getAvgFieldSizePollIndDiss:
+                    dataSegmYearDissPollDep = dataSegmentYear.dissolve(by=['aggClassPollDep'])
+                    dataSegmYearDissPollDep['aggClassPollDep'] = np.array(dataSegmYearDissPollDep.index)
+                    dataSegmYearDissPollDep.Shape_Area = dataSegmYearDissPollDep.geometry.area
+                    dataSegmYearDissPollDep.Shape_Leng = dataSegmYearDissPollDep.geometry.length
+                    dataSegmYearDissPollDep.sort_values(by=['D1_HUS','D2_NUM','YEA'], inplace = True)
+                    dataSegmYearDissPollDep.reset_index(drop=True, inplace=True)
+                    
                 # Calculate metrics and assign values in 'data'
                 if getLandCoverProportion:     
                     landCoverProportion = functions.calculateLandCoverProportion(dataSegmentYear, landCoverTypes, log)
@@ -445,6 +465,12 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                 if getAvgFieldSize:                 
                     avgFieldSize        = functions.calculateAvgFieldSize(dataSegmentYear, log)
                     data.loc[dataSegmentYear.index, 'avgFieldSize'] = np.repeat(avgFieldSize, len(dataSegmentYear))
+                if getAvgFieldSizePollDep:                 
+                    avgFieldSizePollDep = functions.calculateAvgFieldSizePollDep(dataSegmentYear, log)
+                    data.loc[dataSegmentYear.index, 'avgFieldSizePollDep'] = np.repeat(avgFieldSizePollDep, len(dataSegmentYear))
+                if getAvgFieldSizePollInd:                 
+                    avgFieldSizePollInd = functions.calculateAvgFieldSizePollInd(dataSegmentYear, log)
+                    data.loc[dataSegmentYear.index, 'avgFieldSizePollInd'] = np.repeat(avgFieldSizePollInd, len(dataSegmentYear))
                 if getAvgSeminatSize:               
                     avgSeminatSize      = functions.calculateAvgSeminaturalSize(dataSegmentYear, log)
                     data.loc[dataSegmentYear.index, 'avgSeminatSize'] = np.repeat(avgSeminatSize, len(dataSegmentYear))                
@@ -457,6 +483,12 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                 if getAvgFieldSizeDiss:                 
                     avgFieldSizeDiss    = functions.calculateAvgFieldSize(dataSegmYearDiss, log)
                     data.loc[dataSegmentYear.index, 'avgFieldSizeDiss'] = np.repeat(avgFieldSizeDiss, len(dataSegmentYear))
+                if getAvgFieldSizePollDepDiss:                 
+                    avgFieldSizePollDepDiss = functions.calculateAvgFieldSizePollDep(dataSegmYearDissPollDep, log)
+                    data.loc[dataSegmentYear.index, 'avgFieldSizePollDepDiss'] = np.repeat(avgFieldSizePollDepDiss, len(dataSegmentYear))
+                if getAvgFieldSizePollIndDiss:                 
+                    avgFieldSizePollIndDiss = functions.calculateAvgFieldSizePollInd(dataSegmYearDissPollDep, log)
+                    data.loc[dataSegmentYear.index, 'avgFieldSizePollIndDiss'] = np.repeat(avgFieldSizePollIndDiss, len(dataSegmentYear))
                 if getAvgSeminatSizeDiss:               
                     avgSeminatSizeDiss  = functions.calculateAvgSeminaturalSize(dataSegmYearDiss, log)
                     data.loc[dataSegmentYear.index, 'avgSeminatSizeDiss'] = np.repeat(avgSeminatSizeDiss, len(dataSegmentYear))                    
@@ -519,7 +551,7 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                 log.write("Processing File..."+filename+" Data Zone..."+str(int(zoneNr))+" Percentage completed..."+str(np.floor(times*100))+'\n')
 
     # Group by number of the segment and year, drop not useful columns, and save to csv
-    data = data.drop(columns=['D3_PAR','D4_GRC','D5_CUL','D7_SRI','D9_RTO','DE_CS','Shape_Area','Shape_Leng','aggClass','isEuskadi','geometry'])
+    data = data.drop(columns=['D3_PAR','D4_GRC','D5_CUL','D7_SRI','D9_RTO','DE_CS','Shape_Area','Shape_Leng','aggClass','isEuskadi','aggClassPollDep','geometry'])
     data = data.groupby(['D1_HUS','D2_NUM','YEA']).first().reset_index()
     log.write("Now: " + datetime.now().strftime("%d/%m/%Y %H:%M:%S")+'\n')
     log.write("Writing file..."+outFilename+'\n')

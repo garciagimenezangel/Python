@@ -42,9 +42,9 @@ log.write("PROCESS flagDataSegments.py STARTED AT: " + datetime.now().strftime("
 data2001_20016 = gpd.read_file(inputESYRCE_2001_2016, layer=layer)
 data2017_20019 = gpd.read_file(inputESYRCE_2017_2019)
 data = pd.concat([data2001_20016, data2017_20019], ignore_index=True)
-data = data.dropna(thresh=1)
 data = data.where(data['D1_HUS'] != 0)
 data = data.where(data['D2_NUM'] != 0)
+data = data.dropna(thresh=1)
 data.sort_values(by=['D1_HUS','D2_NUM','YEA'], inplace = True)
 data.reset_index(drop=True, inplace=True)
 
