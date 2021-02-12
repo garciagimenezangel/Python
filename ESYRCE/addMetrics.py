@@ -38,35 +38,35 @@ getAvgSize                 = False # Average size of the polygons (water ignored
 getAvgFieldSize            = False # Average size of the fields identified as crops 
 getAvgSeminatSize          = False # Average size of the fields identified as seminatural area 
 getAvgOtherSize            = False # Average size of the fields identified as other
-getAvgFieldSizePollDep     = True # Average size of the fields identified as crops dependent on pollinators
-getAvgFieldSizePollInd     = True # Average size of the fields identified as crops not dependent on pollinators
-getAvgSizeDiss             = True # Average size of the polygons (water ignored) dissolving by group
-getAvgFieldSizeDiss        = True # Average size of the fields identified as crops dissolving by group
-getAvgSeminatSizeDiss      = True # Average size of the fields identified as seminatural area dissolving by group
-getAvgOtherSizeDiss        = True # Average size of the fields identified as other dissolving by group
-getAvgFieldSizePollDepDiss = True # Average size of the fields identified as crops dependent on pollinators dissolving by group
-getAvgFieldSizePollIndDiss = True # Average size of the fields identified as crops not dependent on pollinators dissolving by group
+getAvgFieldSizePollDep     = False # Average size of the fields identified as crops dependent on pollinators
+getAvgFieldSizePollInd     = False # Average size of the fields identified as crops not dependent on pollinators
+getAvgSizeDiss             = False # Average size of the polygons (water ignored) dissolving by group
+getAvgFieldSizeDiss        = False # Average size of the fields identified as crops dissolving by group
+getAvgSeminatSizeDiss      = False # Average size of the fields identified as seminatural area dissolving by group
+getAvgOtherSizeDiss        = False # Average size of the fields identified as other dissolving by group
+getAvgFieldSizePollDepDiss = False # Average size of the fields identified as crops dependent on pollinators dissolving by group
+getAvgFieldSizePollIndDiss = False # Average size of the fields identified as crops not dependent on pollinators dissolving by group
 getHeterogeneity           = False # Heterogeneity, as number of crop types per unit area
-getDemand                  = True # Average demand, weighted by the area of the polygons 
+getDemand                  = False # Average demand, weighted by the area of the polygons 
 getSegmentArea             = False # Total area of the segments
 getSegmentAreaWithoutWater = False # Area of the segments, ignoring water 
 getEdgeDensity             = False # Density of edges (length/area)
 getEdgeDensitySeminatural  = False # Density of edges from seminatural area (length/area)
-getEdgeDensityCropfields   = True  # Density of edges from crop fields (length/area)
+getEdgeDensityCropfields   = False  # Density of edges from crop fields (length/area)
 getEdgeDensityOther        = False # Density of edges from other landcover types (length/area)
-getEdgeDensDissolved       = True # Density of edges (total) dissolving by 'isCropfield' and 'isSeminatural'
-getEdgeDensitySeminatDiss  = True # Density of edges (seminatural) dissolving by 'isCropfield' and 'isSeminatural'
-getEdgeDensityCropDiss     = True # Density of edges (cropfields) dissolving by 'isCropfield' and 'isSeminatural'
-getEdgeDensityOtherDiss    = True # Density of edges (others) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensDissolved       = False # Density of edges (total) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensitySeminatDiss  = False # Density of edges (seminatural) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensityCropDiss     = False # Density of edges (cropfields) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensityOtherDiss    = False # Density of edges (others) dissolving by 'isCropfield' and 'isSeminatural'
 getSystemProportion        = False  # Percentage of each crop system: dry, water scarce (normally irrigated but dry because of water scarcity), irrigation or greenhouse
-getFallowYears             = True
+getAvgSizeLCType           = True  # Average size of the every land cover in landCoverTypes
 
 # Final output
-finalFilename = "newMetrics_2021-02"
+finalFilename = "avgSizeLCType_2021-02"
 
 # Paths
-#inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test3\\'
-#outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test3\\'
+#inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test2\\'
+#outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test2\\'
 #logFile             = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\logs\\addMetrics.log'
 #EuskadiSegmentsCsv  = home + '\\DATA\\ESYRCE\\landCoverChange\\D1HUS_D2NUM_flag012_Euskadi.csv'
 #centroidPtsShp      = home + '\\DATA\\ESYRCE\\landCoverChange\\centroids_HUS_NUM.shp'
@@ -336,6 +336,9 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     if getLandCoverProportion:     
         for x in landCoverTypes.keys(): 
             data['prop_'+x] = np.repeat(np.nan, len(data))
+    if getAvgSizeLCType:     
+        for x in landCoverTypes.keys(): 
+            data['avgSize_'+x] = np.repeat(np.nan, len(data))
     if getCropYield:               
         for x in landCoverTypes.keys():      
             data['yield_'+x] = np.repeat(np.nan, len(data))
@@ -445,6 +448,9 @@ for file in glob.glob(inputESYRCE + "*.shp"):
                 if getLandCoverProportion:     
                     landCoverProportion = functions.calculateLandCoverProportion(dataSegmentYear, landCoverTypes, log)
                     for x in landCoverTypes.keys(): data.loc[dataSegmentYear.index, 'prop_'+x] = np.repeat(landCoverProportion[x], len(dataSegmentYear)) 
+                if getAvgSizeLCType:     
+                    avgSizeLCType = functions.calculateAvgSizeLCType(dataSegmentYear, landCoverTypes, log)
+                    for x in landCoverTypes.keys(): data.loc[dataSegmentYear.index, 'avgSize_'+x] = np.repeat(avgSizeLCType[x], len(dataSegmentYear))
                 if getCropYield:               
                     cropYield           = functions.calculateCropYield(dataSegmentYear, landCoverTypes, log)
                     varYield            = functions.calculateVarianceYield(dataSegmentYear, landCoverTypes, cropYield, log)

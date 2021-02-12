@@ -321,6 +321,68 @@ def calculateAvgFieldSize(dataSegmentYear, log):
     else:
         return 0
     
+
+"""
+INPUT: a subset of ESYRCE data corresponding to a segment for a particular year + land cover type to 
+OUTPUT: average size of the crop fields (in hectares)
+"""
+def calculateAvgSizeLCType(dataSegmentYear, landCoverTypes, log):
+    # Read codes from dictionary landCoverTypes
+    keys     = list(landCoverTypes.keys())
+    lcCul    = list(landCoverTypes.values())
+    lcGrc    = list(['IM','NA'])    
+    
+    # Initialize variables to store accumulated area values 
+    lcAcc  = np.zeros(len(lcCul)) # accumulated area of each land cover type
+    nPolys = np.zeros(len(lcCul)) # number of polygons of each land cover type
+        
+    # Iterate through the polygons in dataSegmentYear
+    for index in dataSegmentYear.index:
+        # Ignore water codes
+        try:
+            if isWater(dataSegmentYear.loc[index]): continue    
+        except Exception as e:
+            log.write(str(e))
+            continue   
+        
+        # area of the polygon
+        areaPolygon = dataSegmentYear.loc[index].Shape_Area
+        
+        # First, see if D4_GRC correspond to IM or NA. If not, then use D5_CUL
+        polyGrc = dataSegmentYear.loc[index].D4_GRC
+        if polyGrc in lcGrc:
+            if polyGrc in lcCul:
+                ind = lcCul.index(polyGrc)
+                lcAcc[ind] = lcAcc[ind] + areaPolygon
+                nPolys[ind] = nPolys[ind] + 1
+        # If not found with D4_GRC, use 2 first characteres of D5_CUL 
+        else: 
+            try:
+                polyCul = dataSegmentYear.loc[index].D5_CUL[0:2]
+            except:
+                log.write("Problem with land cover codes:"+str(dataSegmentYear.loc[index].D2_NUM)+
+                      "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
+                      "...Year:"+str(dataSegmentYear.loc[index].YEA)+'\n')
+                continue            
+            
+            if polyCul in lcCul:
+                ind = lcCul.index(polyCul)
+                lcAcc[ind] = lcAcc[ind] + areaPolygon
+                nPolys[ind] = nPolys[ind] + 1
+            else: 
+                log.write("Warning: Index not found in calculateLandCoverPercentages. Parcel IGNORED"+
+                  "...Segment:" +str(dataSegmentYear.loc[index].D2_NUM)+
+                  "...Parcel:"+str(dataSegmentYear.loc[index].D3_PAR)+
+                  "...Year:"  +str(dataSegmentYear.loc[index].YEA)+
+                  "...D5_CUL:"+str(polyCul)+'\n')          
+                      
+    validInd = [nPolys>0]
+    values = np.zeros(len(nPolys))
+    values[validInd] = lcAcc[validInd]*1e-4/nPolys[validInd] #avg area in hectares
+        
+    # Output dictionary. Key: land cover type; value: avg size of the polygons of that lc type
+    return dict((keys[ind], values[ind]) for ind in range(0,len(keys)))  
+    
     
 """
 INPUT: a subset of ESYRCE data corresponding to a segment for a particular year 
