@@ -29,44 +29,76 @@ OUTPUT: csv file with ESYRCE identificator (segment number + year) and the metri
 ## SETTINGS ##
 ##############
 # Metrics available
+#getLandCoverControlPoints  = False # Get Land Cover at control points, to register trajectories (e.g. maize->barley->spartizal->maize)
+#getLandCoverProportion     = False # Percentage of the land cover types (see variable 'landCoverTypes' below)
+#getSoilTechniqueProportion = False # Soil maintenance technique proportion (see variable 'soilCodes' below)
+#getSowTechniqueProportion  = False # Sowing technique proportion (direct or traditional)
+#getCropYield               = False # Average and variance of the yield of each crop within the segments (see variable 'cropCodes' below) 
+#getAvgSize                 = False # Average size of the polygons (water ignored)
+#getAvgFieldSize            = True # Average size of the fields identified as crops 
+#getAvgSeminatSize          = False # Average size of the fields identified as seminatural area 
+#getAvgOtherSize            = False # Average size of the fields identified as other
+#getAvgFieldSizePollDep     = True # Average size of the fields identified as crops dependent on pollinators
+#getAvgFieldSizePollInd     = True # Average size of the fields identified as crops not dependent on pollinators
+#getAvgSizeDiss             = True # Average size of the polygons (water ignored) dissolving by group
+#getAvgFieldSizeDiss        = True # Average size of the fields identified as crops dissolving by group
+#getAvgSeminatSizeDiss      = True # Average size of the fields identified as seminatural area dissolving by group
+#getAvgOtherSizeDiss        = True # Average size of the fields identified as other dissolving by group
+#getAvgFieldSizePollDepDiss = True # Average size of the fields identified as crops dependent on pollinators dissolving by group
+#getAvgFieldSizePollIndDiss = True # Average size of the fields identified as crops not dependent on pollinators dissolving by group
+#getHeterogeneity           = False # Heterogeneity, as number of crop types per unit area
+#getDemand                  = True # Average demand, weighted by the area of the polygons 
+#getSegmentArea             = False # Total area of the segment
+#getSegmentAreaWithoutWater = False # Area of the segment, ignoring water 
+#getEdgeDensity             = False # Density of edges (length/area)
+#getEdgeDensitySeminatural  = False # Density of edges from seminatural area (length/area)
+#getEdgeDensityCropfields   = True  # Density of edges from crop fields (length/area)
+#getEdgeDensityOther        = False # Density of edges from other landcover types (length/area)
+#getEdgeDensDissolved       = True # Density of edges (total) dissolving by 'isCropfield' and 'isSeminatural'
+#getEdgeDensitySeminatDiss  = True # Density of edges (seminatural) dissolving by 'isCropfield' and 'isSeminatural'
+#getEdgeDensityCropDiss     = True # Density of edges (cropfields) dissolving by 'isCropfield' and 'isSeminatural'
+#getEdgeDensityOtherDiss    = True # Density of edges (others) dissolving by 'isCropfield' and 'isSeminatural'
+#getSystemProportion        = False  # Percentage of each crop system: dry, water scarce (normally irrigated but dry because of water scarcity), irrigation or greenhouse
+#getAvgSizeLCType           = False  # Average size of the every land cover in landCoverTypes
 getLandCoverControlPoints  = False # Get Land Cover at control points, to register trajectories (e.g. maize->barley->spartizal->maize)
 getLandCoverProportion     = False # Percentage of the land cover types (see variable 'landCoverTypes' below)
 getSoilTechniqueProportion = False # Soil maintenance technique proportion (see variable 'soilCodes' below)
 getSowTechniqueProportion  = False # Sowing technique proportion (direct or traditional)
 getCropYield               = False # Average and variance of the yield of each crop within the segments (see variable 'cropCodes' below) 
 getAvgSize                 = False # Average size of the polygons (water ignored)
-getAvgFieldSize            = False # Average size of the fields identified as crops 
+getAvgFieldSize            = True # Average size of the fields identified as crops 
 getAvgSeminatSize          = False # Average size of the fields identified as seminatural area 
 getAvgOtherSize            = False # Average size of the fields identified as other
 getAvgFieldSizePollDep     = False # Average size of the fields identified as crops dependent on pollinators
 getAvgFieldSizePollInd     = False # Average size of the fields identified as crops not dependent on pollinators
-getAvgSizeDiss             = False # Average size of the polygons (water ignored) dissolving by group
-getAvgFieldSizeDiss        = False # Average size of the fields identified as crops dissolving by group
-getAvgSeminatSizeDiss      = False # Average size of the fields identified as seminatural area dissolving by group
-getAvgOtherSizeDiss        = False # Average size of the fields identified as other dissolving by group
-getAvgFieldSizePollDepDiss = False # Average size of the fields identified as crops dependent on pollinators dissolving by group
-getAvgFieldSizePollIndDiss = False # Average size of the fields identified as crops not dependent on pollinators dissolving by group
+getAvgSizeDiss             = True # Average size of the polygons (water ignored) dissolving by group
+getAvgFieldSizeDiss        = True # Average size of the fields identified as crops dissolving by group
+getAvgSeminatSizeDiss      = True # Average size of the fields identified as seminatural area dissolving by group
+getAvgOtherSizeDiss        = True # Average size of the fields identified as other dissolving by group
+getAvgFieldSizePollDepDiss = True # Average size of the fields identified as crops dependent on pollinators dissolving by group
+getAvgFieldSizePollIndDiss = True # Average size of the fields identified as crops not dependent on pollinators dissolving by group
 getHeterogeneity           = False # Heterogeneity, as number of crop types per unit area
-getDemand                  = False # Average demand, weighted by the area of the polygons 
-getSegmentArea             = False # Total area of the segments
-getSegmentAreaWithoutWater = False # Area of the segments, ignoring water 
+getDemand                  = True # Average demand, weighted by the area of the polygons 
+getSegmentArea             = False # Total area of the segment
+getSegmentAreaWithoutWater = False # Area of the segment, ignoring water 
 getEdgeDensity             = False # Density of edges (length/area)
 getEdgeDensitySeminatural  = False # Density of edges from seminatural area (length/area)
-getEdgeDensityCropfields   = False  # Density of edges from crop fields (length/area)
+getEdgeDensityCropfields   = True  # Density of edges from crop fields (length/area)
 getEdgeDensityOther        = False # Density of edges from other landcover types (length/area)
-getEdgeDensDissolved       = False # Density of edges (total) dissolving by 'isCropfield' and 'isSeminatural'
-getEdgeDensitySeminatDiss  = False # Density of edges (seminatural) dissolving by 'isCropfield' and 'isSeminatural'
-getEdgeDensityCropDiss     = False # Density of edges (cropfields) dissolving by 'isCropfield' and 'isSeminatural'
-getEdgeDensityOtherDiss    = False # Density of edges (others) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensDissolved       = True # Density of edges (total) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensitySeminatDiss  = True # Density of edges (seminatural) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensityCropDiss     = True # Density of edges (cropfields) dissolving by 'isCropfield' and 'isSeminatural'
+getEdgeDensityOtherDiss    = True # Density of edges (others) dissolving by 'isCropfield' and 'isSeminatural'
 getSystemProportion        = False  # Percentage of each crop system: dry, water scarce (normally irrigated but dry because of water scarcity), irrigation or greenhouse
-getAvgSizeLCType           = True  # Average size of the every land cover in landCoverTypes
+getAvgSizeLCType           = False  # Average size of the every land cover in landCoverTypes
 
 # Final output
-finalFilename = "avgSizeLCType_2021-02"
+finalFilename = "newMetrics_2021-02"
 
 # Paths
-#inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\test2\\'
-#outFolder           = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\test2\\'
+#inputESYRCE         = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\flagged\\all\\'
+#outAuxFolder        = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\all\\'
+#outFinalFolder      = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\z30\\metrics\\all\\'
 #logFile             = home + '\\DATA\\ESYRCE\\PROCESSED - local testing\\logs\\addMetrics.log'
 #EuskadiSegmentsCsv  = home + '\\DATA\\ESYRCE\\landCoverChange\\D1HUS_D2NUM_flag012_Euskadi.csv'
 #centroidPtsShp      = home + '\\DATA\\ESYRCE\\landCoverChange\\centroids_HUS_NUM.shp'
@@ -74,7 +106,8 @@ finalFilename = "avgSizeLCType_2021-02"
 #tableIsCropSeminat  = 'G:\\My Drive\\PROJECTS\\OBSERV\\Lookup Tables\\ESYRCE\\isCropSeminatural.csv'
 #functionsFolder     = home + '\\git\\Python\\ESYRCE\\'
 inputESYRCE         = home + '/DATA/ESYRCE/PROCESSED/z30/flagged/'
-outFolder           = home + '/DATA/ESYRCE/PROCESSED/z30/metrics/'
+outAuxFolder        = home + '/DATA/ESYRCE/PROCESSED/z30/metrics/auxfiles/'
+outFinalFolder      = home + '/DATA/ESYRCE/PROCESSED/z30/metrics/final/'
 logFile             = home + '/DATA/ESYRCE/PROCESSED/logs/addMetrics.log'
 EuskadiSegmentsCsv  = home + '/DATA/ESYRCE/landCoverChange/D1HUS_D2NUM_flag012_Euskadi.csv'
 centroidPtsShp      = home + '/DATA/ESYRCE/landCoverChange/centroids_HUS_NUM.shp'
@@ -304,7 +337,7 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     # OUTPUT
     filename = file.split(inputESYRCE)[1]
     filename = filename.split(".shp")[0]
-    outFilename = outFolder+filename+".csv"
+    outFilename = outAuxFolder+filename+".csv"
 
     log.write("Processing file..."+filename+'\n')
     
@@ -314,13 +347,13 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     # Modify or create useful columns
     data.Shape_Area = data.geometry.area
     data.Shape_Leng = data.geometry.length
-    data['aggClass'] = [functions.getAggregatedClass(data.loc[i], dictIsSeminatural, dictIsCrop) for i in data.index]
+    data['aggClass'] = [functions.getAggregatedClass(data.loc[i], dictIsSeminatural, dictIsCrop, log) for i in data.index]
     data = data.loc[(data['aggClass'] != "Exception")]
     EuskadiSegments = pd.read_csv(EuskadiSegmentsCsv).drop_duplicates().round(decimals=0).astype('int64')
     data['D2_NUM']  = data['D2_NUM'].round(decimals=0).astype('int64')
     data['isEuskadi'] = [functions.isEuskadiSegment(data.loc[i], EuskadiSegments) for i in data.index]
     data['isPollDep'] = [functions.isPollintorDependent(data.loc[i], dictCultivarDemand) for i in data.index]
-    data['aggClassPollDep'] = data['aggClass'] +' '+ data['isPollDep'].astype(str)
+    data['aggClassPollDep'] = data['aggClass'] + data['isPollDep'].astype(str)
     
     # Select columns, remove duplicates (detected many times for 2019 data), sort and reset indices
     data = data[['D1_HUS','D2_NUM','D3_PAR','D4_GRC','D5_CUL','D7_SRI','D9_RTO','DE_CS','YEA','Shape_Area','Shape_Leng','aggClass','isEuskadi','aggClassPollDep','geometry']]
@@ -565,8 +598,8 @@ for file in glob.glob(inputESYRCE + "*.shp"):
     log.write("Data saved... " + outFilename+'\n')
 
 # Merge csv's
-outFilename  = outFolder+finalFilename+".csv"
-csvs         = [i for i in glob.glob(outFolder + "*.csv")]
+outFilename  = outFinalFolder+finalFilename+".csv"
+csvs         = [i for i in glob.glob(outAuxFolder + "*.csv")]
 combined_csv = pd.concat([pd.read_csv(f) for f in csvs ])
 combined_csv.to_csv( outFilename, index=False)
 log.write("Data saved... " + outFilename+'\n')

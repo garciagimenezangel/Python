@@ -946,7 +946,7 @@ def allFiles(root, ext):
 INPUT: array of ESYRCE codes, and dictionaries to relate codes with seminatural and crop classes
 OUTPUT: aggregation class-> crop, seminatural, water or other (plus exception)
 """
-def getAggregatedClass(dataRow, dictIsSeminatural, dictIsCrop):
+def getAggregatedClass(dataRow, dictIsSeminatural, dictIsCrop, log):
     waterCodes = np.array(['AG','MO'])
     d4_grc     = dataRow.D4_GRC
     d5_cul     = dataRow.D5_CUL
@@ -964,6 +964,11 @@ def getAggregatedClass(dataRow, dictIsSeminatural, dictIsCrop):
         if (not classSet) & np.isin(d4_grc, waterCodes):
             aggClass = "Water"     
     except:
+        log.write("Warning: Exception at getAggregatedClass(). "+    
+                  "...zone:"+str(dataRow.D1_HUS)+
+                  "...Segment:" +str(dataRow.D2_NUM)+
+                  "...Parcel:"+str(dataRow.D3_PAR)+
+                  "...Year:"  +str(dataRow.YEA)+'\n')
         return "Exception"
     return aggClass
 
@@ -1004,7 +1009,7 @@ INPUT:
 OUTPUT: 
 """
 def isAggClassPollinatorDependent(data):
-    return data.aggClassPollDep == "Crop True"
+    return data.aggClassPollDep == "CropTrue"
     
     
 """
