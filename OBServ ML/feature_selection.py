@@ -21,10 +21,6 @@ if __name__ == '__main__':
     df_train_num.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/data_num_train.csv', index=False)
     df_test_num.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/data_num_test.csv', index=False)
 
-    # # Remove variables after superficial inspection of scatter plots (in Weka)
-    # df_train.drop(columns=['moss'], inplace=True) # Moss~0
-    # df_train.drop(columns=['activity'], inplace=True) # Collinearity with bio05
-
     #######################################
     # Recursive Feature Elimination (RFE)
     #######################################

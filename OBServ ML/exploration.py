@@ -25,16 +25,16 @@ if __name__ == '__main__':
     # Manipulate columns df_field
     #######################################
     # Conditions:
-    # 1. Abundances must be integer numbers
+    # 1. Abundances must be integer numbers (tolerance of 0.05)
     # 2. Latitude and longitude must be !na (there will not be model values anyways)
     # 3. Strictly positive abundances
-    # 4. Discard sampling years 1990, 1991 ( much older than the rest (2004 onwards) )
+    # 4. Set temporal threshold (sampling year >= 1998). This removes years 1990, 1991, that show not-very-healthy values of "comparable abundance"
     # Fill values
-    # 5. Total sampled time NA replaced by median (120)
+    # 5. Total sampled time NA replaced by median (120), abundance=NA replace by zero
     # 6. Compute comparable abundances
 
     # Conditions:
-    # 1. Abundances must be integer numbers
+    # 1. Abundances must be integer numbers (tolerance of 0.05)
     decimal_wb  = (df_field['ab_wildbees'] % 1)
     decimal_syr = (df_field['ab_syrphids'] % 1)
     decimal_bmb = (df_field['ab_bombus'] % 1)
@@ -44,23 +44,25 @@ if __name__ == '__main__':
     # 2. Latitude and longitude must be !na (otherwise there will not be model values anyway)
     cond2 = (~df_field['latitude'].isna()) & (~df_field['longitude'].isna())
     # 3. Strictly positive abundances
-    cond3 = (df_field['ab_wildbees'] > 0) | (df_field['ab_syrphids'] > 0) | (df_field['ab_bombus'] > 0)
-    # 4. Discard sampling years 1990, 1991 ( much older than the rest (2004 onwards) )
-    cond4 = (df_field['sampling_year'] != '1990') & (df_field['sampling_year'] != '1991')
+    cond3 = (~df_field['ab_wildbees'].isna() & df_field['ab_wildbees'] > 0) | \
+            (~df_field['ab_syrphids'].isna() & df_field['ab_syrphids'] > 0) | \
+            (~df_field['ab_bombus'].isna() & df_field['ab_bombus'] > 0)
+    # 4. Set temporal threshold (sampling year >= 1998). This removes years 1990, 1991, that show not very healthy values of "comparable abundance"
+    refYear = df_field['sampling_year'].str[:4].astype('int')
+    cond4 = (refYear >= 1998)
 
     # Filter by conditions
     df_field = df_field[ (cond1 & cond2 & cond3 & cond4) ]
 
     # Fill values
-    # 5. Total sampled time must be !na -> replace by median
-    df_field.loc[ df_field['total_sampled_time'].isna(), 'total_sampled_time'] = np.nanmedian(df_field['total_sampled_time'])
+    # 5. Total sampled time NA replaced by median (120), abundance=NA replace by zero
+    df_field.loc[df_field['total_sampled_time'].isna(), 'total_sampled_time'] = np.nanmedian(df_field['total_sampled_time'])
+    df_field.loc[df_field['ab_wildbees'].isna(), 'ab_wildbees'] = 0
+    df_field.loc[df_field['ab_syrphids'].isna(), 'ab_syrphids'] = 0
+    df_field.loc[df_field['ab_bombus'].isna()  , 'ab_bombus']   = 0
 
     # 6. Compute comparable abundances
-    df_field['comp_ab_wb']         = df_field['ab_wildbees']    / df_field['total_sampled_time']
-    df_field['comp_ab_syr']        = df_field['ab_syrphids']    / df_field['total_sampled_time']
-    df_field['comp_ab_bmb']        = df_field['ab_bombus']      / df_field['total_sampled_time']
-    df_field['comp_ab_wb_syr']     = df_field['comp_ab_wb']     + df_field['comp_ab_syr']
-    df_field['comp_ab_wb_bmb_syr'] = df_field['comp_ab_wb_syr'] + df_field['comp_ab_bmb']
+    df_field['comp_ab_wb_bmb_syr'] = (df_field['ab_wildbees']+ df_field['ab_syrphids']+ df_field['ab_bombus']) / df_field['total_sampled_time']
     df_field['log_abundance']      = np.log(df_field['comp_ab_wb_bmb_syr'])
 
     #######################################
@@ -68,8 +70,8 @@ if __name__ == '__main__':
     #######################################
     sns.distplot(df_field['log_abundance'])
     # skewness and kurtosis
-    print("Skewness: %f" % np.log(df_field['comp_ab_wb_bmb_syr'].skew())) # Skewness: 1.556788
-    print("Kurtosis: %f" % np.log(df_field['comp_ab_wb_bmb_syr'].kurt())) # Kurtosis: 3.654915
+    print("Skewness: %f" % df_field['log_abundance'].skew()) # Skewness: -0.215122
+    print("Kurtosis: %f" % df_field['log_abundance'].kurt()) # Kurtosis: -0.171634
 
     # Check normality log_abundance
     sns.distplot(df_field['log_abundance'], fit=norm)
