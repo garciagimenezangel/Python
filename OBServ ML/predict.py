@@ -13,8 +13,10 @@ modelsRepo    = "C:/Users/angel/git/Observ_models/"
 dataDir   = modelsRepo + "data/ML_preprocessing/"
 
 if __name__ == '__main__':
-    df_train = pd.read_csv(dataDir+'data_num_train.csv')
-    df_test = pd.read_csv(dataDir+'data_num_test.csv')
+    df_train = pd.read_csv(dataDir+'train_set.csv')
+    df_test = pd.read_csv(dataDir+'test_set.csv')
+    X = pd.read_csv(dataDir + 'predictors_prepared.csv')
+    y = pd.read_csv(dataDir + 'labels.csv')
 
     # Test simple model, no tuning of hyperparameters, to see how good the predictions are
     model = Ridge(alpha=1.0)

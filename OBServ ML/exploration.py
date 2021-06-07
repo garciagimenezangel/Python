@@ -28,7 +28,7 @@ if __name__ == '__main__':
     # 1. Abundances must be integer numbers (tolerance of 0.05)
     # 2. Latitude and longitude must be !na (there will not be model values anyways)
     # 3. Strictly positive abundances
-    # 4. Set temporal threshold (sampling year >= 1998). This removes years 1990, 1991, that show not-very-healthy values of "comparable abundance"
+    # 4. Set temporal threshold (sampling year >= 2000). This removes years 1990, 1991, that show not-very-healthy values of "comparable abundance"
     # Fill values
     # 5. Total sampled time NA replaced by median (120), abundance=NA replace by zero
     # 6. Compute comparable abundances
