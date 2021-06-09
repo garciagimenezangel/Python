@@ -6,13 +6,14 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.svm import SVR
 from sklearn.utils import all_estimators
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import cross_val_score, RandomizedSearchCV
+from sklearn.model_selection import cross_val_score, RandomizedSearchCV, GridSearchCV
+
 warnings.filterwarnings('ignore')
 
 def get_predictors_and_labels():
-    modelsRepo    = "C:/Users/angel/git/Observ_models/"
-    dataDir   = modelsRepo + "data/ML_preprocessing/"
-    return ( pd.read_csv(dataDir+'predictors_prepared.csv'), np.array(pd.read_csv(dataDir+'labels.csv')) )
+    models_repo    = "C:/Users/angel/git/Observ_models/"
+    data_dir   = models_repo + "data/ML_preprocessing/train/"
+    return ( pd.read_csv(data_dir+'predictors_prepared.csv'), np.array(pd.read_csv(data_dir+'labels.csv')).flatten() )
 
 if __name__ == '__main__':
     predictors, labels = get_predictors_and_labels()
@@ -54,6 +55,8 @@ if __name__ == '__main__':
     # I use randomized search over a (small) set of parameters, to get the best score. I repeat the process several
     # times, using a parameter space "surrounding" the best parameters in the previous step
     ########################
+    # Note: BayesSearchCV in currently latest version of scikit-optimize not compatible with scikit-learn 0.24.1
+    # When scikit-optimize version 0.9.0 is available (currenlty in development), use: BayesSearchCV(model,params,cv=5)
     # RandomForestRegressor
     model = RandomForestRegressor()
     # define search space
@@ -64,6 +67,7 @@ if __name__ == '__main__':
     params['bootstrap'] = [True]
     # define the search
     search = RandomizedSearchCV(model, params, cv=5, scoring='neg_mean_squared_error', return_train_score=True, verbose=2)
+    # search = GridSearchCV(model, params, cv=5, scoring='neg_mean_squared_error', return_train_score=True, verbose=2)
     search.fit(predictors, labels)
     cvres = search.cv_results_
     for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):

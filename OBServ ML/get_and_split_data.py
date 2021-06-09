@@ -3,23 +3,22 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 from scipy.stats import norm
-from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from scipy import stats
 import warnings
 warnings.filterwarnings('ignore')
 
 def get_feature_data():
-    modelsRepo = "C:/Users/angel/git/Observ_models/"
-    featuresDir = modelsRepo + "data/GEE/GEE features/"
+    models_repo = "C:/Users/angel/git/Observ_models/"
+    featuresDir = models_repo + "data/GEE/GEE features/"
     df_features = pd.read_csv(featuresDir + 'Features.csv')
     df_features.drop(columns=['system:index', '.geo', 'refYear'], inplace=True)
     return apply_minimum_conditions_features(df_features)
 
 def get_field_data():
-    fieldRepo    = "C:/Users/angel/git/OBservData/"
-    fieldDataDir = fieldRepo + "Final_Data/"
-    df_field     = pd.read_csv(fieldDataDir+'CropPol_field_level_data.csv')
+    field_repo    = "C:/Users/angel/git/OBservData/"
+    field_data_dir = field_repo + "Final_Data/"
+    df_field     = pd.read_csv(field_data_dir+'CropPol_field_level_data.csv')
     return apply_minimum_conditions_field(df_field)
 
 def apply_minimum_conditions_field(data):
@@ -76,11 +75,10 @@ def check_normality(data, column):
     print("Kurtosis: %f" % data[column].kurt()) # Kurtosis: -0.168611
     # Check normality log_abundance
     sns.distplot(data[column], fit=norm)
-    fig = plt.figure()
-    res = stats.probplot(data[column], plot=plt)
+    # fig = plt.figure()
+    # res = stats.probplot(data[column], plot=plt)
 
-def boxplot(data, x, y, ymin=-5, ymax=2):
-    f, ax = plt.subplots(figsize=(8, 6))
+def boxplot(data, x, ymin=-5, ymax=2):
     fig = sns.boxplot(x=x, y="log_abundance", data=data)
     fig.axis(ymin=ymin, ymax=ymax)
 
@@ -95,6 +93,10 @@ if __name__ == 'main':
     data.drop(columns=['study_id', 'site_id'], inplace=True)
     check_normality(data, 'log_abundance')
     boxplot(data, 'biome_num', 'log_abundance')
+    # Check normality other variables
+    sns.distplot(data['elevation'], fit=norm)
+    fig = plt.figure()
+    res = stats.probplot(data['elevation'], plot=plt)
 
     #######################################
     # Stratified split training and test
