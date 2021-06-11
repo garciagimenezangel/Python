@@ -10,7 +10,8 @@ warnings.filterwarnings('ignore')
 def get_train_test_sets():
     models_repo    = "C:/Users/angel/git/Observ_models/"
     data_dir   = models_repo + "data/ML_preprocessing/"
-    return ( pd.read_csv(data_dir+'/train/train_set.csv'), pd.read_csv(data_dir+'test/test_set.csv') )
+    train, test = ( pd.read_csv(data_dir+'/train/train_set_withIDs.csv'), pd.read_csv(data_dir+'test/test_set_withIDs.csv') )
+    return train.drop(columns=['site_id','study_id']), test.drop(columns=['site_id','study_id'])
 
 if __name__ == '__main__':
     df_train, df_test = get_train_test_sets()

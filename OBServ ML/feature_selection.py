@@ -49,7 +49,7 @@ if __name__ == '__main__':
            'dist_seminat', 'ec', 'ei', 'elevation', 'es', 'et', 'gHM', 'gpp',
            'le', 'pdsi', 'pet', 'ple', 'ro', 'soil', 'soil_carbon_b10',
            'soil_carbon_b200', 'soil_clay_b10', 'soil_clay_b200',
-           'soil_den_b10', 'soil_den_b200', 'soil_pH_b10', 'soil_pH_b200',
+           'soil_den_b10', 'soil_den_b200', 'soil_pH_b10', 'soil_pH_b200', 'soil_sand_b10', 'soil_sand_b200',
            'soil_water_b10', 'soil_water_b200', 'srad', 'swe', 'topo_div',
            'vap', 'vpd', 'vs', 'activity', 'bare', 'crop', 'grass', 'moss',
            'shrub', 'tree', 'urban', 'management', 'x0_1.0', 'x0_2.0',
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     df_results['mean'] = df_results.mean(axis=1)
     df_results['n_features'] = range(min_n, max_n+1)
     df_results.to_csv(
-        path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/featue_selection_SVR.csv',
+        path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/featue_selection_RF.csv',
         index=False)
     # n_features ~15 yields good results:
     rfe = RFE(estimator=model, n_features_to_select=15)
