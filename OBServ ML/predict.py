@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.pyplot import scatter
 from matplotlib.pyplot import plot
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 from scipy import stats
 
 warnings.filterwarnings('ignore')
@@ -64,3 +64,6 @@ if __name__ == '__main__':
     confidence = 0.95
     squared_errors = (yhat - labels_test)**2
     np.sqrt(stats.t.interval(confidence, len(squared_errors)-1, loc=squared_errors.mean(), scale=stats.sem(squared_errors)))
+
+    # Mean absolute error
+    mae = mean_absolute_error(labels_test, yhat)
