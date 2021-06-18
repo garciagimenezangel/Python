@@ -1,50 +1,47 @@
 import pandas as pd
 import numpy as np
 import warnings
+
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import scatter
 from matplotlib.pyplot import plot
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from scipy import stats
-
-warnings.filterwarnings('ignore')
 from sklearn.svm import SVR
+warnings.filterwarnings('ignore')
 
-def get_train_predictors_and_labels_rf15():
+def get_train_data_reduced_58():
     models_repo    = "C:/Users/angel/git/Observ_models/"
     data_dir   = models_repo + "data/ML_preprocessing/train/"
-    return ( pd.read_csv(data_dir+'predictors_red15RF.csv'), np.array(pd.read_csv(data_dir+'labels.csv')).flatten() )
+    return pd.read_csv(data_dir+'data_reduced_58.csv')
 
-def get_test_predictors_and_labels_rf15():
+def get_test_data_reduced_58():
     models_repo    = "C:/Users/angel/git/Observ_models/"
     data_dir   = models_repo + "data/ML_preprocessing/test/"
-    return ( pd.read_csv(data_dir+'predictors_red15RF.csv'), np.array(pd.read_csv(data_dir+'labels.csv')).flatten() )
+    return pd.read_csv(data_dir+'data_reduced_58.csv')
 
-def get_train_predictors_and_labels_svr30():
+def get_train_data_reduced_10():
     models_repo    = "C:/Users/angel/git/Observ_models/"
     data_dir   = models_repo + "data/ML_preprocessing/train/"
-    return ( pd.read_csv(data_dir+'predictors_red30SVR.csv'), np.array(pd.read_csv(data_dir+'labels.csv')).flatten() )
+    return pd.read_csv(data_dir+'data_reduced_10.csv')
 
-def get_test_predictors_and_labels_svr30():
+def get_test_data_reduced_10():
     models_repo    = "C:/Users/angel/git/Observ_models/"
     data_dir   = models_repo + "data/ML_preprocessing/test/"
-    return ( pd.read_csv(data_dir+'predictors_red30SVR.csv'), np.array(pd.read_csv(data_dir+'labels.csv')).flatten() )
+    return pd.read_csv(data_dir+'data_reduced_10.csv')
 
 if __name__ == '__main__':
-    predictors_train, labels_train = get_train_predictors_and_labels_svr30()
-    predictors_test,  labels_test  = get_test_predictors_and_labels_svr30()
-    predictors_train, labels_train = get_train_predictors_and_labels_rf15()
-    predictors_test,  labels_test  = get_test_predictors_and_labels_rf15()
-
-    # Random Forest Regressor
-    model = RandomForestRegressor(n_estimators=120, min_samples_split=3, min_samples_leaf=4)  # parameters found in 'model_selection'
-    model.fit(predictors_train, labels_train)
-    yhat = model.predict(predictors_test)
+    train_prepared   = get_train_data_reduced_10()
+    test_prepared    = get_test_data_reduced_10()
+    predictors_train = train_prepared.iloc[:,:-1]
+    labels_train     = np.array(train_prepared.iloc[:,-1:]).flatten()
+    predictors_test  = test_prepared.iloc[:,:-1]
+    labels_test      = np.array(test_prepared.iloc[:,-1:]).flatten()
 
     # Support Vector Regressor
-    model = SVR(gamma=0.1, C=2.0) # parameters found in 'model_selection'
+    model = SVR(C=1.7, coef0=-0.29, epsilon=0.06, gamma=0.11, kernel='rbf') # parameters found in 'model_selection'
     model.fit(predictors_train, labels_train)
     yhat = model.predict(predictors_test)
 

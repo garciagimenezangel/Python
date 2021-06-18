@@ -76,7 +76,7 @@ if __name__ == '__main__':
     cvres = search.cv_results_
     for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
         print(np.sqrt(-mean_score), params)
-    search.best_params_  #{'C': 1.6979657260988366, 'coef0': -0.2855846601605023, 'epsilon': 0.061117460899596444, 'gamma': 0.10514781667802747, 'kernel': 'rbf'}
+    search.best_params_ #{'C': 1.6979657260988366, 'coef0': -0.2855846601605023, 'epsilon': 0.061117460899596444, 'gamma': 0.10514781667802747, 'kernel': 'rbf'}
     search.best_score_  #-0.9869701127408879
 
     # ElasticNetCV
