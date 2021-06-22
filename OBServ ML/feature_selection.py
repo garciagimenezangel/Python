@@ -45,11 +45,11 @@ def evaluate_model_sfs(model, predictors, labels, direction='backward', n_featur
     return np.sqrt(-scores)
 
 if __name__ == '__main__':
-    train_prepared = get_train_data_prepared()
-    test_prepared = get_test_data_prepared()
+    # train_prepared = get_train_data_prepared()
+    # test_prepared = get_test_data_prepared()
     # Including mechanistic model value
-    # train_prepared = get_train_data_prepared_with_mechanistic()
-    # test_prepared = get_test_data_prepared_with_mechanistic()
+    train_prepared = get_train_data_prepared_with_mechanistic()
+    test_prepared = get_test_data_prepared_with_mechanistic()
 
     # Get predictors and labels
     predictors_train = train_prepared.iloc[:,:-1]
@@ -136,7 +136,7 @@ if __name__ == '__main__':
     model = SVR(C=1.7, coef0=-0.29, epsilon=0.06, gamma=0.11, kernel='rbf')
     # Explore number of features
     min_n = 5
-    max_n = 14
+    max_n = 40
     results, n_features = list(), list()
     for i in range(min_n,max_n+1):
         print(datetime.datetime.now())
@@ -149,16 +149,17 @@ if __name__ == '__main__':
     df_results['mean'] = df_results.mean(axis=1)
     df_results['n_features'] = range(min_n, max_n+1)
     df_results.to_csv(
-        path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/feature_selection_SVR_5-15.csv',
+        path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/feature_selection_SVR_5-40.csv',
         index=False)
     # n_features ~58 yields good score:
-    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=58, cv=5, direction='forward', n_jobs=6)
+    # sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=58, cv=5, direction='forward', n_jobs=6)
     # sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=10, cv=5, direction='forward', n_jobs=6) # test with only 10, that gives not-that-bad score
+    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=20, cv=5, direction='forward', n_jobs=6)
     sfs.fit(predictors_train, labels_train)
     data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[sfs.support_]),['log_abundance']) ]
     data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[sfs.support_]),['log_abundance']) ]
-    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML_preprocessing/train/data_reduced_10.csv', index=False)
-    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML_preprocessing/test/data_reduced_10.csv', index=False)
+    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML_preprocessing/train/data_reduced_6.csv', index=False)
+    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML_preprocessing/test/data_reduced_6.csv', index=False)
 
     # EVALUATE THE MODEL WITH REDUCED PREDICTORS:
     # rfe = RFE(estimator=model, n_features_to_select=n_features)

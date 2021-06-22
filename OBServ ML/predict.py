@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import warnings
-
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
@@ -32,9 +31,39 @@ def get_test_data_reduced_10():
     data_dir   = models_repo + "data/ML_preprocessing/test/"
     return pd.read_csv(data_dir+'data_reduced_10.csv')
 
+def get_train_data_reduced_7():
+    models_repo    = "C:/Users/angel/git/Observ_models/"
+    data_dir   = models_repo + "data/ML_preprocessing/train/"
+    return pd.read_csv(data_dir+'data_reduced_7.csv')
+
+def get_test_data_reduced_7():
+    models_repo    = "C:/Users/angel/git/Observ_models/"
+    data_dir   = models_repo + "data/ML_preprocessing/test/"
+    return pd.read_csv(data_dir+'data_reduced_7.csv')
+
+def get_train_data_reduced_27():
+    models_repo    = "C:/Users/angel/git/Observ_models/"
+    data_dir   = models_repo + "data/ML_preprocessing/train/"
+    return pd.read_csv(data_dir+'data_reduced_27.csv')
+
+def get_test_data_reduced_27():
+    models_repo    = "C:/Users/angel/git/Observ_models/"
+    data_dir   = models_repo + "data/ML_preprocessing/test/"
+    return pd.read_csv(data_dir+'data_reduced_27.csv')
+
+def get_train_data_reduced_6():
+    models_repo    = "C:/Users/angel/git/Observ_models/"
+    data_dir   = models_repo + "data/ML_preprocessing/train/"
+    return pd.read_csv(data_dir+'data_reduced_6.csv')
+
+def get_test_data_reduced_6():
+    models_repo    = "C:/Users/angel/git/Observ_models/"
+    data_dir   = models_repo + "data/ML_preprocessing/test/"
+    return pd.read_csv(data_dir+'data_reduced_6.csv')
+
 if __name__ == '__main__':
-    train_prepared   = get_train_data_reduced_10()
-    test_prepared    = get_test_data_reduced_10()
+    train_prepared   = get_train_data_reduced_6()
+    test_prepared    = get_test_data_reduced_6()
     predictors_train = train_prepared.iloc[:,:-1]
     labels_train     = np.array(train_prepared.iloc[:,-1:]).flatten()
     predictors_test  = test_prepared.iloc[:,:-1]
@@ -64,3 +93,9 @@ if __name__ == '__main__':
 
     # Mean absolute error
     mae = mean_absolute_error(labels_test, yhat)
+
+    # Interactive plot
+    import plotly.express as px
+    df = pd.concat([get_test_data_reduced_27(), pd.DataFrame(yhat, columns=['predicted']) ], axis=1)
+    fig = px.scatter(df, x="predicted", y="log_abundance", hover_data=df.columns)
+    fig.show()

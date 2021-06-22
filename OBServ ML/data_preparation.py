@@ -9,6 +9,7 @@ import seaborn as sns
 from scipy.stats import norm
 from sklearn.model_selection import train_test_split
 from scipy import stats
+import pollinators_dependency as poll_dep
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -96,6 +97,10 @@ def fill_missing_biomes(data):
     data.loc[data.biome_num == 'unknown', 'biome_num'] = new_biome
     return data
 
+def remap_crops(data):
+    data['crop'] = data['crop'].map(poll_dep.dep)
+    return data
+
 def check_normality(data, column):
     sns.distplot(data[column])
     # skewness and kurtosis
@@ -118,22 +123,16 @@ def add_mechanistic_values(data, model_name='Lonsdorf.Delphi_lcCont1_open1_forEd
 if __name__ == '__main__':
 
     #######################################
-    # Get, explore
+    # Get
     #######################################
     df_features = get_feature_data()
     df_field    = get_field_data()
     data = df_features.merge(df_field, on=['study_id', 'site_id'])
     data = apply_minimum_conditions(data)
     data = fill_missing_biomes(data)
+    data = remap_crops(data)
     data = compute_comparable_abundance(data)
-    # data = add_mechanistic_values(data)
-
-    check_normality(data, 'log_abundance')
-    boxplot(data, 'biome_num', 'log_abundance')
-    # Check normality other variables
-    sns.distplot(data['elevation'], fit=norm)
-    fig = plt.figure()
-    res = stats.probplot(data['elevation'], plot=plt)
+    data = add_mechanistic_values(data)
 
     # Separate predictors and labels
     predictors = data.drop("log_abundance", axis=1)
@@ -141,6 +140,7 @@ if __name__ == '__main__':
 
     # (Set biome as categorical)
     predictors['biome_num'] = predictors.biome_num.astype('object')
+
 
     #######################################
     # Transformations
@@ -176,14 +176,14 @@ if __name__ == '__main__':
     pred_num = predictors.select_dtypes('number')
     numeric_col = list(pred_num)
     ordinal_col = ["management"]
-    onehot_col  = ["biome_num", "crop"]
+    onehot_col  = ["biome_num"]
     num_pipeline = Pipeline([
         ('num_imputer', SimpleImputer(strategy="mean")),
         ('std_scaler', StandardScaler())
     ])
     ordinal_pipeline = Pipeline([
         ('manag_imputer', SimpleImputer(strategy="constant", fill_value="conventional")),
-        ('ordinal_encoder', OrdinalEncoder(categories=[['unmanaged','conventional','IPM','organic']]))
+        ('ordinal_encoder', OrdinalEncoder(categories=[['conventional','IPM','unmanaged','organic']]))
     ])
     onehot_pipeline = Pipeline([
         ('onehot_encoder', OneHotEncoder())
@@ -227,9 +227,22 @@ if __name__ == '__main__':
     df_test  = dataset_prepared[[~x for x in train_selection]]
 
     # Save predictors and labels (train and set)
-    df_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/train/data_prepared.csv', index=False)
-    df_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/test/data_prepared.csv', index=False)
+    # df_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/train/data_prepared.csv', index=False)
+    # df_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/test/data_prepared.csv', index=False)
 
     # Save predictors and labels including model data (train and set)
     df_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/train/data_prepared_with_mech.csv', index=False)
     df_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/test/data_prepared_with_mech.csv', index=False)
+
+    #######################################
+    # Explore
+    #######################################
+    check_normality(data, 'log_abundance')
+    boxplot(data, 'biome_num', 'log_abundance')
+    # Check normality other variables
+    sns.distplot(data['elevation'], fit=norm)
+    fig = plt.figure()
+    res = stats.probplot(data['elevation'], plot=plt)
+
+    # count NA's
+    n_na = data.isnull().sum().sort_values(ascending = False).sum()
