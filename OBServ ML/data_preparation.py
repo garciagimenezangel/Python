@@ -36,7 +36,7 @@ def get_field_data():
     df_field     = pd.read_csv(field_data_dir+'CropPol_field_level_data.csv')
     return df_field[['site_id', 'study_id',
                      'ab_wildbees', 'ab_syrphids', 'ab_bombus',
-                     'total_sampled_time', 'sampling_year', 'management', 'crop']]
+                     'total_sampled_time', 'sampling_year']]
 
 def apply_minimum_conditions(data):
     # Conditions:
@@ -130,9 +130,9 @@ if __name__ == '__main__':
     data = df_features.merge(df_field, on=['study_id', 'site_id'])
     data = apply_minimum_conditions(data)
     data = fill_missing_biomes(data)
-    data = remap_crops(data)
+    # data = remap_crops(data)
     data = compute_comparable_abundance(data)
-    data = add_mechanistic_values(data)
+    # data = add_mechanistic_values(data)
 
     # Separate predictors and labels
     predictors = data.drop("log_abundance", axis=1)
@@ -192,7 +192,7 @@ if __name__ == '__main__':
     onehot_encoder_names = X.named_steps['onehot_encoder'].get_feature_names()
     full_pipeline = ColumnTransformer([
         ("numeric", num_pipeline, numeric_col),
-        ("ordinal", ordinal_pipeline, ordinal_col),
+        # ("ordinal", ordinal_pipeline, ordinal_col),
         ("onehot",  onehot_pipeline, onehot_col )
     ])
 
@@ -203,9 +203,10 @@ if __name__ == '__main__':
 
     # Convert into data frame
     numeric_col = np.array(pred_num.columns)
-    ordinal_col = np.array(["management"])
+    # ordinal_col = np.array(["management"])
     onehot_col  = np.array(onehot_encoder_names)
-    feature_names = np.concatenate( (numeric_col, ordinal_col, onehot_col), axis=0)
+    # feature_names = np.concatenate( (numeric_col, ordinal_col, onehot_col), axis=0)
+    feature_names = np.concatenate( (numeric_col, onehot_col), axis=0)
     predictors_prepared = pd.DataFrame(x_transformed, columns=feature_names, index=predictors.index)
     dataset_prepared = predictors_prepared.copy()
     dataset_prepared['log_abundance'] = labels
@@ -226,18 +227,27 @@ if __name__ == '__main__':
     df_train = dataset_prepared[train_selection]
     df_test  = dataset_prepared[[~x for x in train_selection]]
 
-    # Save predictors and labels (train and set)
-    # df_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/train/data_prepared.csv', index=False)
-    # df_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/test/data_prepared.csv', index=False)
+    # # Save predictors and labels (train and set)
+    df_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/train/data_prepared.csv', index=False)
+    df_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/test/data_prepared.csv', index=False)
 
     # Save predictors and labels including model data (train and set)
     df_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/train/data_prepared_with_mech.csv', index=False)
     df_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/test/data_prepared_with_mech.csv', index=False)
 
+    # # Save data (not processed by pipeline) including study_id and site_id
+    data_train = data[train_selection]
+    data_test  = data[[~x for x in train_selection]]
+    data_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/train/data_prepared_withIDs.csv', index=False)
+    data_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/test/data_prepared_withIDs.csv', index=False)
+
     #######################################
     # Explore
     #######################################
     check_normality(data, 'log_abundance')
+    data['year'] = data['study_id'].str[-4:]
+    a = data.loc[data.year != "16_2",]
+    boxplot(a, 'year', 'log_abundance')
     boxplot(data, 'biome_num', 'log_abundance')
     # Check normality other variables
     sns.distplot(data['elevation'], fit=norm)

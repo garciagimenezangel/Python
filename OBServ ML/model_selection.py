@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
 import warnings
-from sklearn.linear_model import ElasticNetCV, LassoCV, TweedieRegressor, BayesianRidge
+
+from sklearn.ensemble import ExtraTreesRegressor
+from sklearn.linear_model import ElasticNetCV, LassoCV, TweedieRegressor
 from sklearn.svm import SVR
 from sklearn.utils import all_estimators
 from sklearn.metrics import mean_squared_error
@@ -50,7 +52,7 @@ if __name__ == '__main__':
     # 2 ElasticNetCV
     # 3 LassoCV
     # 4 TweedieRegressor
-    # 5 BayesianRidge
+    # 5 ExtraTreesRegressor
 
     ########################
     # Hyperparameter tuning
@@ -75,8 +77,8 @@ if __name__ == '__main__':
     cvres = search.cv_results_
     for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
         print(np.sqrt(-mean_score), params)
-    search.best_params_ #{'C': 1.6979657260988366, 'coef0': -0.2855846601605023, 'epsilon': 0.061117460899596444, 'gamma': 0.10514781667802747, 'kernel': 'rbf'}
-    search.best_score_  #-0.9869701127408879
+    search.best_params_ #{'C': 1.7342889543571887, 'coef0': -0.3345352614917637, 'epsilon': 0.09256863132721108, 'gamma': 0.14372942931130184, 'kernel': 'rbf'}
+    search.best_score_  #-1.0015267911375498
 
     # ElasticNetCV
     model = ElasticNetCV()
@@ -92,8 +94,8 @@ if __name__ == '__main__':
     cvres = search.cv_results_
     for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
         print(np.sqrt(-mean_score), params)
-    search.best_params_  #{'eps': 0.059404230559449316, 'l1_ratio': 0.9513270631254528, 'n_alphas': 3}
-    search.best_score_  #-1.0280005710704525
+    search.best_params_
+    search.best_score_
 
     # LassoCV
     model = LassoCV()
@@ -108,11 +110,11 @@ if __name__ == '__main__':
     cvres = search.cv_results_
     for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
         print(np.sqrt(-mean_score), params)
-    search.best_params_ # {'eps': 0.011183032750034745, 'n_alphas': 1}
-    search.best_score_ #-1.0272733578190911
+    search.best_params_
+    search.best_score_
 
     # TweedieRegressor
-    model = TweedieRegressor(max_iter=1000)
+    model = TweedieRegressor()
     # define search space
     params = dict()
     params['power'] = [0,1,2,3]
@@ -123,19 +125,21 @@ if __name__ == '__main__':
     cvres = search.cv_results_
     for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
         print(np.sqrt(-mean_score), params)
-    search.best_params_  #{'power': 0}
-    search.best_score_  #-1.049854731429676
+    search.best_params_
+    search.best_score_
 
-    # BayesianRidge
-    model = BayesianRidge(n_iter=3000)
+    # ExtraTreesRegressor
+    model = ExtraTreesRegressor()
     # define search space
     params = dict()
-    params['alpha_1']     = uniform(loc=0.00000001, scale=0.1)
-    params['alpha_2']     = uniform(loc=0.00000001, scale=0.1)
-    params['lambda_1']    = uniform(loc=0.00000001, scale=0.1)
-    params['lambda_2']    = uniform(loc=0.00000001, scale=0.1)
-    params['alpha_init']  = uniform(loc=0.00000001, scale=0.1)
-    params['lambda_init'] = uniform(loc=0.00000001, scale=0.1)
+    params['n_estimators'] = [2,8,32,128,512]
+    params['max_depth']    = [1,4,16,64]
+    params['min_samples_split'] = [1,4,16,64]
+    params['min_samples_leaf']  = [1,4,16,64]
+    params['min_weight_fraction_leaf']  = uniform(loc=0, scale=1)
+    params['max_leaf_nodes'] = [1,4,16,64]
+    params['min_impurity_split'] = [1,4,16,64]
+    params['warm_start'] = [True, False]
     # define the search
     search = RandomizedSearchCV(model, params, cv=5, scoring='neg_mean_absolute_error', n_iter=1000,
                                 return_train_score=True, verbose=2, random_state=135, n_jobs=-1)
@@ -143,6 +147,7 @@ if __name__ == '__main__':
     cvres = search.cv_results_
     for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
         print(np.sqrt(-mean_score), params)
-    search.best_params_  # {'alpha_1': 0.0033435924818114803, 'alpha_2': 0.040853967588064345, 'alpha_init': 0.02715955787651284, 'lambda_1': 0.08930101099447024, 'lambda_2': 8.553613592314184e-05, 'lambda_init': 0.06775499126811027}
-    search.best_score_  # -1.0580556094882547
+    search.best_params_ # {'max_depth': 4, 'max_leaf_nodes': 64, 'min_impurity_split': 1, 'min_samples_leaf': 4, 'min_samples_split': 16, 'min_weight_fraction_leaf': 0.07133051462209383, 'n_estimators': 8, 'warm_start': False}
+    search.best_score_ # -1.077662406413546
 
+    #model = ExtraTreesRegressor(max_depth=4, max_leaf_nodes=64, min_impurity_split=1, min_samples_leaf=4, min_samples_split=16, min_weight_fraction_leaf=0.07133051462209383, n_estimators=8, warm_start=False)

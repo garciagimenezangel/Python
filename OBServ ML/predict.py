@@ -70,7 +70,7 @@ if __name__ == '__main__':
     labels_test      = np.array(test_prepared.iloc[:,-1:]).flatten()
 
     # Support Vector Regressor
-    model = SVR(C=1.7, coef0=-0.29, epsilon=0.06, gamma=0.11, kernel='rbf') # parameters found in 'model_selection'
+    model = SVR(C=1.7, coef0=-0.33, epsilon=0.09, gamma=0.14, kernel='rbf')
     model.fit(predictors_train, labels_train)
     yhat = model.predict(predictors_test)
 
