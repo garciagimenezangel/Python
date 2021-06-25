@@ -34,7 +34,7 @@ def get_field_data():
     field_repo    = "C:/Users/angel/git/OBservData/"
     field_data_dir = field_repo + "Final_Data/"
     df_field     = pd.read_csv(field_data_dir+'CropPol_field_level_data.csv')
-    return df_field[['site_id', 'study_id',
+    return df_field[['site_id', 'study_id', 'crop', 'management',
                      'ab_wildbees', 'ab_syrphids', 'ab_bombus',
                      'total_sampled_time', 'sampling_year']]
 
@@ -84,7 +84,31 @@ def compute_comparable_abundance(data):
     # 6. Compute comparable abundances
     data['comp_ab_wb_bmb_syr'] = (data['ab_wildbees']+ data['ab_syrphids']+ data['ab_bombus']) / data['total_sampled_time']
     data['log_abundance']      = np.log(data['comp_ab_wb_bmb_syr'])
-    data.drop(columns=['ab_wildbees', 'ab_syrphids', 'ab_bombus', 'total_sampled_time', 'comp_ab_wb_bmb_syr'], inplace=True)
+    data.drop(columns=['comp_ab_wb_bmb_syr'], inplace=True)
+    # data.drop(columns=['ab_wildbees', 'ab_syrphids', 'ab_bombus', 'total_sampled_time', 'comp_ab_wb_bmb_syr'], inplace=True)
+    return data
+
+def compute_comparable_abundance_small(data):
+    # Compute comparable abundance
+    # 5. Total sampled time NA replaced by median (120), abundance=NA replace by zero
+    data.loc[data['total_sampled_time'].isna(), 'total_sampled_time'] = np.nanmedian(data['total_sampled_time'])
+    data.loc[data['ab_wildbees'].isna(), 'ab_wildbees'] = 0
+    data.loc[data['ab_syrphids'].isna(), 'ab_syrphids'] = 0
+    # 6. Compute comparable abundances
+    data['comp_ab_wb_syr'] = (data['ab_wildbees']+ data['ab_syrphids']) / data['total_sampled_time']
+    data['log_ab_small']  = np.log(data['comp_ab_wb_syr'])
+    data.drop(columns=['ab_wildbees', 'ab_syrphids', 'comp_ab_wb_syr'], inplace=True)
+    return data
+
+def compute_comparable_abundance_large(data):
+    # Compute comparable abundance
+    # 5. Total sampled time NA replaced by median (120), abundance=NA replace by zero
+    data.loc[data['total_sampled_time'].isna(), 'total_sampled_time'] = np.nanmedian(data['total_sampled_time'])
+    data.loc[data['ab_bombus'].isna(), 'ab_bombus'] = 0
+    # 6. Compute comparable abundances
+    data['comp_ab_bmb'] = data['ab_bombus'] / data['total_sampled_time']
+    data['log_ab_large']  = np.log(data['comp_ab_bmb'])
+    data.drop(columns=['ab_bombus', 'comp_ab_bmb'], inplace=True)
     return data
 
 def fill_biome(x, data):
@@ -130,8 +154,10 @@ if __name__ == '__main__':
     data = df_features.merge(df_field, on=['study_id', 'site_id'])
     data = apply_minimum_conditions(data)
     data = fill_missing_biomes(data)
-    # data = remap_crops(data)
+    data = remap_crops(data)
     data = compute_comparable_abundance(data)
+    data = compute_comparable_abundance_small(data)
+    data = compute_comparable_abundance_large(data)
     # data = add_mechanistic_values(data)
 
     # Separate predictors and labels
@@ -256,3 +282,11 @@ if __name__ == '__main__':
 
     # count NA's
     n_na = data.isnull().sum().sort_values(ascending = False).sum()
+
+    # guilds
+    small = data.copy()
+    small = small.loc[ np.isfinite(small['log_ab_small']), ]
+    check_normality(small, 'log_ab_small')
+    large = data.copy().sort_values(by=["log_ab_large"])
+    large = large.loc[ np.isfinite(large['log_ab_large']), ]
+    check_normality(large, 'log_ab_large')

@@ -62,8 +62,8 @@ def get_test_data_reduced_6():
     return pd.read_csv(data_dir+'data_reduced_6.csv')
 
 if __name__ == '__main__':
-    train_prepared   = get_train_data_reduced_6()
-    test_prepared    = get_test_data_reduced_6()
+    train_prepared   = get_train_data_reduced_7()
+    test_prepared    = get_test_data_reduced_7()
     predictors_train = train_prepared.iloc[:,:-1]
     labels_train     = np.array(train_prepared.iloc[:,-1:]).flatten()
     predictors_test  = test_prepared.iloc[:,:-1]
@@ -78,6 +78,8 @@ if __name__ == '__main__':
     scatter(yhat, labels_test)
     plt.xlabel("Prediction ML")
     plt.ylabel("log(Observed abundance)")
+    plt.xlim(-5, 1)
+    plt.ylim(-7, 2)
     m, b = np.polyfit(yhat, labels_test, 1)
     plot(yhat, m * yhat + b)
     X_reg, y_reg = yhat.reshape(-1, 1), labels_test.reshape(-1, 1)
