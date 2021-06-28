@@ -110,8 +110,8 @@ if __name__ == '__main__':
     model = RandomForestRegressor(n_estimators=120, min_samples_split=3, min_samples_leaf=4, bootstrap=True)  # parameters found in 'model_selection'
     rfecv = RFECV(estimator=model, n_jobs=-1, cv=5, scoring="neg_mean_absolute_error")
     rfecv.fit(predictors_train, labels_train)
-    data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[rfecv.support_]),['log_abundance']) ]
-    data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[rfecv.support_]),['log_abundance']) ]
+    data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[rfecv.support_]),['log_visit_rate']) ]
+    data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[rfecv.support_]),['log_visit_rate']) ]
     data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_RFECV.csv', index=False)
     data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_RFECV.csv', index=False)
 
@@ -141,8 +141,8 @@ if __name__ == '__main__':
     # sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=10, cv=5, direction='forward', n_jobs=6) # test with only 10, that gives not-that-bad score
     sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=7, cv=5, direction='forward', n_jobs=6)
     sfs.fit(predictors_train, labels_train)
-    data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[sfs.support_]),['log_abundance']) ]
-    data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[sfs.support_]),['log_abundance']) ]
+    data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[sfs.support_]),['log_visit_rate']) ]
+    data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[sfs.support_]),['log_visit_rate']) ]
     data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_7.csv', index=False)
     data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_7.csv', index=False)
 

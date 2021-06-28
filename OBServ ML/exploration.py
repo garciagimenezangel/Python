@@ -62,21 +62,21 @@ if __name__ == '__main__':
     df_field.loc[df_field['ab_bombus'].isna()  , 'ab_bombus']   = 0
 
     # 6. Compute comparable abundances
-    df_field['comp_ab_wb_bmb_syr'] = (df_field['ab_wildbees']+ df_field['ab_syrphids']+ df_field['ab_bombus']) / df_field['total_sampled_time']
-    df_field['log_abundance']      = np.log(df_field['comp_ab_wb_bmb_syr'])
+    df_field['visit_rate_wb_bmb_syr'] = (df_field['ab_wildbees']+ df_field['ab_syrphids']+ df_field['ab_bombus']) / df_field['total_sampled_time']
+    df_field['log_visit_rate']      = np.log(df_field['visit_rate_wb_bmb_syr'])
 
     #######################################
     # Explore df_field
     #######################################
-    sns.distplot(df_field['log_abundance'])
+    sns.distplot(df_field['log_visit_rate'])
     # skewness and kurtosis
-    print("Skewness: %f" % df_field['log_abundance'].skew()) # Skewness: -0.215122
-    print("Kurtosis: %f" % df_field['log_abundance'].kurt()) # Kurtosis: -0.171634
+    print("Skewness: %f" % df_field['log_visit_rate'].skew()) # Skewness: -0.215122
+    print("Kurtosis: %f" % df_field['log_visit_rate'].kurt()) # Kurtosis: -0.171634
 
-    # Check normality log_abundance
-    sns.distplot(df_field['log_abundance'], fit=norm)
+    # Check normality log_visit_rate
+    sns.distplot(df_field['log_visit_rate'], fit=norm)
     fig = plt.figure()
-    res = stats.probplot(df_field['log_abundance'], plot=plt)
+    res = stats.probplot(df_field['log_visit_rate'], plot=plt)
 
     #######################################
     # Manipulate columns df_features
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     #######################################
     # Merge
     #######################################
-    data = df_features.merge(df_field[['site_id', 'study_id', 'log_abundance']])
+    data = df_features.merge(df_field[['site_id', 'study_id', 'log_visit_rate']])
 
     #######################################
     # Explore data
@@ -117,13 +117,13 @@ if __name__ == '__main__':
     # box plot biome/abundance
     var = 'biome_num'
     f, ax = plt.subplots(figsize=(8, 6))
-    fig = sns.boxplot(x=var, y="log_abundance", data=data)
+    fig = sns.boxplot(x=var, y="log_visit_rate", data=data)
     fig.axis(ymin=-5, ymax=2)
 
     # box plot biome/abundance
     var = 'refYear'
     f, ax = plt.subplots(figsize=(8, 6))
-    fig = sns.boxplot(x=var, y="log_abundance", data=data)
+    fig = sns.boxplot(x=var, y="log_visit_rate", data=data)
     fig.axis(ymin=-5, ymax=2)
 
     # correlation matrices
@@ -134,7 +134,7 @@ if __name__ == '__main__':
 
     # log abundance correlations
     k = 10  # number of variables for heatmap
-    cols = corrmat.nlargest(k, 'log_abundance')['log_abundance'].index
+    cols = corrmat.nlargest(k, 'log_visit_rate')['log_visit_rate'].index
     cm = np.corrcoef(data[cols].values.T)
     sns.set(font_scale=1.25)
     hm = sns.heatmap(cm, cbar=True, annot=True, square=True, fmt='.2f', annot_kws={'size': 10}, yticklabels=cols.values,
@@ -158,9 +158,9 @@ if __name__ == '__main__':
     #######################################
     # Manipulate columns data
     #######################################
-    # Standardize numeric columns (except target log_abundance
+    # Standardize numeric columns (except target log_visit_rate
     numeric = data.select_dtypes('number')
-    numeric.drop(columns=['log_abundance'], inplace=True)
+    numeric.drop(columns=['log_visit_rate'], inplace=True)
     data[numeric.columns] = StandardScaler().fit_transform(numeric)
 
     #######################################
@@ -174,6 +174,6 @@ if __name__ == '__main__':
     x_train.reset_index(drop=True, inplace=True)
     x_test.reset_index(drop=True, inplace=True)
 
-    data.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/exploration_full.csv', index=False)
-    x_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/exploration_train.csv', index=False)
-    x_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/exploration_test.csv', index=False)
+    data.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/exploration_full.csv', index=False)
+    x_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/exploration_train.csv', index=False)
+    x_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/exploration_test.csv', index=False)

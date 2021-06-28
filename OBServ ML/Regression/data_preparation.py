@@ -74,7 +74,7 @@ def apply_minimum_conditions(data):
     print(all_cond.describe())
     return data[ all_cond ]
 
-def compute_comparable_abundance(data):
+def compute_visit_rate(data):
     # Compute comparable abundance
     # 5. Total sampled time NA replaced by median (120), abundance=NA replace by zero
     data.loc[data['total_sampled_time'].isna(), 'total_sampled_time'] = np.nanmedian(data['total_sampled_time'])
@@ -82,33 +82,33 @@ def compute_comparable_abundance(data):
     data.loc[data['ab_syrphids'].isna(), 'ab_syrphids'] = 0
     data.loc[data['ab_bombus'].isna()  , 'ab_bombus']   = 0
     # 6. Compute comparable abundances
-    data['comp_ab_wb_bmb_syr'] = (data['ab_wildbees']+ data['ab_syrphids']+ data['ab_bombus']) / data['total_sampled_time']
-    data['log_abundance']      = np.log(data['comp_ab_wb_bmb_syr'])
-    data.drop(columns=['comp_ab_wb_bmb_syr'], inplace=True)
-    # data.drop(columns=['ab_wildbees', 'ab_syrphids', 'ab_bombus', 'total_sampled_time', 'comp_ab_wb_bmb_syr'], inplace=True)
+    data['visit_rate_wb_bmb_syr'] = (data['ab_wildbees']+ data['ab_syrphids']+ data['ab_bombus']) / data['total_sampled_time']
+    data['log_visit_rate']      = np.log(data['visit_rate_wb_bmb_syr'])
+    # data.drop(columns=['visit_rate_wb_bmb_syr'], inplace=True)
+    data.drop(columns=['ab_wildbees', 'ab_syrphids', 'ab_bombus', 'total_sampled_time', 'visit_rate_wb_bmb_syr'], inplace=True)
     return data
 
-def compute_comparable_abundance_small(data):
+def compute_visit_rate_small(data):
     # Compute comparable abundance
     # 5. Total sampled time NA replaced by median (120), abundance=NA replace by zero
     data.loc[data['total_sampled_time'].isna(), 'total_sampled_time'] = np.nanmedian(data['total_sampled_time'])
     data.loc[data['ab_wildbees'].isna(), 'ab_wildbees'] = 0
     data.loc[data['ab_syrphids'].isna(), 'ab_syrphids'] = 0
     # 6. Compute comparable abundances
-    data['comp_ab_wb_syr'] = (data['ab_wildbees']+ data['ab_syrphids']) / data['total_sampled_time']
-    data['log_ab_small']  = np.log(data['comp_ab_wb_syr'])
-    data.drop(columns=['ab_wildbees', 'ab_syrphids', 'comp_ab_wb_syr'], inplace=True)
+    data['visit_rate_wb_syr'] = (data['ab_wildbees']+ data['ab_syrphids']) / data['total_sampled_time']
+    data['log_vr_small']  = np.log(data['visit_rate_wb_syr'])
+    data.drop(columns=['ab_wildbees', 'ab_syrphids', 'visit_rate_wb_syr'], inplace=True)
     return data
 
-def compute_comparable_abundance_large(data):
+def compute_visit_rate_large(data):
     # Compute comparable abundance
     # 5. Total sampled time NA replaced by median (120), abundance=NA replace by zero
     data.loc[data['total_sampled_time'].isna(), 'total_sampled_time'] = np.nanmedian(data['total_sampled_time'])
     data.loc[data['ab_bombus'].isna(), 'ab_bombus'] = 0
     # 6. Compute comparable abundances
-    data['comp_ab_bmb'] = data['ab_bombus'] / data['total_sampled_time']
-    data['log_ab_large']  = np.log(data['comp_ab_bmb'])
-    data.drop(columns=['ab_bombus', 'comp_ab_bmb'], inplace=True)
+    data['visit_rate_bmb'] = data['ab_bombus'] / data['total_sampled_time']
+    data['log_vr_large']  = np.log(data['visit_rate_bmb'])
+    data.drop(columns=['ab_bombus', 'visit_rate_bmb'], inplace=True)
     return data
 
 def fill_biome(x, data):
@@ -130,16 +130,16 @@ def check_normality(data, column):
     # skewness and kurtosis
     print("Skewness: %f" % data[column].skew()) # Skewness: -0.220768
     print("Kurtosis: %f" % data[column].kurt()) # Kurtosis: -0.168611
-    # Check normality log_abundance
+    # Check normality log_visit_rate
     sns.distplot(data[column], fit=norm)
     fig = plt.figure()
     res = stats.probplot(data[column], plot=plt)
 
 def boxplot(data, x, ymin=-5, ymax=2):
-    fig = sns.boxplot(x=x, y="log_abundance", data=data)
+    fig = sns.boxplot(x=x, y="log_visit_rate", data=data)
     fig.axis(ymin=ymin, ymax=ymax)
 
-def add_mechanistic_values(data, model_name='Lonsdorf.Delphi_lcCont1_open1_forEd1_crEd1_div1_ins1max_dist1_suitmult'):
+def add_mechanistic_values(data, model_name='Lonsdorf.Delphi_lcCont1_open0_forEd0_crEd0_div0_ins0max_dist0_suitmult'):
     data_dir = "C:/Users/angel/git/Observ_models/data/"
     model_data  = pd.read_csv(data_dir + 'model_data_lite.csv')[['site_id','study_id',model_name]]
     return data.merge(model_data, on=['study_id', 'site_id'])
@@ -154,15 +154,15 @@ if __name__ == '__main__':
     data = df_features.merge(df_field, on=['study_id', 'site_id'])
     data = apply_minimum_conditions(data)
     data = fill_missing_biomes(data)
-    data = remap_crops(data)
-    data = compute_comparable_abundance(data)
-    data = compute_comparable_abundance_small(data)
-    data = compute_comparable_abundance_large(data)
+    # data = remap_crops(data)
+    data = compute_visit_rate(data)
+    # data = compute_visit_rate_small(data)
+    # data = compute_visit_rate_large(data)
     # data = add_mechanistic_values(data)
 
     # Separate predictors and labels
-    predictors = data.drop("log_abundance", axis=1)
-    labels     = data['log_abundance'].copy()
+    predictors = data.drop("log_visit_rate", axis=1)
+    labels     = data['log_visit_rate'].copy()
 
     # (Set biome as categorical)
     predictors['biome_num'] = predictors.biome_num.astype('object')
@@ -192,7 +192,7 @@ if __name__ == '__main__':
     # management_encoder = OrdinalEncoder(categories=[['unmanaged','conventional','IPM','organic']])
     # a = management_encoder.fit_transform(pred_management)
     #
-    # # Standardize numeric columns (except target log_abundance
+    # # Standardize numeric columns (except target log_visit_rate
     # pred_num = predictors.select_dtypes('number')
     # pred_num = StandardScaler().fit_transform(pred_num)
 
@@ -235,7 +235,7 @@ if __name__ == '__main__':
     feature_names = np.concatenate( (numeric_col, onehot_col), axis=0)
     predictors_prepared = pd.DataFrame(x_transformed, columns=feature_names, index=predictors.index)
     dataset_prepared = predictors_prepared.copy()
-    dataset_prepared['log_abundance'] = labels
+    dataset_prepared['log_visit_rate'] = labels
 
     #########################################################
     # Stratified split training and test (split by study_id)
@@ -253,28 +253,28 @@ if __name__ == '__main__':
     df_train = dataset_prepared[train_selection]
     df_test  = dataset_prepared[[~x for x in train_selection]]
 
-    # # Save predictors and labels (train and set)
-    df_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/train/data_prepared.csv', index=False)
-    df_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/test/data_prepared.csv', index=False)
+    # Save predictors and labels (train and set)
+    df_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_prepared.csv', index=False)
+    df_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_prepared.csv', index=False)
 
     # Save predictors and labels including model data (train and set)
-    df_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/train/data_prepared_with_mech.csv', index=False)
-    df_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/test/data_prepared_with_mech.csv', index=False)
+    df_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_prepared_with_mech.csv', index=False)
+    df_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_prepared_with_mech.csv', index=False)
 
-    # # Save data (not processed by pipeline) including study_id and site_id
+    # Save data (not processed by pipeline) including study_id and site_id
     data_train = data[train_selection]
     data_test  = data[[~x for x in train_selection]]
-    data_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/train/data_prepared_withIDs.csv', index=False)
-    data_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/test/data_prepared_withIDs.csv', index=False)
+    data_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_prepared_withIDs.csv', index=False)
+    data_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_prepared_withIDs.csv', index=False)
 
     #######################################
     # Explore
     #######################################
-    check_normality(data, 'log_abundance')
+    check_normality(data, 'log_visit_rate')
     data['year'] = data['study_id'].str[-4:]
     a = data.loc[data.year != "16_2",]
-    boxplot(a, 'year', 'log_abundance')
-    boxplot(data, 'biome_num', 'log_abundance')
+    boxplot(a, 'year', 'log_visit_rate')
+    boxplot(data, 'biome_num', 'log_visit_rate')
     # Check normality other variables
     sns.distplot(data['elevation'], fit=norm)
     fig = plt.figure()
@@ -285,8 +285,8 @@ if __name__ == '__main__':
 
     # guilds
     small = data.copy()
-    small = small.loc[ np.isfinite(small['log_ab_small']), ]
-    check_normality(small, 'log_ab_small')
-    large = data.copy().sort_values(by=["log_ab_large"])
-    large = large.loc[ np.isfinite(large['log_ab_large']), ]
-    check_normality(large, 'log_ab_large')
+    small = small.loc[ np.isfinite(small['log_vr_small']), ]
+    check_normality(small, 'log_vr_small')
+    large = data.copy().sort_values(by=["log_vr_large"])
+    large = large.loc[ np.isfinite(large['log_vr_large']), ]
+    check_normality(large, 'log_vr_large')

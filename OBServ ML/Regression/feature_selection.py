@@ -13,22 +13,22 @@ warnings.filterwarnings('ignore')
 
 def get_train_data_prepared():
     models_repo    = "C:/Users/angel/git/Observ_models/"
-    data_dir   = models_repo + "data/ML_preprocessing/train/"
+    data_dir   = models_repo + "data/ML/Regression/train/"
     return pd.read_csv(data_dir+'data_prepared.csv')
 
 def get_test_data_prepared():
     models_repo    = "C:/Users/angel/git/Observ_models/"
-    data_dir   = models_repo + "data/ML_preprocessing/test/"
+    data_dir   = models_repo + "data/ML/Regression/test/"
     return pd.read_csv(data_dir+'data_prepared.csv')
 
 def get_train_data_prepared_with_mechanistic():
     models_repo    = "C:/Users/angel/git/Observ_models/"
-    data_dir   = models_repo + "data/ML_preprocessing/train/"
+    data_dir   = models_repo + "data/ML/Regression/train/"
     return pd.read_csv(data_dir+'data_prepared_with_mech.csv')
 
 def get_test_data_prepared_with_mechanistic():
     models_repo    = "C:/Users/angel/git/Observ_models/"
-    data_dir   = models_repo + "data/ML_preprocessing/test/"
+    data_dir   = models_repo + "data/ML/Regression/test/"
     return pd.read_csv(data_dir+'data_prepared_with_mech.csv')
 
 def evaluate_model_rfe(model, predictors, labels, n_features=50):
@@ -94,15 +94,15 @@ if __name__ == '__main__':
     # df_results['mean'] = df_results.mean(axis=1)
     # df_results['n_features'] = range(min_n, max_n+1)
     # df_results.to_csv(
-    #     path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/feature_selection_RF.csv',
+    #     path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/feature_selection_RF.csv',
     #     index=False)
     # # n_features ~15 yields good results:
     # rfe = RFE(estimator=model, n_features_to_select=15)
     # rfe.fit(predictors_train, labels_train)
     # predictors_reduced_train = predictors_train[ predictors_train.columns[rfe.support_]]
     # predictors_reduced_test  = predictors_test[ predictors_test.columns[rfe.support_]]
-    # predictors_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML_preprocessing/train/predictors_red15RF.csv', index=False)
-    # predictors_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML_preprocessing/test/predictors_red15RF.csv', index=False)
+    # predictors_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/predictors_red15RF.csv', index=False)
+    # predictors_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/predictors_red15RF.csv', index=False)
     #
     # ##############################################################################
     # # Recursive Feature Elimination and Cross-Validated selection (RFECV)
@@ -110,10 +110,10 @@ if __name__ == '__main__':
     model = RandomForestRegressor(n_estimators=120, min_samples_split=3, min_samples_leaf=4, bootstrap=True)  # parameters found in 'model_selection'
     rfecv = RFECV(estimator=model, n_jobs=-1, cv=5, scoring="neg_mean_absolute_error")
     rfecv.fit(predictors_train, labels_train)
-    data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[rfecv.support_]),['log_abundance']) ]
-    data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[rfecv.support_]),['log_abundance']) ]
-    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML_preprocessing/train/data_reduced_RFECV.csv', index=False)
-    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML_preprocessing/test/data_reduced_RFECV.csv', index=False)
+    data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[rfecv.support_]),['log_visit_rate']) ]
+    data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[rfecv.support_]),['log_visit_rate']) ]
+    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_RFECV.csv', index=False)
+    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_RFECV.csv', index=False)
 
     #######################################
     # SequentialFeatureSelector (SFS)
@@ -134,17 +134,17 @@ if __name__ == '__main__':
     df_results['mean'] = df_results.mean(axis=1)
     df_results['n_features'] = range(min_n, max_n+1)
     df_results.to_csv(
-        path_or_buf='C:/Users/angel/git/Observ_models/data/ML_preprocessing/feature_selection_SVR_3-15.csv',
+        path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/feature_selection_SVR_3-15.csv',
         index=False)
     # Select n_features:
     # sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=58, cv=5, direction='forward', n_jobs=6)
     # sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=10, cv=5, direction='forward', n_jobs=6) # test with only 10, that gives not-that-bad score
     sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=7, cv=5, direction='forward', n_jobs=6)
     sfs.fit(predictors_train, labels_train)
-    data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[sfs.support_]),['log_abundance']) ]
-    data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[sfs.support_]),['log_abundance']) ]
-    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML_preprocessing/train/data_reduced_7.csv', index=False)
-    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML_preprocessing/test/data_reduced_7.csv', index=False)
+    data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[sfs.support_]),['log_visit_rate']) ]
+    data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[sfs.support_]),['log_visit_rate']) ]
+    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_7.csv', index=False)
+    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_7.csv', index=False)
 
     # EVALUATE THE MODEL WITH REDUCED PREDICTORS:
     model = SVR(C=1.7, coef0=-0.33, epsilon=0.09, gamma=0.14, kernel='rbf')

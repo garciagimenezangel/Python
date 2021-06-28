@@ -13,52 +13,52 @@ warnings.filterwarnings('ignore')
 
 def get_train_data_reduced_58():
     models_repo    = "C:/Users/angel/git/Observ_models/"
-    data_dir   = models_repo + "data/ML_preprocessing/train/"
+    data_dir   = models_repo + "data/ML/Regression/train/"
     return pd.read_csv(data_dir+'data_reduced_58.csv')
 
 def get_test_data_reduced_58():
     models_repo    = "C:/Users/angel/git/Observ_models/"
-    data_dir   = models_repo + "data/ML_preprocessing/test/"
+    data_dir   = models_repo + "data/ML/Regression/test/"
     return pd.read_csv(data_dir+'data_reduced_58.csv')
 
 def get_train_data_reduced_10():
     models_repo    = "C:/Users/angel/git/Observ_models/"
-    data_dir   = models_repo + "data/ML_preprocessing/train/"
+    data_dir   = models_repo + "data/ML/Regression/train/"
     return pd.read_csv(data_dir+'data_reduced_10.csv')
 
 def get_test_data_reduced_10():
     models_repo    = "C:/Users/angel/git/Observ_models/"
-    data_dir   = models_repo + "data/ML_preprocessing/test/"
+    data_dir   = models_repo + "data/ML/Regression/test/"
     return pd.read_csv(data_dir+'data_reduced_10.csv')
 
 def get_train_data_reduced_7():
     models_repo    = "C:/Users/angel/git/Observ_models/"
-    data_dir   = models_repo + "data/ML_preprocessing/train/"
+    data_dir   = models_repo + "data/ML/Regression/train/"
     return pd.read_csv(data_dir+'data_reduced_7.csv')
 
 def get_test_data_reduced_7():
     models_repo    = "C:/Users/angel/git/Observ_models/"
-    data_dir   = models_repo + "data/ML_preprocessing/test/"
+    data_dir   = models_repo + "data/ML/Regression/test/"
     return pd.read_csv(data_dir+'data_reduced_7.csv')
 
 def get_train_data_reduced_27():
     models_repo    = "C:/Users/angel/git/Observ_models/"
-    data_dir   = models_repo + "data/ML_preprocessing/train/"
+    data_dir   = models_repo + "data/ML/Regression/train/"
     return pd.read_csv(data_dir+'data_reduced_27.csv')
 
 def get_test_data_reduced_27():
     models_repo    = "C:/Users/angel/git/Observ_models/"
-    data_dir   = models_repo + "data/ML_preprocessing/test/"
+    data_dir   = models_repo + "data/ML/Regression/test/"
     return pd.read_csv(data_dir+'data_reduced_27.csv')
 
 def get_train_data_reduced_6():
     models_repo    = "C:/Users/angel/git/Observ_models/"
-    data_dir   = models_repo + "data/ML_preprocessing/train/"
+    data_dir   = models_repo + "data/ML/Regression/train/"
     return pd.read_csv(data_dir+'data_reduced_6.csv')
 
 def get_test_data_reduced_6():
     models_repo    = "C:/Users/angel/git/Observ_models/"
-    data_dir   = models_repo + "data/ML_preprocessing/test/"
+    data_dir   = models_repo + "data/ML/Regression/test/"
     return pd.read_csv(data_dir+'data_reduced_6.csv')
 
 if __name__ == '__main__':
@@ -99,5 +99,5 @@ if __name__ == '__main__':
     # Interactive plot
     import plotly.express as px
     df = pd.concat([get_test_data_reduced_27(), pd.DataFrame(yhat, columns=['predicted']) ], axis=1)
-    fig = px.scatter(df, x="predicted", y="log_abundance", hover_data=df.columns)
+    fig = px.scatter(df, x="predicted", y="log_visit_rate", hover_data=df.columns)
     fig.show()

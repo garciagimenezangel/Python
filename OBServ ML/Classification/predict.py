@@ -99,5 +99,5 @@ if __name__ == '__main__':
     # Interactive plot
     import plotly.express as px
     df = pd.concat([get_test_data_reduced_27(), pd.DataFrame(yhat, columns=['predicted']) ], axis=1)
-    fig = px.scatter(df, x="predicted", y="log_abundance", hover_data=df.columns)
+    fig = px.scatter(df, x="predicted", y="log_visit_rate", hover_data=df.columns)
     fig.show()
