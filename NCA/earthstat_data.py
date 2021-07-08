@@ -4,7 +4,7 @@ from dask_rasterio import read_raster, write_raster
 import dask.array as da
 
 earthstat_dir  = "C:/Users/angel/DATA/Earthstat/HarvestedAreaYield175Crops_Geotiff/HarvestedAreaYield175Crops_Geotiff/"
-layer = "HarvestedAreaHectares"
+layer = "Production"
 ext = ".tif"
 selected_files = [file for file in glob.iglob(earthstat_dir + '**/*' + layer + ext, recursive=True)]
 map2array=[]
@@ -16,5 +16,5 @@ with rasterio.open(selected_files[0]) as src:
     profile = src.profile
     profile.update(compress='lzw')
 
-write_raster(earthstat_dir + "SumHarvestedAreaHectares.tif", da.nansum(ds_stack,0), **profile)
+write_raster(earthstat_dir + "Sum" + layer + ".tif", da.nansum(ds_stack,0), **profile)
 
