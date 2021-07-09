@@ -34,7 +34,7 @@ def get_field_data():
     field_repo    = "C:/Users/angel/git/OBservData/"
     field_data_dir = field_repo + "Final_Data/"
     df_field     = pd.read_csv(field_data_dir+'CropPol_field_level_data.csv')
-    return df_field[['site_id', 'study_id', 'crop', 'management',
+    return df_field[['site_id', 'study_id', #'crop', 'management',
                      'ab_wildbees', 'ab_syrphids', 'ab_bombus',
                      'total_sampled_time', 'sampling_year']]
 

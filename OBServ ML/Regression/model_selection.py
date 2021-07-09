@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import warnings
 
-from sklearn.ensemble import ExtraTreesRegressor
+from sklearn.ensemble import ExtraTreesRegressor, RandomForestRegressor
 from sklearn.linear_model import ElasticNetCV, LassoCV, TweedieRegressor
 from sklearn.svm import SVR
 from sklearn.utils import all_estimators
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     # 2 ElasticNetCV
     # 3 LassoCV
     # 4 TweedieRegressor
-    # 5 ExtraTreesRegressor
+    # 5 RandomForestRegressor
 
     ########################
     # Hyperparameter tuning
@@ -94,8 +94,8 @@ if __name__ == '__main__':
     cvres = search.cv_results_
     for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
         print(np.sqrt(-mean_score), params)
-    search.best_params_
-    search.best_score_
+    search.best_params_ # {'eps': 0.02931633062568853, 'l1_ratio': 0.08421237467099396, 'n_alphas': 2}
+    search.best_score_ # -1.0528635717776293
 
     # LassoCV
     model = LassoCV()
@@ -110,8 +110,8 @@ if __name__ == '__main__':
     cvres = search.cv_results_
     for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
         print(np.sqrt(-mean_score), params)
-    search.best_params_
-    search.best_score_
+    search.best_params_ # {'eps': 0.0020065877446290396, 'n_alphas': 3}
+    search.best_score_ # -1.0616612391220008
 
     # TweedieRegressor
     model = TweedieRegressor()
@@ -128,17 +128,17 @@ if __name__ == '__main__':
     search.best_params_
     search.best_score_
 
-    # ExtraTreesRegressor
-    model = ExtraTreesRegressor()
+    # RandomForestRegressor
+    model = RandomForestRegressor()
     # define search space
     params = dict()
-    params['n_estimators'] = [2,8,32,128,512]
-    params['max_depth']    = [1,4,16,64]
-    params['min_samples_split'] = [1,4,16,64]
-    params['min_samples_leaf']  = [1,4,16,64]
+    params['n_estimators'] = [250,500,550,600]
+    params['max_depth']    = [1,2,4,8,16]
+    params['min_samples_split'] = [4,16,32]
+    params['min_samples_leaf']  = [16,64,128]
     params['min_weight_fraction_leaf']  = uniform(loc=0, scale=1)
-    params['max_leaf_nodes'] = [1,4,16,64]
-    params['min_impurity_split'] = [1,4,16,64]
+    params['max_leaf_nodes'] = [4,16,32,64]
+    params['min_impurity_decrease'] = uniform(loc=0, scale=1)
     params['warm_start'] = [True, False]
     # define the search
     search = RandomizedSearchCV(model, params, cv=5, scoring='neg_mean_absolute_error', n_iter=1000,
@@ -147,9 +147,8 @@ if __name__ == '__main__':
     cvres = search.cv_results_
     for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
         print(np.sqrt(-mean_score), params)
-    search.best_params_ # {'max_depth': 4, 'max_leaf_nodes': 64, 'min_impurity_split': 1, 'min_samples_leaf': 4, 'min_samples_split': 16, 'min_weight_fraction_leaf': 0.07133051462209383, 'n_estimators': 8, 'warm_start': False}
-    search.best_score_ # -1.077662406413546
+    search.best_params_ # {'max_depth': 8, 'max_leaf_nodes': 32, 'min_impurity_decrease': 0.03918141818683696, 'min_samples_leaf': 64, 'min_samples_split': 32, 'min_weight_fraction_leaf': 0.12148045457124956, 'n_estimators': 550, 'warm_start': True}
+    search.best_score_ # -1.0822663779610597
 
-    #model = ExtraTreesRegressor(max_depth=4, max_leaf_nodes=64, min_impurity_split=1, min_samples_leaf=4, min_samples_split=16, min_weight_fraction_leaf=0.07133051462209383, n_estimators=8, warm_start=False)
 
 

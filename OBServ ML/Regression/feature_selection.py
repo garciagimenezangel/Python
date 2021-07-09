@@ -118,10 +118,10 @@ if __name__ == '__main__':
     #######################################
     # SequentialFeatureSelector (SFS)
     #######################################
-    model = SVR(C=1.7, coef0=-0.33, epsilon=0.09, gamma=0.14, kernel='rbf')
+    model = SVR(C=1.73, epsilon=0.09, gamma=0.14) #{'C': 1.7342889543571887, 'coef0': -0.3345352614917637, 'epsilon': 0.09256863132721108, 'gamma': 0.14372942931130184, 'kernel': 'rbf'}
     # Explore number of features
     min_n = 3
-    max_n = 15
+    max_n = 40
     results, n_features = list(), list()
     for i in range(min_n,max_n+1):
         print(datetime.datetime.now())
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     df_results['mean'] = df_results.mean(axis=1)
     df_results['n_features'] = range(min_n, max_n+1)
     df_results.to_csv(
-        path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/feature_selection_SVR_3-15.csv',
+        path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/feature_selection_SVR_3-40.csv',
         index=False)
     # Select n_features:
     # sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=58, cv=5, direction='forward', n_jobs=6)
