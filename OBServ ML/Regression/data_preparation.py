@@ -7,9 +7,10 @@ from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import norm
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedKFold
 from scipy import stats
 import pollinators_dependency as poll_dep
+import pickle
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -203,6 +204,7 @@ if __name__ == '__main__':
     numeric_col = list(pred_num)
     ordinal_col = ["management"]
     onehot_col  = ["biome_num"]
+    dummy_col   = ["study_id","site_id"] # keep this to use later (e.g. create custom cross validation iterator)
     num_pipeline = Pipeline([
         ('num_imputer', SimpleImputer(strategy="mean")),
         ('std_scaler', StandardScaler())
@@ -214,11 +216,13 @@ if __name__ == '__main__':
     onehot_pipeline = Pipeline([
         ('onehot_encoder', OneHotEncoder())
     ])
+    dummy_pipeline = Pipeline([('dummy_imputer', SimpleImputer(strategy="constant", fill_value=""))])
     X = onehot_pipeline.fit(predictors[onehot_col])
     onehot_encoder_names = X.named_steps['onehot_encoder'].get_feature_names()
     full_pipeline = ColumnTransformer([
         ("numeric", num_pipeline, numeric_col),
         # ("ordinal", ordinal_pipeline, ordinal_col),
+        ("dummy", dummy_pipeline, dummy_col),
         ("onehot",  onehot_pipeline, onehot_col )
     ])
 
@@ -230,16 +234,17 @@ if __name__ == '__main__':
     # Convert into data frame
     numeric_col = np.array(pred_num.columns)
     # ordinal_col = np.array(["management"])
+    dummy_col = np.array(["study_id","site_id"])
     onehot_col  = np.array(onehot_encoder_names)
     # feature_names = np.concatenate( (numeric_col, ordinal_col, onehot_col), axis=0)
-    feature_names = np.concatenate( (numeric_col, onehot_col), axis=0)
+    feature_names = np.concatenate( (numeric_col, dummy_col, onehot_col), axis=0)
     predictors_prepared = pd.DataFrame(x_transformed, columns=feature_names, index=predictors.index)
     dataset_prepared = predictors_prepared.copy()
     dataset_prepared['log_visit_rate'] = labels
 
-    #########################################################
+    #############################################################
     # Stratified split training and test (split by study_id)
-    #########################################################
+    #############################################################
     df_studies = data.groupby('study_id', as_index=False).first()[['study_id','biome_num']]
     # For the training set, take biomes with more than one count (otherwise I get an error in train_test_split.
     # They are added in the test set later, to keep all data
@@ -250,22 +255,42 @@ if __name__ == '__main__':
     x_train, x_test, y_train, y_test = train_test_split(df_studies_split, strata, stratify=strata,  test_size=0.25, random_state=135)
     studies_train   = x_train.study_id
     train_selection = [ x_train.study_id.str.contains(x).any() for x in data.study_id ]
-    df_train = dataset_prepared[train_selection]
-    df_test  = dataset_prepared[[~x for x in train_selection]]
+    df_train = dataset_prepared[train_selection].reset_index(drop=True)
+    df_test  = dataset_prepared[[~x for x in train_selection]].reset_index(drop=True)
 
-    # Save predictors and labels (train and set)
-    df_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_prepared.csv', index=False)
-    df_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_prepared.csv', index=False)
+    # Save predictors and labels (train and set), removing study_id
+    df_train.drop(columns=['study_id', 'site_id']).to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_prepared.csv', index=False)
+    df_test.drop(columns=['study_id', 'site_id']).to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_prepared.csv', index=False)
 
     # Save predictors and labels including model data (train and set)
-    df_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_prepared_with_mech.csv', index=False)
-    df_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_prepared_with_mech.csv', index=False)
+    # df_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_prepared_with_mech.csv', index=False)
+    # df_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_prepared_with_mech.csv', index=False)
 
     # Save data (not processed by pipeline) including study_id and site_id
-    data_train = data[train_selection]
-    data_test  = data[[~x for x in train_selection]]
-    data_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_prepared_withIDs.csv', index=False)
-    data_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_prepared_withIDs.csv', index=False)
+    train_withIDs = data[train_selection].copy().reset_index(drop=True)
+    test_withIDs  = data[[~x for x in train_selection]].copy().reset_index(drop=True)
+    train_withIDs.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_prepared_withIDs.csv', index=False)
+    test_withIDs.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_prepared_withIDs.csv', index=False)
+
+    # Save custom cross validation iterator
+    df_studies = data[train_selection].reset_index(drop=True).groupby('study_id', as_index=False).first()[['study_id', 'biome_num']]
+    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=135)
+    target = df_studies.loc[:, 'biome_num'].astype(int)
+    df_studies['fold'] = -1
+    n_fold = 0
+    for train_index, test_index in skf.split(df_studies, target):
+        df_studies.loc[test_index,'fold'] = n_fold
+        n_fold = n_fold+1
+    df_studies.drop(columns=['biome_num'], inplace=True)
+    dict_folds = df_studies.set_index('study_id').T.to_dict('records')[0]
+    df_train.replace(to_replace=dict_folds, inplace=True)
+    myCViterator = []
+    for i in range(0,5):
+        trainIndices = df_train[df_train['study_id'] != i].index.values.astype(int)
+        testIndices = df_train[df_train['study_id'] == i].index.values.astype(int)
+        myCViterator.append((trainIndices, testIndices))
+    with open('C:/Users/angel/git/Observ_models/data/ML/Regression/train/myCViterator.pkl', 'wb') as f:
+        pickle.dump(myCViterator, f)
 
     #######################################
     # Explore

@@ -1,13 +1,17 @@
+import pickle
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.feature_selection import RFE, RFECV
 import warnings
+
+from sklearn.linear_model import BayesianRidge
 from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import cross_val_score
 from matplotlib import pyplot
 from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn.svm import SVR
+from sklearn.inspection import permutation_importance
 import datetime
 warnings.filterwarnings('ignore')
 
@@ -31,19 +35,27 @@ def get_test_data_prepared_with_mechanistic():
     data_dir   = models_repo + "data/ML/Regression/test/"
     return pd.read_csv(data_dir+'data_prepared_with_mech.csv')
 
-def evaluate_model_rfe(model, predictors, labels, n_features=50):
+def evaluate_model_rfe(model, predictors, labels, n_features=50, cv=5, n_jobs=-1):
     rfe = RFE(estimator=model, n_features_to_select=n_features)
     rfe.fit(predictors, labels)
     predictors_reduced = predictors[ predictors.columns[rfe.support_] ]
-    scores = cross_val_score(model, predictors_reduced, labels, scoring="neg_mean_absolute_error", cv=5, n_jobs=-1)
-    return np.sqrt(-scores)
+    scores = cross_val_score(model, predictors_reduced, labels, scoring="neg_mean_absolute_error", cv=cv, n_jobs=n_jobs)
+    scores = -scores
+    model.fit(predictors_reduced, labels)
+    abundance_predictions = model.predict(predictors_reduced)
+    mae = mean_absolute_error(labels, abundance_predictions)
+    return np.append(scores, mae)
 
-def evaluate_model_sfs(model, predictors, labels, direction='backward', n_features=50, n_jobs=-1):
-    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=n_features, cv=5, direction=direction, n_jobs=n_jobs)
+def evaluate_model_sfs(model, predictors, labels, direction='backward', n_features=50, n_jobs=-1, cv=5):
+    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=n_features, cv=cv, direction=direction, n_jobs=n_jobs)
     sfs.fit(predictors, labels)
     predictors_reduced = predictors[ predictors.columns[sfs.support_] ]
-    scores = cross_val_score(model, predictors_reduced, labels, scoring="neg_mean_absolute_error", cv=5, n_jobs=n_jobs)
-    return np.sqrt(-scores)
+    scores = cross_val_score(model, predictors_reduced, labels, scoring="neg_mean_absolute_error", cv=cv, n_jobs=n_jobs)
+    scores = -scores
+    model.fit(predictors_reduced, labels)
+    abundance_predictions = model.predict(predictors_reduced)
+    mae = mean_absolute_error(labels, abundance_predictions)
+    return np.append(scores, mae)
 
 if __name__ == '__main__':
     train_prepared = get_train_data_prepared()
@@ -57,104 +69,83 @@ if __name__ == '__main__':
     predictors_test  = test_prepared.iloc[:,:-1]
     labels_train     = np.array(train_prepared.iloc[:,-1:]).flatten()
 
+    # Load custom cross validation
+    with open('C:/Users/angel/git/Observ_models/data/ML/Regression/train/myCViterator.pkl', 'rb') as file:
+        myCViterator = pickle.load(file)
+
     #######################################
-    # Feature importance
+    # Feature importance with RF
     #######################################
     # TODO: use other model among the ones tried in model_selection (SVR with rbf doesn't allow the extraction of feature importance). See: https://stats.stackexchange.com/questions/265656/is-there-a-way-to-determine-the-important-features-weight-for-an-svm-that-uses)
-    model = RandomForestRegressor(n_estimators=120, min_samples_split=3, min_samples_leaf=4, bootstrap=True) # parameters found in 'model_selection'
+    model = RandomForestRegressor(max_depth=16, max_leaf_nodes=16, min_impurity_decrease=0.034256187052082665, min_samples_leaf=16, min_samples_split=16, min_weight_fraction_leaf=0.31790461400795267, n_estimators=250, warm_start=False) # parameters found in 'model_selection'
     model.fit(predictors_train, labels_train)
-    feature_names = np.array(['bio01', 'bio02', 'bio03', 'bio04', 'bio05', 'bio06', 'bio07', 'bio08',
-       'bio09', 'bio10', 'bio11', 'bio12', 'bio13', 'bio14', 'bio15', 'bio16',
-       'bio17', 'bio18', 'bio19', 'chili', 'def', 'dist_seminat', 'ec', 'ei',
-       'elevation', 'es', 'et', 'gHM', 'gpp', 'le', 'pdsi', 'pet', 'ple', 'ro',
-       'soil', 'soil_carbon_b10', 'soil_carbon_b200', 'soil_clay_b10',
-       'soil_clay_b200', 'soil_den_b10', 'soil_den_b200', 'soil_pH_b10',
-       'soil_pH_b200', 'soil_sand_b10', 'soil_sand_b200', 'soil_water_b10',
-       'soil_water_b200', 'srad', 'swe', 'topo_div', 'vap', 'vpd', 'vs',
-       'activity', 'bare', 'cropland', 'grass', 'moss', 'shrub', 'tree',
-       'urban', 'x0_1.0', 'x0_2.0', 'x0_4.0', 'x0_5.0', 'x0_6.0', 'x0_7.0',
-       'x0_8.0', 'x0_10.0', 'x0_12.0'])
+    feature_names = predictors_train.columns
     feature_importance = pd.DataFrame(sorted(zip(model.feature_importances_, feature_names), reverse=True))
-    #
-    # #######################################
-    # # Recursive Feature Elimination (RFE)
-    # #######################################
-    # model = RandomForestRegressor(n_estimators=120, min_samples_split=3, min_samples_leaf=4, bootstrap=True) # parameters found in 'model_selection'
-    # # Explore number of features with rfe
-    # min_n = 10
-    # max_n = 30
-    # results, n_features = list(), list()
-    # for i in range(min_n,max_n+1):
-    #     scores = evaluate_model_rfe(model, predictors_train, labels_train, n_features=i)
-    #     results.append(scores)
-    #     n_features.append(i)
-    #     print('>%s %.3f (%.3f)' % (i, np.mean(scores), np.std(scores)))
-    # pyplot.boxplot(results, labels=n_features, showmeans=True)
-    # df_results = pd.DataFrame(list(map(np.ravel, results)))
-    # df_results['mean'] = df_results.mean(axis=1)
-    # df_results['n_features'] = range(min_n, max_n+1)
-    # df_results.to_csv(
-    #     path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/feature_selection_RF.csv',
-    #     index=False)
-    # # n_features ~15 yields good results:
-    # rfe = RFE(estimator=model, n_features_to_select=15)
-    # rfe.fit(predictors_train, labels_train)
-    # predictors_reduced_train = predictors_train[ predictors_train.columns[rfe.support_]]
-    # predictors_reduced_test  = predictors_test[ predictors_test.columns[rfe.support_]]
-    # predictors_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/predictors_red15RF.csv', index=False)
-    # predictors_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/predictors_red15RF.csv', index=False)
-    #
-    # ##############################################################################
-    # # Recursive Feature Elimination and Cross-Validated selection (RFECV)
-    # ##############################################################################
-    model = RandomForestRegressor(n_estimators=120, min_samples_split=3, min_samples_leaf=4, bootstrap=True)  # parameters found in 'model_selection'
-    rfecv = RFECV(estimator=model, n_jobs=-1, cv=5, scoring="neg_mean_absolute_error")
-    rfecv.fit(predictors_train, labels_train)
-    data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[rfecv.support_]),['log_visit_rate']) ]
-    data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[rfecv.support_]),['log_visit_rate']) ]
-    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_RFECV.csv', index=False)
-    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_RFECV.csv', index=False)
 
     #######################################
     # SequentialFeatureSelector (SFS)
     #######################################
-    model = SVR(C=1.73, epsilon=0.09, gamma=0.14) #{'C': 1.7342889543571887, 'coef0': -0.3345352614917637, 'epsilon': 0.09256863132721108, 'gamma': 0.14372942931130184, 'kernel': 'rbf'}
+    model = SVR(C=0.22, epsilon=0.17, gamma=0.01, shrinking=False) #{'C': 0.21797997747706432, 'coef0': -0.4971113982700808, 'degree': 4, 'epsilon': 0.16537034144285234, 'gamma': 0.008623955809822392, 'kernel': 'rbf', 'shrinking': False}
     # Explore number of features
     min_n = 3
     max_n = 40
     results, n_features = list(), list()
     for i in range(min_n,max_n+1):
         print(datetime.datetime.now())
-        scores = evaluate_model_sfs(model, predictors_train, labels_train, n_features=i, direction='forward', n_jobs=6)
+        scores = evaluate_model_sfs(model, predictors_train, labels_train, cv=myCViterator, n_features=i, direction='forward', n_jobs=6)
         results.append(scores)
         n_features.append(i)
-        print('>%s %.3f (%.3f)' % (i, np.mean(scores), np.std(scores)))
-    pyplot.boxplot(results, labels=n_features, showmeans=True)
+        print('>%s %.3f (%.3f)' % (i, np.mean(scores[:-1]), np.std(scores[:-1])))
     df_results = pd.DataFrame(list(map(np.ravel, results)))
-    df_results['mean'] = df_results.mean(axis=1)
+    df_results['mean'] = df_results.loc[:,0:4].mean(axis=1)
     df_results['n_features'] = range(min_n, max_n+1)
+    df_results.rename(columns={5: 'All'}, inplace=True)
     df_results.to_csv(
-        path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/feature_selection_SVR_3-40.csv',
+        path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_SVR_3-40.csv',
         index=False)
+    # Plot
+    scores = df_results.iloc[:, :-3].values.tolist()
+    pyplot.boxplot(scores, labels=df_results.n_features, showmeans=True)
+    pyplot.ylabel('MAE', fontsize=16)
+    pyplot.xlabel('N features', fontsize=16)
+    pyplot.plot(df_results.n_features-2, df_results.All, label='Training', color='red')
+    pyplot.plot(df_results.n_features-2, df_results[['mean']], label='Validation', color='green')
+    pyplot.legend()
     # Select n_features:
     # sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=58, cv=5, direction='forward', n_jobs=6)
     # sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=10, cv=5, direction='forward', n_jobs=6) # test with only 10, that gives not-that-bad score
-    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=7, cv=5, direction='forward', n_jobs=6)
+    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=8, cv=myCViterator, direction='forward', n_jobs=6)
     sfs.fit(predictors_train, labels_train)
     data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[sfs.support_]),['log_visit_rate']) ]
     data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[sfs.support_]),['log_visit_rate']) ]
-    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_7.csv', index=False)
-    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_7.csv', index=False)
+    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_8.csv', index=False)
+    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_8.csv', index=False)
+
+    #######################################
+    # Permutation importance
+    #######################################
+    model = SVR(C=2.62, epsilon=0.05, gamma=0.21) #{'C': 2.6180503547870377, 'coef0': -0.5901821308327051, 'epsilon': 0.045644987037295054, 'gamma': 0.2112333725279757, 'kernel': 'rbf'}
+    model.fit(predictors_train, labels_train)
+    perm_importance = permutation_importance(model, predictors_train, labels_train, random_state=135, n_jobs=6)
+    feature_names = predictors_train.columns
+    feature_importance = pd.DataFrame(sorted(zip(perm_importance.importances_mean, feature_names), reverse=True))
+    pyplot.barh(feature_importance.loc[:,1], feature_importance.loc[:,0])
+    # Take 29 features (testing, threshold around 0.15)
+    features_selected = feature_importance.loc[0:10,1]
+    data_reduced_train = train_prepared[np.append(features_selected, ['log_visit_rate'])]
+    data_reduced_test  = test_prepared[np.append(features_selected, ['log_visit_rate'])]
+    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_11.csv', index=False)
+    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_11.csv', index=False)
 
     # EVALUATE THE MODEL WITH REDUCED PREDICTORS:
-    model = SVR(C=1.7, coef0=-0.33, epsilon=0.09, gamma=0.14, kernel='rbf')
+    model = SVR(C=2.62, epsilon=0.05, gamma=0.21)
     predictors_train = data_reduced_train.iloc[:,:-1]
     labels_train     = np.array(data_reduced_train.iloc[:,-1:]).flatten()
     model.fit(predictors_train, labels_train)
     ab_predictions = model.predict(predictors_train)
     mae = mean_absolute_error(labels_train, ab_predictions)
-    scores = cross_val_score(model, predictors_train, labels_train, scoring="neg_mean_absolute_error", cv=5)
-    mae_scores = np.sqrt(-scores)
+    scores = cross_val_score(model, predictors_train, labels_train, scoring="neg_mean_absolute_error", cv=myCViterator)
+    mae_scores = -scores
     print('MAE all: ', mae)
     print('Mean: ', mae_scores.mean())
     print('Std: ', mae_scores.std())
@@ -166,8 +157,63 @@ if __name__ == '__main__':
     model.fit(predictors_train, labels_train)
     ab_predictions = model.predict(predictors_train)
     mae = mean_absolute_error(labels_train, ab_predictions)
-    scores = cross_val_score(model, predictors_train, labels_train, scoring="neg_mean_absolute_error", cv=5)
+    scores = cross_val_score(model, predictors_train, labels_train, scoring="neg_mean_absolute_error", cv=myCViterator)
     mae_scores = np.sqrt(-scores)
     print('MAE all: ', mae)
     print('Mean: ', mae_scores.mean())
     print('Std: ', mae_scores.std())
+
+    #
+    # #######################################
+    # # Recursive Feature Elimination (RFE)
+    # #######################################
+    model = BayesianRidge(alpha_1 = 5.661182937742398, alpha_2 = 8.158544161338462, lambda_1 = 7.509288525874375, lambda_2 = 0.08383802954777253)
+    # model = RandomForestRegressor(n_estimators=120, min_samples_split=3, min_samples_leaf=4, bootstrap=True) # parameters found in 'model_selection'
+    # Explore number of features with rfe
+    min_n = 3
+    max_n = 40
+    results, n_features = list(), list()
+    for i in range(min_n,max_n+1):
+        print(datetime.datetime.now())
+        scores = evaluate_model_rfe(model, predictors_train, labels_train, cv=myCViterator, n_features=i, n_jobs=6)
+        results.append(scores)
+        n_features.append(i)
+        print('>%s %.3f (%.3f)' % (i, np.mean(scores[:-1]), np.std(scores[:-1])))
+    df_results = pd.DataFrame(list(map(np.ravel, results)))
+    df_results['mean'] = df_results.loc[:,0:4].mean(axis=1)
+    df_results['n_features'] = range(min_n, max_n+1)
+    df_results.rename(columns={5: 'All'}, inplace=True)
+    df_results.to_csv(
+        path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_BayesianRidge_3-40.csv',
+        index=False)
+    # Plot
+    scores = df_results.iloc[:, :-3].values.tolist()
+    pyplot.boxplot(scores, labels=df_results.n_features, showmeans=True)
+    pyplot.ylabel('MAE', fontsize=16)
+    pyplot.xlabel('N features', fontsize=16)
+    pyplot.plot(df_results.n_features-2, df_results.All, label='Training', color='red')
+    pyplot.plot(df_results.n_features-2, df_results[['mean']], label='Validation', color='green')
+    pyplot.legend()
+    # Select n_features:
+    rfe = RFE(estimator=model, n_features_to_select=16)
+    rfe.fit(predictors_train, labels_train)
+    data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[rfe.support_]),['log_visit_rate']) ]
+    data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[rfe.support_]),['log_visit_rate']) ]
+    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_16.csv', index=False)
+    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_16.csv', index=False)
+
+
+    # ##############################################################################
+    # # Recursive Feature Elimination and Cross-Validated selection (RFECV)
+    # ##############################################################################
+    model = BayesianRidge(alpha_1 = 5.661182937742398, alpha_2 = 8.158544161338462, lambda_1 = 7.509288525874375, lambda_2 = 0.08383802954777253)
+    # model = RandomForestRegressor(n_estimators=120, min_samples_split=3, min_samples_leaf=4, bootstrap=True)  # parameters found in 'model_selection'
+    rfecv = RFECV(estimator=model, n_jobs=-1, cv=myCViterator, scoring="neg_mean_absolute_error")
+    rfecv.fit(predictors_train, labels_train)
+    data_reduced_train = train_prepared[
+        np.append(np.array(predictors_train.columns[rfecv.support_]), ['log_visit_rate'])]
+    data_reduced_test = test_prepared[np.append(np.array(predictors_test.columns[rfecv.support_]), ['log_visit_rate'])]
+    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_RFECV.csv',
+                              index=False)
+    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_RFECV.csv',
+                             index=False)
