@@ -12,20 +12,18 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.model_selection import cross_val_score, RandomizedSearchCV
 from scipy.stats import uniform
 warnings.filterwarnings('ignore')
+models_repo = "C:/Users/angel/git/Observ_models/"
+root_dir    = models_repo + "data/ML/Regression/train/"
 
 def get_data_prepared():
-    models_repo    = "C:/Users/angel/git/Observ_models/"
-    data_dir   = models_repo + "data/ML/Regression/train/"
-    return pd.read_csv(data_dir+'data_prepared.csv')
+    return pd.read_csv(root_dir+'data_prepared.csv')
 
 def get_data_reduced(n_features):
-    models_repo    = "C:/Users/angel/git/Observ_models/"
-    data_dir   = models_repo + "data/ML/Regression/train/"
-    return pd.read_csv(data_dir+'data_reduced_'+str(n_features)+'.csv')
+    return pd.read_csv(root_dir+'data_reduced_'+str(n_features)+'.csv')
 
 if __name__ == '__main__':
-    data_prepared = get_data_prepared()
-    # data_prepared = get_data_reduced(10)
+    # data_prepared = get_data_prepared()
+    data_prepared = get_data_reduced(15)
     predictors    = data_prepared.iloc[:,:-1]
     labels        = np.array(data_prepared.iloc[:,-1:]).flatten()
 
@@ -89,8 +87,10 @@ if __name__ == '__main__':
     cvres = search.cv_results_
     for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
         print(-mean_score, params)
-    search.best_params_ # {'C': 2.9468542209755357, 'coef0': -0.6868465520687694, 'degree': 4, 'epsilon': 0.18702907953343395, 'gamma': 0.1632449384464454, 'kernel': 'rbf', 'shrinking': True}
-    search.best_score_  # -0.9462104354789641
+    search.best_params_ # all features: {'C': 2.9468542209755357, 'coef0': -0.6868465520687694, 'degree': 4, 'epsilon': 0.18702907953343395, 'gamma': 0.1632449384464454, 'kernel': 'rbf', 'shrinking': True}
+                        # 15 features: {'C': 2.9468542209755357, 'coef0': -0.6868465520687694, 'degree': 4, 'epsilon': 0.18702907953343395, 'gamma': 0.1632449384464454, 'kernel': 'rbf', 'shrinking': True}
+    search.best_score_  # all features: -0.9462104354789641
+                        # 15 features: -0.87222462616609
 
     # HistGradientBoostingRegressor
     model = HistGradientBoostingRegressor()
@@ -105,13 +105,17 @@ if __name__ == '__main__':
     params['warm_start']  = [False, True]
     # define the search
     search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=1000,
-                                return_train_score=True, verbose=2, random_state=135, n_jobs=-1)
+                                return_train_score=True, verbose=2, random_state=135, n_jobs=6)
     search.fit(predictors, labels)
     cvres = search.cv_results_
     for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
         print(-mean_score, params)
-    search.best_params_ # {'l2_regularization': 0.02021888460670551, 'learning_rate': 0.04277282248041758, 'loss': 'least_squares', 'max_depth': 4, 'max_leaf_nodes': 32, 'min_samples_leaf': 16, 'warm_start': True}
-    search.best_score_ # -0.9383553540061313
+    search.best_params_ # all features: {'l2_regularization': 0.02021888460670551, 'learning_rate': 0.04277282248041758, 'loss': 'least_squares', 'max_depth': 4, 'max_leaf_nodes': 32, 'min_samples_leaf': 16, 'warm_start': True}
+                        # 5 features: {'l2_regularization': 0.1923237939031256, 'learning_rate': 0.10551346041298326, 'loss': 'least_absolute_deviation', 'max_depth': 4, 'max_leaf_nodes': 32, 'min_samples_leaf': 4, 'warm_start': False}
+                        # 26 features: {'l2_regularization': 0.02021888460670551, 'learning_rate': 0.04277282248041758, 'loss': 'least_squares', 'max_depth': 4, 'max_leaf_nodes': 32, 'min_samples_leaf': 16, 'warm_start': True}
+    search.best_score_ # all features: -0.9383553540061313
+                        # 5 features: -0.8809402223744808
+                        # 26 features: -0.863443455817459
 
     # ExtraTreesRegressor
     model = ExtraTreesRegressor()

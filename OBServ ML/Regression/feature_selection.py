@@ -1,6 +1,7 @@
 import pickle
 import pandas as pd
 import numpy as np
+from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.ensemble import RandomForestRegressor, HistGradientBoostingRegressor
 from sklearn.feature_selection import RFE, RFECV
 import warnings
@@ -13,26 +14,23 @@ from sklearn.svm import SVR
 from sklearn.inspection import permutation_importance
 import datetime
 warnings.filterwarnings('ignore')
+models_repo = "C:/Users/angel/git/Observ_models/"
 
 def get_train_data_prepared():
-    models_repo    = "C:/Users/angel/git/Observ_models/"
     data_dir   = models_repo + "data/ML/Regression/train/"
     return pd.read_csv(data_dir+'data_prepared.csv')
 
 def get_test_data_prepared():
-    models_repo    = "C:/Users/angel/git/Observ_models/"
     data_dir   = models_repo + "data/ML/Regression/test/"
     return pd.read_csv(data_dir+'data_prepared.csv')
 
-def get_train_data_prepared_with_mechanistic():
-    models_repo    = "C:/Users/angel/git/Observ_models/"
+def get_train_data_prepared_with_management():
     data_dir   = models_repo + "data/ML/Regression/train/"
-    return pd.read_csv(data_dir+'data_prepared_with_mech.csv')
+    return pd.read_csv(data_dir+'data_prepared_withManag.csv')
 
-def get_test_data_prepared_with_mechanistic():
-    models_repo    = "C:/Users/angel/git/Observ_models/"
+def get_test_data_prepared_with_management():
     data_dir   = models_repo + "data/ML/Regression/test/"
-    return pd.read_csv(data_dir+'data_prepared_with_mech.csv')
+    return pd.read_csv(data_dir+'data_prepared_withManag.csv')
 
 def evaluate_model_rfe(model, predictors, labels, n_features=50, cv=5, n_jobs=-1):
     rfe = RFE(estimator=model, n_features_to_select=n_features)
@@ -50,8 +48,8 @@ if __name__ == '__main__':
     train_prepared = get_train_data_prepared()
     test_prepared = get_test_data_prepared()
     # Including mechanistic model value
-    # train_prepared = get_train_data_prepared_with_mechanistic()
-    # test_prepared = get_test_data_prepared_with_mechanistic()
+    # train_prepared = get_train_data_prepared_with_management()
+    # test_prepared = get_test_data_prepared_with_management()
 
     # Get predictors and labels
     predictors_train = train_prepared.iloc[:,:-1]
@@ -74,8 +72,8 @@ if __name__ == '__main__':
     #######################################
     # SequentialFeatureSelector (SFS)
     #######################################
-    model = HistGradientBoostingRegressor(l2_regularization=0.02021888460670551, learning_rate=0.04277282248041758, loss='least_squares', max_depth=4, max_leaf_nodes=32, min_samples_leaf=16, warm_start=True)
-    # model = SVR(C=2.9468542209755357, epsilon=0.18702907953343395, gamma=0.1632449384464454, shrinking=True) #{'C': 2.9468542209755357, 'coef0': -0.6868465520687694, 'degree': 4, 'epsilon': 0.18702907953343395, 'gamma': 0.1632449384464454, 'kernel': 'rbf', 'shrinking': True}
+    # model = HistGradientBoostingRegressor(l2_regularization=0.02021888460670551, learning_rate=0.04277282248041758, loss='least_squares', max_depth=4, max_leaf_nodes=32, min_samples_leaf=16, warm_start=True)
+    # model = SVR(C=2.9468542209755357, epsilon=0.18702907953343395, gamma=0.1632449384464454) #{'C': 2.9468542209755357, 'coef0': -0.6868465520687694, 'degree': 4, 'epsilon': 0.18702907953343395, 'gamma': 0.1632449384464454, 'kernel': 'rbf', 'shrinking': True}
     # Explore number of features
     min_n = 3
     max_n = 40
@@ -93,8 +91,8 @@ if __name__ == '__main__':
     df_results_train['n_features'] = range(min_n, max_n+1)
     df_results_test['mean']        = df_results_test.mean(axis=1)
     df_results_test['n_features']  = range(min_n, max_n+1)
-    df_results_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_train_SVR_3-40.csv', index=False)
-    df_results_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_test_SVR_3-40.csv', index=False)
+    df_results_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_train_HistGradientBoosting_3-40.csv', index=False)
+    df_results_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_test_HistGradientBoosting_3-40.csv', index=False)
     # Plot
     scores_train = df_results_train.iloc[:, 0:5].values.tolist()
     scores_test  = df_results_test.iloc[:, 0:5].values.tolist()
@@ -110,13 +108,12 @@ if __name__ == '__main__':
     pyplot.xlabel('N features', fontsize=16)
     pyplot.legend(loc="best")
     # Select n_features:
-    # sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=58, cv=5, direction='forward', n_jobs=6)
-    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=10, cv=myCViterator, direction='forward', n_jobs=6)
+    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=26, cv=myCViterator, direction='forward', n_jobs=6)
     sfs.fit(predictors_train, labels_train)
     data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[sfs.support_]),['log_visit_rate']) ]
     data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[sfs.support_]),['log_visit_rate']) ]
-    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_10.csv', index=False)
-    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_10.csv', index=False)
+    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_15.csv', index=False)
+    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_15.csv', index=False)
 
     # #######################################
     # # Permutation importance

@@ -1,7 +1,8 @@
 import pickle
-
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.experimental import enable_hist_gradient_boosting
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.linear_model import BayesianRidge
 from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import SVC, SVR
@@ -119,7 +120,7 @@ def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
 
 
 # data_prepared = get_data_prepared()
-data_prepared = get_data_reduced(16)
+data_prepared = get_data_reduced(26)
 predictors = data_prepared.iloc[:, :-1]
 labels = np.array(data_prepared.iloc[:, -1:]).flatten()
 # Load custom cross validation
@@ -127,8 +128,9 @@ with open('C:/Users/angel/git/Observ_models/data/ML/Regression/train/myCViterato
     myCViterator = pickle.load(file)
 
 title = "Learning Curves"
-# estimator = SVR(C = 2.41199588236654, epsilon = 0.07426154697634271, gamma = 0.002148615554943889)
-estimator = BayesianRidge(alpha_1 = 5.661182937742398, alpha_2 = 8.158544161338462, lambda_1 = 7.509288525874375, lambda_2 = 0.08383802954777253)
+estimator = HistGradientBoostingRegressor(l2_regularization=0.02021888460670551, learning_rate=0.04277282248041758, loss='least_squares', max_depth=4, max_leaf_nodes=32, min_samples_leaf=16, warm_start=True)
+# estimator = HistGradientBoostingRegressor(l2_regularization=0.1923237939031256, learning_rate=0.10551346041298326, loss='least_absolute_deviation', max_depth=4, max_leaf_nodes=32, min_samples_leaf=4, warm_start=False)
+# estimator = SVR(C=2.9468542209755357, epsilon=0.18702907953343395, gamma=0.1632449384464454) #{'C': 2.9468542209755357, 'coef0': -0.6868465520687694, 'degree': 4, 'epsilon': 0.18702907953343395, 'gamma': 0.1632449384464454, 'kernel': 'rbf', 'shrinking': True}
 plot_learning_curve(estimator, title, predictors, labels, cv=myCViterator, n_jobs=6)
 
 plt.show()
