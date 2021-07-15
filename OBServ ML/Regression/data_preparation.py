@@ -35,7 +35,7 @@ def get_field_data():
     field_repo    = "C:/Users/angel/git/OBservData/"
     field_data_dir = field_repo + "Final_Data/"
     df_field     = pd.read_csv(field_data_dir+'CropPol_field_level_data.csv')
-    return df_field[['site_id', 'study_id', #'crop', 'management',
+    return df_field[['site_id', 'study_id', 'crop', 'management',
                      'ab_wildbees', 'ab_syrphids', 'ab_bombus',
                      'total_sampled_time', 'sampling_year']]
 
@@ -68,9 +68,13 @@ def apply_minimum_conditions(data):
     cond4 = (data.isnull().sum(axis=1) < 7)
     print("Less than 7 NAs per row:")
     print(cond4.describe())
+    # 5. Total sampled time != NA
+    cond5 = ~data['total_sampled_time'].isna()
+    print("Defined sampled time:")
+    print(cond5.describe())
 
     # Filter by conditions
-    all_cond = (cond1 & cond2 & cond3 & cond4)
+    all_cond = (cond1 & cond2 & cond3 & cond4 & cond5)
     print("ALL:")
     print(all_cond.describe())
     return data[ all_cond ]
@@ -85,7 +89,6 @@ def compute_visit_rate(data):
     # 6. Compute comparable abundances
     data['visit_rate_wb_bmb_syr'] = (data['ab_wildbees']+ data['ab_syrphids']+ data['ab_bombus']) / data['total_sampled_time']
     data['log_visit_rate']      = np.log(data['visit_rate_wb_bmb_syr'])
-    # data.drop(columns=['visit_rate_wb_bmb_syr'], inplace=True)
     data.drop(columns=['ab_wildbees', 'ab_syrphids', 'ab_bombus', 'total_sampled_time', 'visit_rate_wb_bmb_syr'], inplace=True)
     return data
 
@@ -168,51 +171,22 @@ if __name__ == '__main__':
     # (Set biome as categorical)
     predictors['biome_num'] = predictors.biome_num.astype('object')
 
-
-    #######################################
-    # Transformations
-    #######################################
-    # 1. Fill NA's in numeric columns with mean
-    # 2. Fill NA's in management column with "conventional"
-    # 3. One-hot encoding of biome_num
-    # 4. Ordinal encoding management
-    # 5. Standardize numeric columns
-
-    # # Imputers (fill NA's strategy)
-    # numeric_imputer    = SimpleImputer(strategy="mean")
-    # management_imputer = SimpleImputer(strategy="constant", fill_value="conventional")
-    #
-    # # One-hot encoding
-    # biome_encoder = OneHotEncoder()
-    # biome_one_hot = biome_encoder.fit_transform(predictors[['biome_num']])
-    #
-    # # Ordinal encoding
-    # pred_management = predictors[['management']]
-    # X = management_imputer.fit_transform(pred_management)
-    # pred_management = pd.DataFrame(X, columns=pred_management.columns, index=pred_management.index)
-    # management_encoder = OrdinalEncoder(categories=[['unmanaged','conventional','IPM','organic']])
-    # a = management_encoder.fit_transform(pred_management)
-    #
-    # # Standardize numeric columns (except target log_visit_rate
-    # pred_num = predictors.select_dtypes('number')
-    # pred_num = StandardScaler().fit_transform(pred_num)
-
     #######################################
     # Pipeline
     #######################################
     pred_num = predictors.select_dtypes('number')
     numeric_col = list(pred_num)
-    ordinal_col = ["management"]
+    # ordinal_col = ["management"]
     onehot_col  = ["biome_num"]
     dummy_col   = ["study_id","site_id"] # keep this to use later (e.g. create custom cross validation iterator)
     num_pipeline = Pipeline([
         ('num_imputer', SimpleImputer(strategy="mean")),
         ('std_scaler', StandardScaler())
     ])
-    ordinal_pipeline = Pipeline([
-        ('manag_imputer', SimpleImputer(strategy="constant", fill_value="conventional")),
-        ('ordinal_encoder', OrdinalEncoder(categories=[['conventional','IPM','unmanaged','organic']]))
-    ])
+    # ordinal_pipeline = Pipeline([
+    #     ('manag_imputer', SimpleImputer(strategy="constant", fill_value="conventional")),
+    #     ('ordinal_encoder', OrdinalEncoder(categories=[['conventional','IPM','unmanaged','organic']]))
+    # ])
     onehot_pipeline = Pipeline([
         ('onehot_encoder', OneHotEncoder())
     ])
@@ -242,6 +216,10 @@ if __name__ == '__main__':
     dataset_prepared = predictors_prepared.copy()
     dataset_prepared['log_visit_rate'] = labels
 
+    # Reset indices
+    data.reset_index(inplace=True, drop=True)
+    dataset_prepared.reset_index(inplace=True, drop=True)
+
     #############################################################
     # Stratified split training and test (split by study_id)
     #############################################################
@@ -252,9 +230,9 @@ if __name__ == '__main__':
     df_studies_split = df_studies.loc[has_more_one[df_studies.biome_num].reset_index().study_id,]
     strata           = df_studies_split.biome_num.astype('category')
 
-    x_train, x_test, y_train, y_test = train_test_split(df_studies_split, strata, stratify=strata,  test_size=0.25, random_state=135)
+    x_train, x_test, y_train, y_test = train_test_split(df_studies_split, strata, stratify=strata, test_size=0.25, random_state=135)
     studies_train   = x_train.study_id
-    train_selection = [ x_train.study_id.str.contains(x).any() for x in data.study_id ]
+    train_selection = [ (x_train.study_id == x).any() for x in data.study_id ]
     df_train = dataset_prepared[train_selection].reset_index(drop=True)
     df_test  = dataset_prepared[[~x for x in train_selection]].reset_index(drop=True)
 

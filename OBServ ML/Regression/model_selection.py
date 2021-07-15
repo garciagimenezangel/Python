@@ -2,7 +2,9 @@ import numpy as np
 import pandas as pd
 import warnings
 import pickle
-from sklearn.ensemble import ExtraTreesRegressor, RandomForestRegressor, GradientBoostingRegressor
+from sklearn.experimental import enable_hist_gradient_boosting
+from sklearn.ensemble import ExtraTreesRegressor, RandomForestRegressor, GradientBoostingRegressor, \
+    HistGradientBoostingRegressor, AdaBoostRegressor
 from sklearn.linear_model import ElasticNetCV, LassoCV, TweedieRegressor, BayesianRidge, OrthogonalMatchingPursuitCV
 from sklearn.svm import SVR, NuSVR
 from sklearn.utils import all_estimators
@@ -23,7 +25,7 @@ def get_data_reduced(n_features):
 
 if __name__ == '__main__':
     data_prepared = get_data_prepared()
-    # data_prepared = get_data_reduced(16)
+    # data_prepared = get_data_reduced(10)
     predictors    = data_prepared.iloc[:,:-1]
     labels        = np.array(data_prepared.iloc[:,-1:]).flatten()
 
@@ -56,11 +58,11 @@ if __name__ == '__main__':
     # Shortlist: check df_results and see which show low 'mean' and not-too-low 'rmse_all' (sign of possible overfitting)
     #######################
     # Selected estimators (no particular order):
-    # 1 SVR
-    # 2 OrthogonalMatchingPursuitCV
-    # 3 BayesianRidge
-    # 4 TweedieRegressor
-    # 5 LassoLarsCV
+    # 1 HistGradientBoostingRegressor
+    # 2 ExtraTreesRegressor
+    # 3 AdaBoostRegressor
+    # 4 RandomForestRegressor
+    # 5 SVR
 
     ########################
     # Hyperparameter tuning
@@ -87,17 +89,20 @@ if __name__ == '__main__':
     cvres = search.cv_results_
     for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
         print(-mean_score, params)
-    search.best_params_ # cv=5: {'C': 1.7342889543571887, 'coef0': -0.3345352614917637, 'epsilon': 0.09256863132721108, 'gamma': 0.14372942931130184, 'kernel': 'rbf'}; myCViterator: {'C': 0.21797997747706432, 'coef0': -0.4971113982700808, 'degree': 4, 'epsilon': 0.16537034144285234, 'gamma': 0.008623955809822392, 'kernel': 'rbf', 'shrinking': False}
-    search.best_score_  # cv=5: -1.0277530513299957; myCViterator: -1.1000191225836446
+    search.best_params_ # {'C': 2.9468542209755357, 'coef0': -0.6868465520687694, 'degree': 4, 'epsilon': 0.18702907953343395, 'gamma': 0.1632449384464454, 'kernel': 'rbf', 'shrinking': True}
+    search.best_score_  # -0.9462104354789641
 
-    # BayesianRidge
-    model = BayesianRidge()
+    # HistGradientBoostingRegressor
+    model = HistGradientBoostingRegressor()
     # define search space
     params = dict()
-    params['alpha_1']      = uniform(loc=0, scale=20)
-    params['alpha_2']      = uniform(loc=0, scale=20)
-    params['lambda_1'] = uniform(loc=0, scale=20)
-    params['lambda_2'] = uniform(loc=0, scale=20)
+    params['loss'] = ['least_squares', 'least_absolute_deviation', 'poisson']
+    params['learning_rate'] = uniform(loc=0, scale=1)
+    params['max_leaf_nodes'] = [8,16,32,64]
+    params['max_depth'] = [2,4,8,16,32]
+    params['min_samples_leaf']  = [2,4,8,16,32]
+    params['l2_regularization']  = uniform(loc=0, scale=1)
+    params['warm_start']  = [False, True]
     # define the search
     search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=1000,
                                 return_train_score=True, verbose=2, random_state=135, n_jobs=-1)
@@ -105,70 +110,82 @@ if __name__ == '__main__':
     cvres = search.cv_results_
     for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
         print(-mean_score, params)
-    search.best_params_ # {'alpha_1': 5.661182937742398, 'alpha_2': 8.158544161338462, 'lambda_1': 7.509288525874375, 'lambda_2': 0.08383802954777253}
-    search.best_score_ # -1.0962985687867208
-    # With 16 predictors: # {'alpha_1': 5.661182937742398, 'alpha_2': 8.158544161338462, 'lambda_1': 7.509288525874375, 'lambda_2': 0.08383802954777253}, score: -1.0962985687867208
+    search.best_params_ # {'l2_regularization': 0.02021888460670551, 'learning_rate': 0.04277282248041758, 'loss': 'least_squares', 'max_depth': 4, 'max_leaf_nodes': 32, 'min_samples_leaf': 16, 'warm_start': True}
+    search.best_score_ # -0.9383553540061313
 
-    # LassoCV
-    model = LassoCV()
+    # ExtraTreesRegressor
+    model = ExtraTreesRegressor()
     # define search space
     params = dict()
-    params['eps']      = uniform(loc=0.001, scale=0.02)
-    params['n_alphas'] = [1,2,3,4,5]
-    # define the search
-    search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=1000,
-                                return_train_score=True, verbose=2, random_state=135, n_jobs=-1)
-    search.fit(predictors, labels)
-    cvres = search.cv_results_
-    for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
-        print(np.sqrt(-mean_score), params)
-    search.best_params_ # {'eps': 0.02082979677480987, 'n_alphas': 1}
-    search.best_score_ # -1.0906752658680903
-
-    # TweedieRegressor
-    model = TweedieRegressor()
-    # define search space
-    params = dict()
-    params['power'] = [0,1,2,3]
-    params['alpha'] = uniform(loc=0, scale=2)
-    params['fit_intercept'] = [False, True]
-    # define the search
-    search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=1000,
-                                return_train_score=True, verbose=2, random_state=135, n_jobs=-1)
-    search.fit(predictors, labels)
-    cvres = search.cv_results_
-    for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
-        print(np.sqrt(-mean_score), params)
-    search.best_params_ #{'alpha': 0.4785355536901701, 'fit_intercept': True, 'power': 0}
-    search.best_score_ #-1.096445843001565
-
-    # OrthogonalMatchingPursuitCV
-    model = OrthogonalMatchingPursuitCV(max_iter=25)
-    # define search space
-    # define the search
-    scores = cross_val_score(model, predictors, labels, scoring="neg_mean_absolute_error", cv=myCViterator)
-    scores.mean()# -1.1441626667132963
-
-    # GradientBoostingRegressor
-    model = GradientBoostingRegressor()
-    # define search space
-    params = dict()
-    params['loss'] = ['ls','lad','huber','quantile']
-    params['learning_rate'] = uniform(loc=0, scale=1)
-    params['n_estimators'] = [2,8,32,128,512,1024]
-    params['min_samples_leaf']  = uniform(loc=0, scale=10)
-    params['min_samples_split']  = uniform(loc=0, scale=10)
-    params['min_weight_fraction_leaf']  = uniform(loc=0, scale=1)
+    params['n_estimators'] = [50,100,200,400,600]
+    params['criterion'] = ['mse', 'mae']
     params['max_depth'] = [2,4,8,16,32]
-    params['min_impurity_decrease'] = uniform(loc=0, scale=1)
+    params['min_samples_split']  = uniform(loc=0, scale=10)
+    params['min_samples_leaf']  = uniform(loc=0, scale=10)
+    params['min_weight_fraction_leaf']  = uniform(loc=0, scale=1)
+    params['max_leaf_nodes']  = [8,16,32,64]
+    params['min_impurity_decrease']  = uniform(loc=0, scale=1)
+    params['bootstrap']  = [False, True]
+    params['warm_start']  = [False, True]
     params['ccp_alpha'] = uniform(loc=0, scale=1)
     # define the search
     search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=1000,
-                                return_train_score=True, verbose=2, random_state=135, n_jobs=-1)
+                                return_train_score=True, verbose=2, random_state=135, n_jobs=6)
     search.fit(predictors, labels)
     cvres = search.cv_results_
     for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
         print(np.sqrt(-mean_score), params)
-    search.best_params_ # {'ccp_alpha': 0.8321352603958725, 'learning_rate': 0.23342126974413813, 'loss': 'lad', 'max_depth': 16, 'min_impurity_decrease': 0.8033722209318646, 'min_samples_leaf': 0.3534652115561199, 'min_samples_split': 0.015604580711630067, 'min_weight_fraction_leaf': 0.12205305102244157, 'n_estimators': 512}
-    search.best_score_ # -1.1813459748984003
+    search.best_params_ # {'bootstrap': False, 'ccp_alpha': 0.019454451882791046, 'criterion': 'mae', 'max_depth': 8, 'max_leaf_nodes': 32, 'min_impurity_decrease': 0.49865469993092115, 'min_samples_leaf': 0.38736893138328954, 'min_samples_split': 0.5708381504562543, 'min_weight_fraction_leaf': 0.11618121903130718, 'n_estimators': 200, 'warm_start': False}
+    search.best_score_ # -1.1432050688125917
+
+    # AdaBoostRegressor
+    # 2 ExtraTreesRegressor
+    # 3 AdaBoostRegressor
+    # 4 RandomForestRegressor
+    model = AdaBoostRegressor()
+    # define search space
+    params = dict()
+    estimator1 = HistGradientBoostingRegressor(l2_regularization=0.02021888460670551,learning_rate=0.04277282248041758,loss='least_squares',max_depth=4,max_leaf_nodes=32,min_samples_leaf=16,warm_start=True)
+    estimator2 = ExtraTreesRegressor(bootstrap=False,ccp_alpha=0.019454451882791046,criterion='mae',max_depth=8,max_leaf_nodes=32,min_impurity_decrease=0.49865469993092115,min_samples_leaf=0.38736893138328954,min_samples_split=0.5708381504562543,min_weight_fraction_leaf=0.11618121903130718,n_estimators=200,warm_start=False)
+    estimator3 = RandomForestRegressor(bootstrap=True,ccp_alpha=0.040560610473318826,criterion='mse',max_depth=4,max_leaf_nodes=64,min_impurity_decrease=0.003427302639933183,min_samples_split=0.22116336729743802,min_weight_fraction_leaf=0.086566739859892,n_estimators=400,warm_start=False)
+    params['base_estimator'] = [estimator1, estimator2, estimator3]
+    params['n_estimators']  = [50,100,200,400,600]
+    params['learning_rate'] = uniform(loc=0, scale=1)
+    params['loss'] = ['linear', 'square', 'exponential']
+    # define the search
+    search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=100,
+                                return_train_score=True, verbose=2, random_state=135, n_jobs=6)
+    search.fit(predictors, labels)
+    cvres = search.cv_results_
+    for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
+        print(np.sqrt(-mean_score), params)
+    search.best_params_ #{'base_estimator': HistGradientBoostingRegressor(l2_regularization=0.02021888460670551,
+                              # learning_rate=0.04277282248041758, max_depth=4,
+                              # max_leaf_nodes=32, min_samples_leaf=16,
+                              # warm_start=True), 'learning_rate': 0.21875144982480377, 'loss': 'linear', 'n_estimators': 50}
+    search.best_score_ #-0.9623461251009882
+
+    # RandomForestRegressor
+    model = RandomForestRegressor()
+    # define search space
+    params = dict()
+    params['n_estimators'] = [50, 100, 200, 400, 600]
+    params['criterion'] = ['mse', 'mae']
+    params['max_depth'] = [2, 4, 8, 16, 32]
+    params['min_samples_split'] = uniform(loc=0, scale=1)
+    params['min_weight_fraction_leaf'] = uniform(loc=0, scale=0.5)
+    params['max_leaf_nodes'] = [8, 16, 32, 64]
+    params['min_impurity_decrease'] = uniform(loc=0, scale=1)
+    params['bootstrap'] = [False, True]
+    params['warm_start'] = [False, True]
+    params['ccp_alpha'] = uniform(loc=0, scale=1)
+    # define the search
+    search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=1000,
+                                return_train_score=True, verbose=2, random_state=135, n_jobs=6)
+    search.fit(predictors, labels)
+    cvres = search.cv_results_
+    for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
+        print(np.sqrt(-mean_score), params)
+    search.best_params_ # {'bootstrap': True, 'ccp_alpha': 0.040560610473318826, 'criterion': 'mse', 'max_depth': 4, 'max_leaf_nodes': 64, 'min_impurity_decrease': 0.003427302639933183, 'min_samples_split': 0.22116336729743802, 'min_weight_fraction_leaf': 0.086566739859892, 'n_estimators': 400, 'warm_start': False}
+    search.best_score_ # -1.041137728017587
 
