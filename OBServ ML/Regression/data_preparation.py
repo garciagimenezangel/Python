@@ -37,7 +37,12 @@ def get_field_data():
     df_field     = pd.read_csv(field_data_dir+'CropPol_field_level_data.csv')
     return df_field[['site_id', 'study_id', 'crop', 'management',
                      'ab_wildbees', 'ab_syrphids', 'ab_bombus',
-                     'total_sampled_time', 'sampling_year']]
+                     'total_sampled_time', 'sampling_year', 'sampling_abundance']]
+
+def is_sampling_method_accepted(x):
+    cond1 = 'pan trap' not in x
+    cond2 = x != "nan"
+    return (cond1 & cond2)
 
 def apply_minimum_conditions(data):
     # Conditions:
@@ -51,30 +56,34 @@ def apply_minimum_conditions(data):
     cond1 = ((decimal_wb < 0.05) & (decimal_syr < 0.05) & (decimal_bmb < 0.05)) | \
             ((decimal_wb > 0.95) & (decimal_syr > 0.95) & (decimal_bmb > 0.95))
     cond1[cond1.isna()] = False
-    print("Integer abundances:")
+    print("1. Integer abundances:")
     print(cond1.describe())
     # 2. Strictly positive abundances
     cond2 = (~data['ab_wildbees'].isna() & data['ab_wildbees'] > 0) | \
             (~data['ab_syrphids'].isna() & data['ab_syrphids'] > 0) | \
             (~data['ab_bombus'].isna() & data['ab_bombus'] > 0)
-    print("Strictly positive abundances:")
+    print("2. Strictly positive abundances:")
     print(cond2.describe())
     # 3. Set temporal threshold (sampling year >= 1992). This removes years 1990, 1991, that show not-very-healthy values of "comparable abundance"
     refYear = data['sampling_year'].str[:4].astype('int')
     cond3 = (refYear >= 1992)
-    print("Ref year >=1992:")
+    print("3. Ref year >=1992:")
     print(cond3.describe())
     # 4. Remove rows with 7 or more NaN values
     cond4 = (data.isnull().sum(axis=1) < 7)
-    print("Less than 7 NAs per row:")
+    print("4. Less than 7 NAs per row:")
     print(cond4.describe())
     # 5. Total sampled time != NA
     cond5 = ~data['total_sampled_time'].isna()
-    print("Defined sampled time:")
+    print("5. Defined sampled time:")
     print(cond5.describe())
+    # 6. Sampling method != pan trap
+    cond6 = pd.Series([ is_sampling_method_accepted(x) for x in data['sampling_abundance'].astype('str') ])
+    print("6. Sampling method not pan trap:")
+    print(cond6.describe())
 
     # Filter by conditions
-    all_cond = (cond1 & cond2 & cond3 & cond4 & cond5)
+    all_cond = (cond1 & cond2 & cond3 & cond4 & cond5 & cond6)
     print("ALL:")
     print(all_cond.describe())
     return data[ all_cond ]
@@ -158,7 +167,7 @@ if __name__ == '__main__':
     data = df_features.merge(df_field, on=['study_id', 'site_id'])
     data = apply_minimum_conditions(data)
     data = fill_missing_biomes(data)
-    # data = remap_crops(data)
+    data = remap_crops(data)
     data = compute_visit_rate(data)
     # data = compute_visit_rate_small(data)
     # data = compute_visit_rate_large(data)
@@ -174,26 +183,20 @@ if __name__ == '__main__':
     #######################################
     # Pipeline
     #######################################
-    # Fill unknown management with "conventional"
-    fill_pipeline = ColumnTransformer([
-        ('fill',
-        Pipeline([('manag_imputer', SimpleImputer(strategy="constant", fill_value="conventional"))]),
-        ['management'])
-    ])
-    x_transformed = fill_pipeline.fit_transform(predictors)
-    predictors['management'] = x_transformed
     # Apply transformations (standardize, one-hot encoding)
     pred_num = predictors.select_dtypes('number')
     numeric_col = list(pred_num)
     onehot_col  = ["biome_num"]
+    ordinal_col = ["management"]
     dummy_col   = ["study_id","site_id"] # keep this to use later (e.g. create custom cross validation iterator)
     num_pipeline = Pipeline([
         ('num_imputer', SimpleImputer(strategy="mean")),
         ('std_scaler', StandardScaler())
     ])
-    # ordinal_pipeline = Pipeline([
-    #     ('ordinal_encoder', OrdinalEncoder(categories=[['conventional','IPM','unmanaged','organic']]))
-    # ])
+    ordinal_pipeline = Pipeline([
+         ('manag_imputer', SimpleImputer(strategy="constant", fill_value="conventional")),
+         ('ordinal_encoder', OrdinalEncoder(categories=[['conventional','IPM','unmanaged','organic']]))
+    ])
     onehot_pipeline = Pipeline([
         ('onehot_encoder', OneHotEncoder())
     ])
@@ -202,7 +205,7 @@ if __name__ == '__main__':
     onehot_encoder_names = X.named_steps['onehot_encoder'].get_feature_names()
     full_pipeline = ColumnTransformer([
         ("numeric", num_pipeline, numeric_col),
-        # ("ordinal", ordinal_pipeline, ordinal_col),
+        ("ordinal", ordinal_pipeline, ordinal_col),
         ("dummy", dummy_pipeline, dummy_col),
         ("onehot",  onehot_pipeline, onehot_col )
     ])
@@ -216,8 +219,7 @@ if __name__ == '__main__':
     numeric_col = np.array(pred_num.columns)
     dummy_col = np.array(["study_id","site_id"])
     onehot_col  = np.array(onehot_encoder_names)
-    # feature_names = np.concatenate( (numeric_col, ordinal_col, onehot_col), axis=0)
-    feature_names = np.concatenate( (numeric_col, dummy_col, onehot_col), axis=0)
+    feature_names = np.concatenate( (numeric_col, ordinal_col, dummy_col, onehot_col), axis=0)
     predictors_prepared = pd.DataFrame(x_transformed, columns=feature_names, index=predictors.index)
     dataset_prepared = predictors_prepared.copy()
     dataset_prepared['log_visit_rate'] = labels
@@ -236,7 +238,7 @@ if __name__ == '__main__':
     df_studies_split = df_studies.loc[has_more_one[df_studies.biome_num].reset_index().study_id,]
     strata           = df_studies_split.biome_num.astype('category')
 
-    x_train, x_test, y_train, y_test = train_test_split(df_studies_split, strata, stratify=strata, test_size=0.25, random_state=135)
+    x_train, x_test, y_train, y_test = train_test_split(df_studies_split, strata, stratify=strata, test_size=0.25, random_state=13)
     studies_train   = x_train.study_id
     train_selection = [ (x_train.study_id == x).any() for x in data.study_id ]
     df_train = dataset_prepared[train_selection].reset_index(drop=True)
