@@ -45,11 +45,11 @@ def evaluate_model_sfs(model, predictors, labels, direction='backward', n_featur
     return cross_validate(model, predictors_reduced, labels, scoring="neg_mean_absolute_error", cv=cv, n_jobs=n_jobs, return_train_score=True)
 
 if __name__ == '__main__':
-    train_prepared = get_train_data_prepared()
-    test_prepared = get_test_data_prepared()
+    # train_prepared = get_train_data_prepared()
+    # test_prepared = get_test_data_prepared()
     # Including mechanistic model value
-    # train_prepared = get_train_data_prepared_with_management()
-    # test_prepared = get_test_data_prepared_with_management()
+    train_prepared = get_train_data_prepared_with_management()
+    test_prepared = get_test_data_prepared_with_management()
 
     # Get predictors and labels
     predictors_train = train_prepared.iloc[:,:-1]
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     #######################################
     # SequentialFeatureSelector (SFS)
     #######################################
-    # model = HistGradientBoostingRegressor(l2_regularization=0.02021888460670551, learning_rate=0.04277282248041758, loss='least_squares', max_depth=4, max_leaf_nodes=32, min_samples_leaf=16, warm_start=True)
+    model = HistGradientBoostingRegressor(l2_regularization=0.1923237939031256, learning_rate=0.10551346041298326, loss='least_absolute_deviation', max_depth=4, max_leaf_nodes=32, min_samples_leaf=4, warm_start=False)
     # model = SVR(C=2.9468542209755357, epsilon=0.18702907953343395, gamma=0.1632449384464454) #{'C': 2.9468542209755357, 'coef0': -0.6868465520687694, 'degree': 4, 'epsilon': 0.18702907953343395, 'gamma': 0.1632449384464454, 'kernel': 'rbf', 'shrinking': True}
     # Explore number of features
     min_n = 3
@@ -108,28 +108,30 @@ if __name__ == '__main__':
     pyplot.xlabel('N features', fontsize=16)
     pyplot.legend(loc="best")
     # Select n_features:
-    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=26, cv=myCViterator, direction='forward', n_jobs=6)
+    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=10, cv=myCViterator, direction='forward', n_jobs=6)
     sfs.fit(predictors_train, labels_train)
-    data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[sfs.support_]),['log_visit_rate']) ]
-    data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[sfs.support_]),['log_visit_rate']) ]
-    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_15.csv', index=False)
-    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_15.csv', index=False)
+    data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[sfs.support_]),['management','log_visit_rate']) ]
+    data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[sfs.support_]),['management','log_visit_rate']) ]
+    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_6.csv', index=False)
+    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_6.csv', index=False)
 
     # #######################################
     # # Permutation importance
     # #######################################
-    # model = SVR(C=2.62, epsilon=0.05, gamma=0.21) #{'C': 2.6180503547870377, 'coef0': -0.5901821308327051, 'epsilon': 0.045644987037295054, 'gamma': 0.2112333725279757, 'kernel': 'rbf'}
-    # model.fit(predictors_train, labels_train)
-    # perm_importance = permutation_importance(model, predictors_train, labels_train, random_state=135, n_jobs=6)
-    # feature_names = predictors_train.columns
-    # feature_importance = pd.DataFrame(sorted(zip(perm_importance.importances_mean, feature_names), reverse=True))
-    # pyplot.barh(feature_importance.loc[:,1], feature_importance.loc[:,0])
-    # # Take 29 features (testing, threshold around 0.15)
-    # features_selected = feature_importance.loc[0:10,1]
-    # data_reduced_train = train_prepared[np.append(features_selected, ['log_visit_rate'])]
-    # data_reduced_test  = test_prepared[np.append(features_selected, ['log_visit_rate'])]
-    # data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_11.csv', index=False)
-    # data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_11.csv', index=False)
+    model = HistGradientBoostingRegressor(l2_regularization=0.02021888460670551, learning_rate=0.04277282248041758,
+                                          loss='least_squares', max_depth=4, max_leaf_nodes=32,
+                                          min_samples_leaf=16, warm_start=True)
+    model.fit(predictors_train, labels_train)
+    perm_importance = permutation_importance(model, predictors_train, labels_train, random_state=135, n_jobs=6)
+    feature_names = predictors_train.columns
+    feature_importance = pd.DataFrame(sorted(zip(perm_importance.importances_mean, feature_names), reverse=True))
+    pyplot.barh(feature_importance.loc[:,1], feature_importance.loc[:,0])
+    # Take 29 features (testing, threshold around 0.15)
+    features_selected = feature_importance.loc[0:10,1]
+    data_reduced_train = train_prepared[np.append(features_selected, ['log_visit_rate'])]
+    data_reduced_test  = test_prepared[np.append(features_selected, ['log_visit_rate'])]
+    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_11.csv', index=False)
+    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_11.csv', index=False)
 
     # #######################################
     # # Recursive Feature Elimination (RFE)

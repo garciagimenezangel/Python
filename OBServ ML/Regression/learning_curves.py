@@ -120,7 +120,7 @@ def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
 
 
 # data_prepared = get_data_prepared()
-data_prepared = get_data_reduced(26)
+data_prepared = get_data_reduced(15)
 predictors = data_prepared.iloc[:, :-1]
 labels = np.array(data_prepared.iloc[:, -1:]).flatten()
 # Load custom cross validation
@@ -128,9 +128,8 @@ with open('C:/Users/angel/git/Observ_models/data/ML/Regression/train/myCViterato
     myCViterator = pickle.load(file)
 
 title = "Learning Curves"
-estimator = HistGradientBoostingRegressor(l2_regularization=0.02021888460670551, learning_rate=0.04277282248041758, loss='least_squares', max_depth=4, max_leaf_nodes=32, min_samples_leaf=16, warm_start=True)
-# estimator = HistGradientBoostingRegressor(l2_regularization=0.1923237939031256, learning_rate=0.10551346041298326, loss='least_absolute_deviation', max_depth=4, max_leaf_nodes=32, min_samples_leaf=4, warm_start=False)
-# estimator = SVR(C=2.9468542209755357, epsilon=0.18702907953343395, gamma=0.1632449384464454) #{'C': 2.9468542209755357, 'coef0': -0.6868465520687694, 'degree': 4, 'epsilon': 0.18702907953343395, 'gamma': 0.1632449384464454, 'kernel': 'rbf', 'shrinking': True}
+# estimator = HistGradientBoostingRegressor(l2_regularization=0.02021888460670551, learning_rate=0.04277282248041758, loss='least_squares', max_depth=4, max_leaf_nodes=32, min_samples_leaf=16, warm_start=True)
+estimator = HistGradientBoostingRegressor(l2_regularization=0.1923237939031256, learning_rate=0.10551346041298326, loss='least_absolute_deviation', max_depth=4, max_leaf_nodes=32, min_samples_leaf=4, warm_start=False)
+# estimator = SVR(C=1.5393618387949028,coef0=-0.46947890084948296,degree=3,epsilon=0.19800137347940394,gamma=0.12523398796877383,kernel='rbf',shrinking=False)
 plot_learning_curve(estimator, title, predictors, labels, cv=myCViterator, n_jobs=6)
-
 plt.show()

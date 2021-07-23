@@ -89,14 +89,16 @@ if __name__ == '__main__':
         print(-mean_score, params)
     search.best_params_ # all features: {'C': 2.9468542209755357, 'coef0': -0.6868465520687694, 'degree': 4, 'epsilon': 0.18702907953343395, 'gamma': 0.1632449384464454, 'kernel': 'rbf', 'shrinking': True}
                         # 15 features: {'C': 2.9468542209755357, 'coef0': -0.6868465520687694, 'degree': 4, 'epsilon': 0.18702907953343395, 'gamma': 0.1632449384464454, 'kernel': 'rbf', 'shrinking': True}
+                        # 22 features: {'C': 1.5393618387949028, 'coef0': -0.46947890084948296, 'degree': 3, 'epsilon': 0.19800137347940394, 'gamma': 0.12523398796877383, 'kernel': 'rbf', 'shrinking': False}
     search.best_score_  # all features: -0.9462104354789641
                         # 15 features: -0.87222462616609
+                        # 22 features: -0.9023594174493642
 
     # HistGradientBoostingRegressor
     model = HistGradientBoostingRegressor()
     # define search space
     params = dict()
-    params['loss'] = ['least_squares', 'least_absolute_deviation', 'poisson']
+    params['loss'] = ['least_squares', 'least_absolute_deviation']
     params['learning_rate'] = uniform(loc=0, scale=1)
     params['max_leaf_nodes'] = [8,16,32,64]
     params['max_depth'] = [2,4,8,16,32]
@@ -113,9 +115,14 @@ if __name__ == '__main__':
     search.best_params_ # all features: {'l2_regularization': 0.02021888460670551, 'learning_rate': 0.04277282248041758, 'loss': 'least_squares', 'max_depth': 4, 'max_leaf_nodes': 32, 'min_samples_leaf': 16, 'warm_start': True}
                         # 5 features: {'l2_regularization': 0.1923237939031256, 'learning_rate': 0.10551346041298326, 'loss': 'least_absolute_deviation', 'max_depth': 4, 'max_leaf_nodes': 32, 'min_samples_leaf': 4, 'warm_start': False}
                         # 26 features: {'l2_regularization': 0.02021888460670551, 'learning_rate': 0.04277282248041758, 'loss': 'least_squares', 'max_depth': 4, 'max_leaf_nodes': 32, 'min_samples_leaf': 16, 'warm_start': True}
+                        # 22 features: {'l2_regularization': 0.34991994773700774, 'learning_rate': 0.048052417381370005, 'loss': 'least_absolute_deviation', 'max_depth': 16, 'max_leaf_nodes': 32, 'min_samples_leaf': 16, 'warm_start': False}
+                        # 4 features: {'l2_regularization': 0.7045103062427752, 'learning_rate': 0.04615711070677131, 'loss': 'least_absolute_deviation', 'max_depth': 4, 'max_leaf_nodes': 32, 'min_samples_leaf': 8, 'warm_start': True}
     search.best_score_ # all features: -0.9383553540061313
                         # 5 features: -0.8809402223744808
                         # 26 features: -0.863443455817459
+                        # 22 features: -0.9447383447363904
+                        # 4 features: -0.9888690062754308
+                        # 6 features: -1.0022852600534802
 
     # ExtraTreesRegressor
     model = ExtraTreesRegressor()

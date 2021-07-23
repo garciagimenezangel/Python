@@ -18,6 +18,19 @@ models_repo = "C:/Users/angel/git/Observ_models/"
 # root_folder = models_repo + "data/ML/_initial test - Fill total sampled time/"
 root_folder = models_repo + "data/ML/Regression/"
 
+def check_normality(array):
+    sns.distplot(array)
+    # skewness and kurtosis
+    print("Skewness: %f" % array.skew()) # Skewness: -0.220768
+    print("Kurtosis: %f" % array.kurt()) # Kurtosis: -0.168611
+    # Check normality log_visit_rate
+    sns.distplot(array, fit=norm)
+    fig = plt.figure()
+    res = stats.probplot(array, plot=plt)
+
+def get_lonsdorf_predictions():
+    return pd.read_csv(models_repo+'data/Lonsdorf evaluation/Model predictions/lm_pred_all.csv')
+
 def get_train_data_reduced(n_features):
     return pd.read_csv(root_folder+'train/data_reduced_'+str(n_features)+'.csv')
 
@@ -61,9 +74,7 @@ if __name__ == '__main__':
 
     # Model
     # model = BayesianRidge(alpha_1 = 5.661182937742398, alpha_2 = 8.158544161338462, lambda_1 = 7.509288525874375, lambda_2 = 0.08383802954777253)
-    model = HistGradientBoostingRegressor(l2_regularization=0.1923237939031256, learning_rate=0.10551346041298326,
-                                              loss='least_absolute_deviation', max_depth=4, max_leaf_nodes=32,
-                                              min_samples_leaf=4, warm_start=False)
+    model = HistGradientBoostingRegressor(l2_regularization=0.1923237939031256, learning_rate=0.10551346041298326, loss='least_absolute_deviation', max_depth=4, max_leaf_nodes=32, min_samples_leaf=4, warm_start=False)
     # model = HistGradientBoostingRegressor(l2_regularization=0.02021888460670551, learning_rate=0.04277282248041758,
     #                                           loss='least_squares', max_depth=4, max_leaf_nodes=32, min_samples_leaf=16,
     #                                           warm_start=True)
@@ -97,14 +108,40 @@ if __name__ == '__main__':
 
     # Observed versus predicted
     fig, ax = plt.subplots()
-    df = pd.DataFrame({'obs':labels_test, 'pred':yhat, 'is_organic':[ x == 3 for x in test_management.management ]})
-    ax.scatter(df['pred'],   df['obs'],   color='blue', alpha=0.5)
-    ax.plot(yhat,yhat, alpha=0.5, color='orange',label='y=prediction ML')
-    ax.set_xlim(-5.5,0)
-    ax.set_xlabel("Prediction ML", fontsize=16)
+    df_ml       = pd.DataFrame({'obs':labels_test, 'pred':yhat})
+    df_ml['source'] = 'ML'
+    df_lons = get_lonsdorf_predictions()
+    df_lons['source'] = 'Mechanistic'
+    df_lons.columns = df_ml.columns
+    ax.scatter(df_lons['pred'], df_lons['obs'],  color='green', alpha=0.5, label="Mechanistic")
+    ax.scatter(df_ml['pred'],   df_ml['obs'],    color='red',   alpha=0.5, label="Machine Learning")
+    ax.plot(yhat,yhat, alpha=0.5, color='orange',label='y=prediction')
+    # ax.set_xlim(-5.5,0)
+    ax.set_xlabel("Prediction", fontsize=16)
     ax.set_ylabel("log(Visitation Rate)", fontsize=16)
     ax.legend(loc='best', fontsize=14)
     plt.show()
+
+    # Density difference (observed-predicted), ML vs mechanistic
+    kwargs = dict(hist_kws={'alpha': .4}, kde_kws={'linewidth': 1})
+    plt.figure()
+    df_ml       = pd.DataFrame({'obs':labels_test, 'pred':yhat})
+    df_ml['source'] = 'ML'
+    df_lons = get_lonsdorf_predictions()
+    df_lons['source'] = 'Mechanistic'
+    df_lons.columns = df_ml.columns
+    diff_ml   = df_ml.obs   - df_ml.pred
+    diff_lons = df_lons.obs - df_lons.pred
+    sns.distplot(diff_lons, color="green", label="Mechanistic", **kwargs)
+    sns.distplot(diff_ml,   color="red",   label="ML", **kwargs)
+    plt.xlabel("(Observed - Predicted)", fontsize=16)
+    plt.ylabel("Density", fontsize=16)
+    plt.legend()
+
+    # Linear regression
+    X_reg, y_reg = np.array(df_lons.pred).reshape(-1, 1), np.array(df_lons.obs).reshape(-1, 1)
+    reg = LinearRegression().fit(X_reg, y_reg)
+    reg.score(X_reg, y_reg)
 
     # Scatter plot organic vs not-organic
     fig, ax = plt.subplots()
@@ -159,22 +196,25 @@ if __name__ == '__main__':
     # fig = px.scatter(df, x="predicted", y="log_visit_rate", hover_data=df.columns, trendline="ols")
     fig.show()
 
-    # Linear regression
-    df = df[~(df.is_organic)]
-    obs = np.array(df.log_visit_rate)
-    pred = np.array(df.predicted)
-    scatter(pred, obs)
-    plt.xlabel("Prediction ML", fontsize=16)
-    plt.ylabel("log(Visitation Rate)", fontsize=16)
-    m, b = np.polyfit(pred, obs, 1)
-    plot(pred, m * pred + b)
-    X_reg, y_reg = pred.reshape(-1, 1), obs.reshape(-1, 1)
-    reg = LinearRegression().fit(X_reg, y_reg)
-    reg.score(X_reg, y_reg)
+    # Stats ( MAE, R2, Mu(obs-pred), Sigma(obs-pred) )
+    mae_ml   = mean_absolute_error(df_ml.pred, df_ml.obs)
+    mae_lons = mean_absolute_error(df_lons.pred, df_lons.obs)
+    m_ml, b_ml   = np.polyfit(df_ml.pred, df_ml.obs, 1)
+    X_reg, y_reg = np.array(df_ml.pred).reshape(-1, 1), np.array(df_ml.obs).reshape(-1, 1)
+    reg   = LinearRegression().fit(X_reg, y_reg)
+    r2_ml = reg.score(X_reg, y_reg)
+    m_lons, b_lons   = np.polyfit(df_lons.pred, df_lons.obs, 1)
+    X_reg, y_reg = np.array(df_lons.pred).reshape(-1, 1), np.array(df_lons.obs).reshape(-1, 1)
+    reg   = LinearRegression().fit(X_reg, y_reg)
+    r2_lons = reg.score(X_reg, y_reg)
+    (mu_ml, sigma_ml) = stats.norm.fit(df_ml.obs - df_ml.pred)
+    (mu_lons, sigma_lons) = stats.norm.fit(df_lons.obs - df_lons.pred)
+    stats_names = ['MAE','R2','Mean (Observed-Predicted)', 'SD (Observed-Predicted)']
+    stats_ml    = [mae_ml, r2_ml, mu_ml, sigma_ml]
+    stats_lons  = [mae_lons, r2_lons, mu_lons, sigma_lons]
+    df_stats = pd.DataFrame({'':stats_names, 'Machine Learning':stats_ml, 'Mechanistic':stats_lons})
+    df_stats.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/tables/prediction_stats.csv', index=False)
 
-    vr_pred = np.exp(pred)
-    vr_obs  = np.exp(obs)
-    scatter(vr_pred, vr_obs)
-    rel_err = np.abs( (vr_pred - vr_obs)*100/vr_obs )
-    mae = mean_absolute_error(vr_obs, vr_pred)
-    plt.hist(rel_err, bins='auto')
+
+
+

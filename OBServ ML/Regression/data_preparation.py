@@ -174,9 +174,17 @@ if __name__ == '__main__':
     #######################################
     # Pipeline
     #######################################
+    # Fill unknown management with "conventional"
+    fill_pipeline = ColumnTransformer([
+        ('fill',
+        Pipeline([('manag_imputer', SimpleImputer(strategy="constant", fill_value="conventional"))]),
+        ['management'])
+    ])
+    x_transformed = fill_pipeline.fit_transform(predictors)
+    predictors['management'] = x_transformed
+    # Apply transformations (standardize, one-hot encoding)
     pred_num = predictors.select_dtypes('number')
     numeric_col = list(pred_num)
-    # ordinal_col = ["management"]
     onehot_col  = ["biome_num"]
     dummy_col   = ["study_id","site_id"] # keep this to use later (e.g. create custom cross validation iterator)
     num_pipeline = Pipeline([
@@ -184,7 +192,6 @@ if __name__ == '__main__':
         ('std_scaler', StandardScaler())
     ])
     # ordinal_pipeline = Pipeline([
-    #     ('manag_imputer', SimpleImputer(strategy="constant", fill_value="conventional")),
     #     ('ordinal_encoder', OrdinalEncoder(categories=[['conventional','IPM','unmanaged','organic']]))
     # ])
     onehot_pipeline = Pipeline([
@@ -207,7 +214,6 @@ if __name__ == '__main__':
 
     # Convert into data frame
     numeric_col = np.array(pred_num.columns)
-    # ordinal_col = np.array(["management"])
     dummy_col = np.array(["study_id","site_id"])
     onehot_col  = np.array(onehot_encoder_names)
     # feature_names = np.concatenate( (numeric_col, ordinal_col, onehot_col), axis=0)
