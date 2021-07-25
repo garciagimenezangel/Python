@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import warnings
 import pickle
-
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.ensemble import ExtraTreesRegressor, RandomForestRegressor, GradientBoostingRegressor, \
@@ -74,27 +73,23 @@ if __name__ == '__main__':
     results=[]
     # Note: BayesSearchCV in currently latest version of scikit-optimize not compatible with scikit-learn 0.24.1
     # When scikit-optimize version 0.9.0 is available (currently in development), use: BayesSearchCV(model,params,cv=5)
-    # SVR
+    # NuSVR
     model = NuSVR()
     # define search space
     params = dict()
-    params['kernel']  = ['linear', 'poly', 'rbf', 'sigmoid']
+    params['kernel']  = ['linear', 'rbf', 'sigmoid']
     params['nu']      = uniform(loc=0, scale=1)
     params['C']       = uniform(loc=0, scale=4)
     params['gamma']   = uniform(loc=0, scale=0.5)
     params['coef0']   = uniform(loc=-1, scale=1)
-    params['degree']  = [3,4,5]
+    params['degree']  = [3,4]
     params['shrinking'] = [False, True]
     # define the search
-    search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=200,
-                                return_train_score=True, verbose=2, random_state=135, n_jobs=6)
+    search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=1000,
+                                verbose=2, random_state=135, n_jobs=6)
     search.fit(predictors, labels)
-    cvres = search.cv_results_
-    for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
-        print(-mean_score, params)
-    search.best_params_ # all features:
-    search.best_score_  # all features:
-    results.append({'model': model, 'best_params': search.best_params_, 'best_score': -search.best_score_})
+    cvres = pd.DataFrame(search.cv_results_).sort_values(by=['mean_test_score'], ascending=False)
+    for i in range(0,10): results.append({'model': model, 'best_params': cvres.iloc[i].params, 'best_score': cvres.iloc[i].mean_test_score})
 
     # MLPRegressor
     model = MLPRegressor(max_iter=10000, solver='sgd')
@@ -108,15 +103,11 @@ if __name__ == '__main__':
     params['power_t'] = uniform(loc=0, scale=1)
     params['momentum'] = uniform(loc=0, scale=1)
     # define the search
-    search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=200,
-                                return_train_score=True, verbose=2, random_state=135, n_jobs=6)
+    search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=1000,
+                                verbose=2, random_state=135, n_jobs=6)
     search.fit(predictors, labels)
-    cvres = search.cv_results_
-    for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
-        print(np.sqrt(-mean_score), params)
-    search.best_params_ # all features:
-    search.best_score_ # all features:
-    results.append({'model': model, 'best_params': search.best_params_, 'best_score': -search.best_score_})
+    cvres = pd.DataFrame(search.cv_results_).sort_values(by=['mean_test_score'], ascending=False)
+    for i in range(0,10): results.append({'model': model, 'best_params': cvres.iloc[i].params, 'best_score': cvres.iloc[i].mean_test_score})
 
     # TweedieRegressor
     model = TweedieRegressor(max_iter=10000)
@@ -126,14 +117,10 @@ if __name__ == '__main__':
     params['alpha'] = uniform(loc=0, scale=3)
     # define the search
     search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=1000,
-                                return_train_score=True, verbose=2, random_state=135, n_jobs=6)
+                                verbose=2, random_state=135, n_jobs=6)
     search.fit(predictors, labels)
-    cvres = search.cv_results_
-    for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
-        print(np.sqrt(-mean_score), params)
-    search.best_params_ # all features:
-    search.best_score_ # all features:
-    results.append({'model': model, 'best_params': search.best_params_, 'best_score': -search.best_score_})
+    cvres = pd.DataFrame(search.cv_results_).sort_values(by=['mean_test_score'], ascending=False)
+    for i in range(0,10): results.append({'model': model, 'best_params': cvres.iloc[i].params, 'best_score': cvres.iloc[i].mean_test_score})
 
     # GradientBoostingRegressor
     model = GradientBoostingRegressor()
@@ -153,15 +140,11 @@ if __name__ == '__main__':
     params['max_leaf_nodes'] = [8, 16, 32, 64]
     params['ccp_alpha'] = uniform(loc=0, scale=1)
     # define the search
-    search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=5000,
-                                return_train_score=True, verbose=2, random_state=135, n_jobs=6)
+    search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=1000,
+                                verbose=2, random_state=135, n_jobs=6)
     search.fit(predictors, labels)
-    cvres = search.cv_results_
-    for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
-        print(np.sqrt(-mean_score), params)
-    search.best_params_ # all features:
-    search.best_score_ # all features:
-    results.append({'model': model, 'best_params': search.best_params_, 'best_score': -search.best_score_})
+    cvres = pd.DataFrame(search.cv_results_).sort_values(by=['mean_test_score'], ascending=False)
+    for i in range(0,10): results.append({'model': model, 'best_params': cvres.iloc[i].params, 'best_score': cvres.iloc[i].mean_test_score})
 
     # ElasticNetCV
     model = ElasticNetCV(max_iter=10000)
@@ -174,14 +157,10 @@ if __name__ == '__main__':
     params['normalize'] = [True, False]
     # define the search
     search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=1000,
-                                return_train_score=True, verbose=2, random_state=135, n_jobs=6)
+                                verbose=2, random_state=135, n_jobs=6)
     search.fit(predictors, labels)
-    cvres = search.cv_results_
-    for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
-        print(np.sqrt(-mean_score), params)
-    search.best_params_ # all features:
-    search.best_score_ # all features:
-    results.append({'model': model, 'best_params': search.best_params_, 'best_score': -search.best_score_})
+    cvres = pd.DataFrame(search.cv_results_).sort_values(by=['mean_test_score'], ascending=False)
+    for i in range(0,10): results.append({'model': model, 'best_params': cvres.iloc[i].params, 'best_score': cvres.iloc[i].mean_test_score})
 
     # PLSRegression
     model = PLSRegression(max_iter=10000)
@@ -190,16 +169,12 @@ if __name__ == '__main__':
     params['n_components'] = [1,2,4,8,16,32]
     # define the search
     search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=1000,
-                                return_train_score=True, verbose=2, random_state=135, n_jobs=6)
+                                verbose=2, random_state=135, n_jobs=6)
     search.fit(predictors, labels)
-    cvres = search.cv_results_
-    for mean_score, params in zip(cvres["mean_test_score"], cvres["params"]):
-        print(np.sqrt(-mean_score), params)
-    search.best_params_ # all features:
-    search.best_score_ # all features:
-    results.append({'model': model, 'best_params': search.best_params_, 'best_score': -search.best_score_})
+    cvres = pd.DataFrame(search.cv_results_).sort_values(by=['mean_test_score'], ascending=False)
+    for i in range(0,10): results.append({'model': model, 'best_params': cvres.iloc[i].params, 'best_score': cvres.iloc[i].mean_test_score})
 
-    df_results = pd.DataFrame(results)
-    df_results_sorted = df_results.sort_values(by=['best_score'], ascending=True)
-    df_results_sorted.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/results_with_all_features.csv', index=False)
+    df_best_scores = pd.DataFrame(results)
+    df_best_scores_sorted = df_best_scores.sort_values(by=['best_score'], ascending=False)
+    df_best_scores_sorted.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/best_scores_all_features.csv', index=False)
 
