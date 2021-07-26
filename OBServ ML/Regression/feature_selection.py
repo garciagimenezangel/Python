@@ -10,9 +10,11 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import cross_val_score, cross_validate
 from matplotlib import pyplot
 from sklearn.feature_selection import SequentialFeatureSelector
-from sklearn.svm import SVR
+from sklearn.neural_network import MLPRegressor
+from sklearn.svm import SVR, NuSVR
 from sklearn.inspection import permutation_importance
 import datetime
+import ast
 warnings.filterwarnings('ignore')
 models_repo = "C:/Users/angel/git/Observ_models/"
 
@@ -24,13 +26,12 @@ def get_test_data_prepared():
     data_dir   = models_repo + "data/ML/Regression/test/"
     return pd.read_csv(data_dir+'data_prepared.csv')
 
-def get_train_data_prepared_with_management():
-    data_dir   = models_repo + "data/ML/Regression/train/"
-    return pd.read_csv(data_dir+'data_prepared_withManag.csv')
-
-def get_test_data_prepared_with_management():
-    data_dir   = models_repo + "data/ML/Regression/test/"
-    return pd.read_csv(data_dir+'data_prepared_withManag.csv')
+def get_best_models(n_features=0):
+    data_dir = models_repo + "data/ML/Regression/hyperparameters/"
+    if n_features>0:
+        return pd.read_csv(data_dir + 'best_scores_'+str(n_features)+'.csv')
+    else:
+        return pd.read_csv(data_dir + 'best_scores_all_features.csv')
 
 def evaluate_model_rfe(model, predictors, labels, n_features=50, cv=5, n_jobs=-1):
     rfe = RFE(estimator=model, n_features_to_select=n_features)
@@ -45,16 +46,16 @@ def evaluate_model_sfs(model, predictors, labels, direction='backward', n_featur
     return cross_validate(model, predictors_reduced, labels, scoring="neg_mean_absolute_error", cv=cv, n_jobs=n_jobs, return_train_score=True)
 
 if __name__ == '__main__':
-    # train_prepared = get_train_data_prepared()
-    # test_prepared = get_test_data_prepared()
-    # Including mechanistic model value
-    train_prepared = get_train_data_prepared_with_management()
-    test_prepared = get_test_data_prepared_with_management()
+    train_prepared = get_train_data_prepared()
+    test_prepared = get_test_data_prepared()
 
     # Get predictors and labels
     predictors_train = train_prepared.iloc[:,:-1]
     predictors_test  = test_prepared.iloc[:,:-1]
     labels_train     = np.array(train_prepared.iloc[:,-1:]).flatten()
+
+    # Get best models
+    df_best_models = get_best_models()
 
     # Load custom cross validation
     with open('C:/Users/angel/git/Observ_models/data/ML/Regression/train/myCViterator.pkl', 'rb') as file:
@@ -72,11 +73,14 @@ if __name__ == '__main__':
     #######################################
     # SequentialFeatureSelector (SFS)
     #######################################
-    model = HistGradientBoostingRegressor(l2_regularization=0.1923237939031256, learning_rate=0.10551346041298326, loss='least_absolute_deviation', max_depth=4, max_leaf_nodes=32, min_samples_leaf=4, warm_start=False)
-    # model = SVR(C=2.9468542209755357, epsilon=0.18702907953343395, gamma=0.1632449384464454) #{'C': 2.9468542209755357, 'coef0': -0.6868465520687694, 'degree': 4, 'epsilon': 0.18702907953343395, 'gamma': 0.1632449384464454, 'kernel': 'rbf', 'shrinking': True}
+    # d = ast.literal_eval(df_best_models.iloc[0].best_params)
+    # model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], degree=d['degree'], kernel=d['kernel'], nu=d['nu'], shrinking=d['shrinking'])
+    d = ast.literal_eval(df_best_models.iloc[10].best_params)
+    model = MLPRegressor(activation=d['activation'], alpha=d['alpha'], hidden_layer_sizes=d['hidden_layer_sizes'], learning_rate=d['learning_rate'],
+                         learning_rate_init=d['learning_rate_init'], momentum=d['momentum'], power_t=d['power_t'], max_iter=10000, solver='sgd')
     # Explore number of features
     min_n = 3
-    max_n = 40
+    max_n = 35
     results_train, results_test, n_features = list(), list(), list()
     for i in range(min_n,max_n+1):
         print(datetime.datetime.now())
@@ -91,8 +95,8 @@ if __name__ == '__main__':
     df_results_train['n_features'] = range(min_n, max_n+1)
     df_results_test['mean']        = df_results_test.mean(axis=1)
     df_results_test['n_features']  = range(min_n, max_n+1)
-    df_results_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_train_HistGradientBoosting_3-40.csv', index=False)
-    df_results_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_test_HistGradientBoosting_3-40.csv', index=False)
+    df_results_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_train_MLPRegressor_3-35.csv', index=False)
+    df_results_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_test_MLPRegressor_3-35.csv', index=False)
     # Plot
     scores_train = df_results_train.iloc[:, 0:5].values.tolist()
     scores_test  = df_results_test.iloc[:, 0:5].values.tolist()
@@ -108,25 +112,23 @@ if __name__ == '__main__':
     pyplot.xlabel('N features', fontsize=16)
     pyplot.legend(loc="best")
     # Select n_features:
-    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=10, cv=myCViterator, direction='forward', n_jobs=6)
+    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=15, cv=myCViterator, direction='forward', n_jobs=6)
     sfs.fit(predictors_train, labels_train)
-    data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[sfs.support_]),['management','log_visit_rate']) ]
-    data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[sfs.support_]),['management','log_visit_rate']) ]
-    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_6.csv', index=False)
-    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_6.csv', index=False)
+    data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[sfs.support_]),['log_visit_rate']) ]
+    data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[sfs.support_]),['log_visit_rate']) ]
+    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_15.csv', index=False)
+    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_15.csv', index=False)
 
     # #######################################
     # # Permutation importance
     # #######################################
-    model = HistGradientBoostingRegressor(l2_regularization=0.02021888460670551, learning_rate=0.04277282248041758,
-                                          loss='least_squares', max_depth=4, max_leaf_nodes=32,
-                                          min_samples_leaf=16, warm_start=True)
+    model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], degree=d['degree'], kernel=d['kernel'], nu=d['nu'], shrinking=d['shrinking'])
     model.fit(predictors_train, labels_train)
     perm_importance = permutation_importance(model, predictors_train, labels_train, random_state=135, n_jobs=6)
     feature_names = predictors_train.columns
     feature_importance = pd.DataFrame(sorted(zip(perm_importance.importances_mean, feature_names), reverse=True))
     pyplot.barh(feature_importance.loc[:,1], feature_importance.loc[:,0])
-    # Take 29 features (testing, threshold around 0.15)
+    # Take XXX features (testing, threshold around XXX)
     features_selected = feature_importance.loc[0:10,1]
     data_reduced_train = train_prepared[np.append(features_selected, ['log_visit_rate'])]
     data_reduced_test  = test_prepared[np.append(features_selected, ['log_visit_rate'])]
@@ -190,7 +192,7 @@ if __name__ == '__main__':
     # ##############################################################################
     # EVALUATE THE MODEL WITH REDUCED PREDICTORS:
     # ##############################################################################
-    model = SVR(C=2.62, epsilon=0.05, gamma=0.21)
+    model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], degree=d['degree'], kernel=d['kernel'], nu=d['nu'], shrinking=d['shrinking'])
     predictors_train = data_reduced_train.iloc[:,:-1]
     labels_train     = np.array(data_reduced_train.iloc[:,-1:]).flatten()
     model.fit(predictors_train, labels_train)

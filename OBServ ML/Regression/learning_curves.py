@@ -1,3 +1,4 @@
+import ast
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
@@ -5,11 +6,12 @@ from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.linear_model import BayesianRidge
 from sklearn.naive_bayes import GaussianNB
-from sklearn.svm import SVC, SVR
+from sklearn.svm import SVC, SVR, NuSVR
 from sklearn.datasets import load_digits
 from sklearn.model_selection import learning_curve
 from sklearn.model_selection import ShuffleSplit
 import pandas as pd
+models_repo = "C:/Users/angel/git/Observ_models/"
 
 def get_data_prepared():
     models_repo    = "C:/Users/angel/git/Observ_models/"
@@ -20,6 +22,13 @@ def get_data_reduced(n_features):
     models_repo    = "C:/Users/angel/git/Observ_models/"
     data_dir   = models_repo + "data/ML/Regression/train/"
     return pd.read_csv(data_dir+'data_reduced_'+str(n_features)+'.csv')
+
+def get_best_models(n_features=0):
+    data_dir = models_repo + "data/ML/Regression/hyperparameters/"
+    if n_features>0:
+        return pd.read_csv(data_dir + 'best_scores_'+str(n_features)+'.csv')
+    else:
+        return pd.read_csv(data_dir + 'best_scores_all_features.csv')
 
 def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
                         n_jobs=None, train_sizes=np.linspace(.1, 1.0, 5)):
@@ -119,17 +128,18 @@ def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
     return plt
 
 
-# data_prepared = get_data_prepared()
+# Load data
 data_prepared = get_data_reduced(15)
+df_best_models = get_best_models(15)
 predictors = data_prepared.iloc[:, :-1]
 labels = np.array(data_prepared.iloc[:, -1:]).flatten()
 # Load custom cross validation
 with open('C:/Users/angel/git/Observ_models/data/ML/Regression/train/myCViterator.pkl', 'rb') as file:
     myCViterator = pickle.load(file)
 
+# Plot learning curve
 title = "Learning Curves"
-# estimator = HistGradientBoostingRegressor(l2_regularization=0.02021888460670551, learning_rate=0.04277282248041758, loss='least_squares', max_depth=4, max_leaf_nodes=32, min_samples_leaf=16, warm_start=True)
-estimator = HistGradientBoostingRegressor(l2_regularization=0.1923237939031256, learning_rate=0.10551346041298326, loss='least_absolute_deviation', max_depth=4, max_leaf_nodes=32, min_samples_leaf=4, warm_start=False)
-# estimator = SVR(C=1.5393618387949028,coef0=-0.46947890084948296,degree=3,epsilon=0.19800137347940394,gamma=0.12523398796877383,kernel='rbf',shrinking=False)
-plot_learning_curve(estimator, title, predictors, labels, cv=myCViterator, n_jobs=6)
+d = ast.literal_eval(df_best_models.iloc[0].best_params)
+model = NuSVR(C=d['C'], gamma=d['gamma'], nu=d['nu'], shrinking=d['shrinking'])
+plot_learning_curve(model, title, predictors, labels, cv=myCViterator, n_jobs=6)
 plt.show()

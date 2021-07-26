@@ -1,3 +1,4 @@
+import ast
 import pandas as pd
 import numpy as np
 import warnings
@@ -9,7 +10,7 @@ from matplotlib.pyplot import scatter
 from matplotlib.pyplot import plot
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from scipy import stats
-from sklearn.svm import SVR
+from sklearn.svm import SVR, NuSVR
 import seaborn as sns
 from scipy.stats import norm
 import plotly.express as px
@@ -37,12 +38,6 @@ def get_train_data_reduced(n_features):
 def get_test_data_reduced(n_features):
     return pd.read_csv(root_folder+'test/data_reduced_'+str(n_features)+'.csv')
 
-def get_train_data_withManagement():
-    return pd.read_csv(root_folder+'train/data_prepared_withManag.csv')
-
-def get_test_data_withManagement():
-    return pd.read_csv(root_folder+'test/data_prepared_withManag.csv')
-
 def get_train_data_full():
     return pd.read_csv(root_folder+'train/data_prepared.csv')
 
@@ -51,6 +46,13 @@ def get_test_data_full():
 
 def get_test_data_withIDs():
     return pd.read_csv(root_folder+'test/data_prepared_withIDs.csv')
+
+def get_best_models(n_features=0):
+    data_dir = models_repo + "data/ML/Regression/hyperparameters/"
+    if n_features>0:
+        return pd.read_csv(data_dir + 'best_scores_'+str(n_features)+'.csv')
+    else:
+        return pd.read_csv(data_dir + 'best_scores_all_features.csv')
 
 def check_normality(data, column):
     sns.distplot(data[column])
@@ -63,22 +65,17 @@ def check_normality(data, column):
     res = stats.probplot(data[column], plot=plt)
 
 if __name__ == '__main__':
-    train_prepared   = get_train_data_reduced(5)
-    test_prepared    = get_test_data_reduced(5)
-    train_management = get_train_data_withManagement()
-    test_management  = get_test_data_withManagement()
+    train_prepared   = get_train_data_reduced(15)
+    test_prepared    = get_test_data_reduced(15)
     predictors_train = train_prepared.iloc[:,:-1]
     labels_train     = np.array(train_prepared.iloc[:,-1:]).flatten()
     predictors_test  = test_prepared.iloc[:,:-1]
     labels_test      = np.array(test_prepared.iloc[:,-1:]).flatten()
 
     # Model
-    # model = BayesianRidge(alpha_1 = 5.661182937742398, alpha_2 = 8.158544161338462, lambda_1 = 7.509288525874375, lambda_2 = 0.08383802954777253)
-    model = HistGradientBoostingRegressor(l2_regularization=0.1923237939031256, learning_rate=0.10551346041298326, loss='least_absolute_deviation', max_depth=4, max_leaf_nodes=32, min_samples_leaf=4, warm_start=False)
-    # model = HistGradientBoostingRegressor(l2_regularization=0.02021888460670551, learning_rate=0.04277282248041758,
-    #                                           loss='least_squares', max_depth=4, max_leaf_nodes=32, min_samples_leaf=16,
-    #                                           warm_start=True)
-    # model = SVR(C=2.9468542209755357, coef0=-0.6868465520687694, degree=4, epsilon=0.18702907953343395, gamma=0.1632449384464454, kernel='rbf', shrinking=True)
+    df_best_models = get_best_models(15)
+    d = ast.literal_eval(df_best_models.iloc[0].best_params)
+    model = NuSVR(C=d['C'], gamma=d['gamma'], nu=d['nu'], shrinking=d['shrinking'])
     model.fit(predictors_train, labels_train)
     yhat = model.predict(predictors_test)
 

@@ -24,8 +24,8 @@ def get_data_reduced(n_features):
     return pd.read_csv(root_dir+'data_reduced_'+str(n_features)+'.csv')
 
 if __name__ == '__main__':
-    data_prepared = get_data_prepared()
-    # data_prepared = get_data_reduced(15)
+    # data_prepared = get_data_prepared()
+    data_prepared = get_data_reduced(15)
     predictors    = data_prepared.iloc[:,:-1]
     labels        = np.array(data_prepared.iloc[:,-1:]).flatten()
 
@@ -53,7 +53,7 @@ if __name__ == '__main__':
             print(e)
     df_results = pd.DataFrame(results)
     df_results_sorted = df_results.sort_values(by=['mean'], ascending=True)
-    df_results_sorted.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/model_selection.csv', index=False)
+    df_results_sorted.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/model_selection_15features.csv', index=False)
     ########################
     # Shortlist: check df_results and see which show low 'mean' and not-too-low 'rmse_all' (sign of possible overfitting)
     #######################
@@ -74,15 +74,15 @@ if __name__ == '__main__':
     # Note: BayesSearchCV in currently latest version of scikit-optimize not compatible with scikit-learn 0.24.1
     # When scikit-optimize version 0.9.0 is available (currently in development), use: BayesSearchCV(model,params,cv=5)
     # NuSVR
-    model = NuSVR()
+    model = NuSVR(kernel='rbf')
     # define search space
     params = dict()
-    params['kernel']  = ['linear', 'rbf', 'sigmoid']
+    # params['kernel']  = ['linear', 'rbf', 'sigmoid']
     params['nu']      = uniform(loc=0, scale=1)
     params['C']       = uniform(loc=0, scale=4)
     params['gamma']   = uniform(loc=0, scale=0.5)
-    params['coef0']   = uniform(loc=-1, scale=1)
-    params['degree']  = [3,4]
+    # params['coef0']   = uniform(loc=-1, scale=1)
+    # params['degree']  = [3,4]
     params['shrinking'] = [False, True]
     # define the search
     search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=1000,
@@ -176,5 +176,5 @@ if __name__ == '__main__':
 
     df_best_scores = pd.DataFrame(results)
     df_best_scores_sorted = df_best_scores.sort_values(by=['best_score'], ascending=False)
-    df_best_scores_sorted.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/best_scores_all_features.csv', index=False)
+    df_best_scores_sorted.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/best_scores_15.csv', index=False)
 
