@@ -6,6 +6,7 @@ from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.linear_model import BayesianRidge
 from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.svm import SVC, SVR, NuSVR
 from sklearn.datasets import load_digits
 from sklearn.model_selection import learning_curve
@@ -28,7 +29,7 @@ def get_best_models(n_features=0):
     if n_features>0:
         return pd.read_csv(data_dir + 'best_scores_'+str(n_features)+'.csv')
     else:
-        return pd.read_csv(data_dir + 'best_scores_all_features.csv')
+        return pd.read_csv(data_dir + 'best_scores.csv')
 
 def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
                         n_jobs=None, train_sizes=np.linspace(.1, 1.0, 5)):
@@ -129,8 +130,8 @@ def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
 
 
 # Load data
-data_prepared = get_data_reduced(15)
-df_best_models = get_best_models(15)
+data_prepared = get_data_reduced(5)
+df_best_models = get_best_models()
 predictors = data_prepared.iloc[:, :-1]
 labels = np.array(data_prepared.iloc[:, -1:]).flatten()
 # Load custom cross validation
@@ -140,6 +141,6 @@ with open('C:/Users/angel/git/Observ_models/data/ML/Regression/train/myCViterato
 # Plot learning curve
 title = "Learning Curves"
 d = ast.literal_eval(df_best_models.iloc[0].best_params)
-model = NuSVR(C=d['C'], gamma=d['gamma'], nu=d['nu'], shrinking=d['shrinking'])
+model = KNeighborsRegressor(weights=d['weights'], p=d['p'], n_neighbors=d['n_neighbors'], leaf_size=10)
 plot_learning_curve(model, title, predictors, labels, cv=myCViterator, n_jobs=6)
 plt.show()

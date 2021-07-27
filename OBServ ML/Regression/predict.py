@@ -10,6 +10,7 @@ from matplotlib.pyplot import scatter
 from matplotlib.pyplot import plot
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from scipy import stats
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.svm import SVR, NuSVR
 import seaborn as sns
 from scipy.stats import norm
@@ -52,7 +53,7 @@ def get_best_models(n_features=0):
     if n_features>0:
         return pd.read_csv(data_dir + 'best_scores_'+str(n_features)+'.csv')
     else:
-        return pd.read_csv(data_dir + 'best_scores_all_features.csv')
+        return pd.read_csv(data_dir + 'best_scores.csv')
 
 def check_normality(data, column):
     sns.distplot(data[column])
@@ -65,17 +66,19 @@ def check_normality(data, column):
     res = stats.probplot(data[column], plot=plt)
 
 if __name__ == '__main__':
-    train_prepared   = get_train_data_reduced(15)
-    test_prepared    = get_test_data_reduced(15)
+    train_prepared   = get_train_data_reduced(12)
+    test_prepared    = get_test_data_reduced(12)
+    # train_prepared   = get_train_data_full()
+    # test_prepared    = get_test_data_full()
     predictors_train = train_prepared.iloc[:,:-1]
     labels_train     = np.array(train_prepared.iloc[:,-1:]).flatten()
     predictors_test  = test_prepared.iloc[:,:-1]
     labels_test      = np.array(test_prepared.iloc[:,-1:]).flatten()
 
     # Model
-    df_best_models = get_best_models(15)
-    d = ast.literal_eval(df_best_models.iloc[0].best_params)
-    model = NuSVR(C=d['C'], gamma=d['gamma'], nu=d['nu'], shrinking=d['shrinking'])
+    df_best_models = get_best_models()
+    d = ast.literal_eval(df_best_models.iloc[10].best_params)
+    model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], nu=d['nu'], kernel=d['kernel'], shrinking=d['shrinking'])
     model.fit(predictors_train, labels_train)
     yhat = model.predict(predictors_test)
 
@@ -90,6 +93,7 @@ if __name__ == '__main__':
     reg.score(X_reg, y_reg)
 
     # Density difference (observed-predicted), organic vs not-organic
+    test_management = get_test_data_full()
     kwargs = dict(hist_kws={'alpha': .4}, kde_kws={'linewidth': 1})
     plt.figure()
     df = pd.DataFrame({'obs':labels_test, 'pred':yhat, 'is_organic':[ x == 3 for x in test_management.management ]})
@@ -171,26 +175,14 @@ if __name__ == '__main__':
     sns.distplot(rel_err_mae)
 
     # Interactive plot
-    organic_studies = np.array(["Ana_Montero_Castano_Vaccinium_corymbosum_Canada_2018",
-                                "Charlie_Nicholson_Vaccinium_corymbosum_USA_2013" ,
-                                "Charlie_Nicholson_Vaccinium_corymbosum_USA_2014" ,
-                                "Georg_Andersson_Brassica_rapa_Sweden_2010"  ,
-                                "Smitha_Krishnan_Coffea_canephora_India_2014" ,
-                                "Virginie_Boreux_Malus_domestica_Germany_2015" ])
-    rule_out_studies = np.array(["Blande_Viana_Passiflora_edulis_Brazil_2005"])
     check_data = get_test_data_withIDs()
-    ruled_out = [ (rule_out_studies == x).any() for x in check_data.study_id ]
-    is_organic = pd.DataFrame(check_data.study_id.tolist()).isin(organic_studies).any(1).values
-    sel_columns = [col for col in test_prepared.columns if not ('x0_' in col)]
-    check_data = check_data[ np.append( sel_columns, ['study_id', 'site_id', 'biome_num'] ) ]
+    test_management = get_test_data_full()
+    is_organic = (test_management.management == 3)
     check_data['is_organic'] = is_organic
     df = pd.concat([ check_data, pd.DataFrame(yhat, columns=['predicted']) ], axis=1)
-    df = df[ [~x for x in ruled_out] ]
-    df['vr_obs'] = np.exp(df.log_visit_rate)
-    df['vr_pred'] = np.exp(df.predicted)
     # fig = px.scatter(df, x="vr_pred", y="vr_obs", hover_data=df.columns, color="is_organic", trendline="ols")
     fig = px.scatter(df, x="predicted", y="log_visit_rate", hover_data=df.columns, color="is_organic", trendline="ols")
-    # fig = px.scatter(df, x="predicted", y="log_visit_rate", hover_data=df.columns, trendline="ols")
+    # fig = px.scatter(df, x="predicted", y="log_visit_rate", hover_data=df.columns)
     fig.show()
 
     # Stats ( MAE, R2, Mu(obs-pred), Sigma(obs-pred) )

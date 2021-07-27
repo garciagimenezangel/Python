@@ -39,89 +39,29 @@ def get_field_data():
                      'ab_wildbees', 'ab_syrphids', 'ab_bombus',
                      'total_sampled_time', 'sampling_year', 'sampling_abundance']]
 
-def is_sampling_method_accepted(x):
-    cond1 = 'pan trap' not in x
-    cond2 = x != "nan"
-    return (cond1 & cond2)
-
-def apply_minimum_conditions(data):
-    # Conditions:
-    # 0. Latitude and longitude must be !na. Implicit because df_features only has data with defined lat and lon.
-    # cond2 = (~data['latitude'].isna()) & (~data['longitude'].isna())
-    # 1. Abundances must be integer numbers (tolerance of 0.05)
-    decimal_wb  = (data['ab_wildbees'] % 1)
-    decimal_syr = (data['ab_syrphids'] % 1)
-    decimal_bmb = (data['ab_bombus'] % 1)
-    nas   =  data['ab_wildbees'].isna() | data['ab_syrphids'].isna() | data['ab_bombus'].isna()
-    cond1 = ((decimal_wb < 0.05) & (decimal_syr < 0.05) & (decimal_bmb < 0.05)) | \
-            ((decimal_wb > 0.95) & (decimal_syr > 0.95) & (decimal_bmb > 0.95))
-    cond1[cond1.isna()] = False
-    print("1. Integer abundances:")
-    print(cond1.describe())
-    # 2. Strictly positive abundances
-    cond2 = (~data['ab_wildbees'].isna() & data['ab_wildbees'] > 0) | \
-            (~data['ab_syrphids'].isna() & data['ab_syrphids'] > 0) | \
-            (~data['ab_bombus'].isna() & data['ab_bombus'] > 0)
-    print("2. Strictly positive abundances:")
-    print(cond2.describe())
-    # 3. Set temporal threshold (sampling year >= 1992). This removes years 1990, 1991, that show not-very-healthy values of "comparable abundance"
-    refYear = data['sampling_year'].str[:4].astype('int')
-    cond3 = (refYear >= 1992)
-    print("3. Ref year >=1992:")
-    print(cond3.describe())
-    # 4. Remove rows with 7 or more NaN values
-    cond4 = (data.isnull().sum(axis=1) < 7)
-    print("4. Less than 7 NAs per row:")
-    print(cond4.describe())
-    # 5. Total sampled time != NA
-    cond5 = ~data['total_sampled_time'].isna()
-    print("5. Defined sampled time:")
-    print(cond5.describe())
-    # 6. Sampling method != pan trap
-    cond6 = pd.Series([ is_sampling_method_accepted(x) for x in data['sampling_abundance'].astype('str') ])
-    print("6. Sampling method not pan trap:")
-    print(cond6.describe())
-
-    # Filter by conditions
-    all_cond = (cond1 & cond2 & cond3 & cond4 & cond5 & cond6)
-    print("ALL:")
-    print(all_cond.describe())
-    return data[ all_cond ]
-
 def compute_visit_rate(data):
-    # Compute comparable abundance
-    # 5. Total sampled time NA replaced by median (120), abundance=NA replace by zero
-    data.loc[data['total_sampled_time'].isna(), 'total_sampled_time'] = np.nanmedian(data['total_sampled_time'])
-    data.loc[data['ab_wildbees'].isna(), 'ab_wildbees'] = 0
-    data.loc[data['ab_syrphids'].isna(), 'ab_syrphids'] = 0
-    data.loc[data['ab_bombus'].isna()  , 'ab_bombus']   = 0
-    # 6. Compute comparable abundances
-    data['visit_rate_wb_bmb_syr'] = (data['ab_wildbees']+ data['ab_syrphids']+ data['ab_bombus']) / data['total_sampled_time']
-    data['log_visit_rate']      = np.log(data['visit_rate_wb_bmb_syr'])
+    data['visit_rate_wb_bmb_syr'] = (data['ab_wildbees'] + data['ab_syrphids'] + data['ab_bombus'] + 1) / data['total_sampled_time']
+    data['log_visit_rate']        = np.log(data['visit_rate_wb_bmb_syr'])
     data.drop(columns=['ab_wildbees', 'ab_syrphids', 'ab_bombus', 'total_sampled_time', 'visit_rate_wb_bmb_syr'], inplace=True)
     return data
 
 def compute_visit_rate_small(data):
-    # Compute comparable abundance
-    # 5. Total sampled time NA replaced by median (120), abundance=NA replace by zero
-    data.loc[data['total_sampled_time'].isna(), 'total_sampled_time'] = np.nanmedian(data['total_sampled_time'])
-    data.loc[data['ab_wildbees'].isna(), 'ab_wildbees'] = 0
-    data.loc[data['ab_syrphids'].isna(), 'ab_syrphids'] = 0
-    # 6. Compute comparable abundances
-    data['visit_rate_wb_syr'] = (data['ab_wildbees']+ data['ab_syrphids']) / data['total_sampled_time']
-    data['log_vr_small']  = np.log(data['visit_rate_wb_syr'])
+    data['visit_rate_wb_syr'] = (data['ab_wildbees']+ data['ab_syrphids'] + 1) / data['total_sampled_time']
+    data['log_vr_small']      = np.log(data['visit_rate_wb_syr'])
     data.drop(columns=['ab_wildbees', 'ab_syrphids', 'visit_rate_wb_syr'], inplace=True)
     return data
 
 def compute_visit_rate_large(data):
     # Compute comparable abundance
-    # 5. Total sampled time NA replaced by median (120), abundance=NA replace by zero
-    data.loc[data['total_sampled_time'].isna(), 'total_sampled_time'] = np.nanmedian(data['total_sampled_time'])
-    data.loc[data['ab_bombus'].isna(), 'ab_bombus'] = 0
-    # 6. Compute comparable abundances
-    data['visit_rate_bmb'] = data['ab_bombus'] / data['total_sampled_time']
-    data['log_vr_large']  = np.log(data['visit_rate_bmb'])
+    data['visit_rate_bmb'] = (data['ab_bombus']+1) / data['total_sampled_time']
+    data['log_vr_large']   = np.log(data['visit_rate_bmb'])
     data.drop(columns=['ab_bombus', 'visit_rate_bmb'], inplace=True)
+    return data
+
+def fill_missing_abundances(data):
+    data.loc[data['ab_bombus'].isna(), 'ab_bombus']     = 0
+    data.loc[data['ab_wildbees'].isna(), 'ab_wildbees'] = 0
+    data.loc[data['ab_syrphids'].isna(), 'ab_syrphids'] = 0
     return data
 
 def fill_biome(x, data):
@@ -148,14 +88,77 @@ def check_normality(data, column):
     fig = plt.figure()
     res = stats.probplot(data[column], plot=plt)
 
-def boxplot(data, x, ymin=-5, ymax=2):
-    fig = sns.boxplot(x=x, y="log_visit_rate", data=data)
+def boxplot(data, x, y, ymin=-5, ymax=2):
+    fig = sns.boxplot(x=x, y=y, data=data)
     fig.axis(ymin=ymin, ymax=ymax)
 
 def add_mechanistic_values(data, model_name='Lonsdorf.Delphi_lcCont1_open0_forEd0_crEd0_div0_ins0max_dist0_suitmult'):
     data_dir = "C:/Users/angel/git/Observ_models/data/"
     model_data  = pd.read_csv(data_dir + 'model_data_lite.csv')[['site_id','study_id',model_name]]
     return data.merge(model_data, on=['study_id', 'site_id'])
+
+def is_sampling_method_accepted(x):
+    cond1 = 'pan trap' not in x
+    cond2 = x != "nan"
+    return (cond1 & cond2)
+
+def is_one_guild_measured(x,y,z):
+    return (~np.isnan(x) | ~np.isnan(y) | ~np.isnan(z))
+
+def are_abundances_integer(study_data): # do not exclude NAs (filtered or transformed in other steps)
+    tol = 0.05
+    cond_wb  = ((study_data['ab_wildbees'] % 1) < tol) | ((study_data['ab_wildbees'] % 1) > (1-tol)) | study_data['ab_wildbees'].isna()
+    cond_syr = ((study_data['ab_syrphids'] % 1) < tol) | ((study_data['ab_syrphids'] % 1) > (1-tol)) | study_data['ab_syrphids'].isna()
+    cond_bmb = ((study_data['ab_bombus'] % 1) < tol)   | ((study_data['ab_bombus'] % 1) > (1-tol))   | study_data['ab_bombus'].isna()
+    cond = cond_wb & cond_syr & cond_bmb
+    return all(cond)
+
+def are_abundances_integer(study_data): # do not exclude NAs (filtered or transformed in other steps)
+    tol = 0.05
+    cond_wb  = ((study_data['ab_wildbees'] % 1) < tol) | ((study_data['ab_wildbees'] % 1) > (1-tol)) | study_data['ab_wildbees'].isna()
+    cond_syr = ((study_data['ab_syrphids'] % 1) < tol) | ((study_data['ab_syrphids'] % 1) > (1-tol)) | study_data['ab_syrphids'].isna()
+    cond_bmb = ((study_data['ab_bombus'] % 1) < tol)   | ((study_data['ab_bombus'] % 1) > (1-tol))   | study_data['ab_bombus'].isna()
+    cond = cond_wb & cond_syr & cond_bmb
+    return all(cond)
+
+def apply_conditions(data):
+    # 1. Abundances of all sites in the study must be integer numbers (tolerance of 0.05)
+    abs_integer = data.groupby('study_id').apply(are_abundances_integer)
+    sel_studies = abs_integer.index[abs_integer]
+    cond1       = data['study_id'].isin(sel_studies)
+    print("1. Studies with all abundances integer:")
+    print(abs_integer.describe())
+    print("1b: Sites")
+    print(cond1.describe())
+
+    # 2. At least one guild measured
+    cond2 = pd.Series([is_one_guild_measured(x,y,z) for (x,y,z) in zip(data['ab_wildbees'], data['ab_syrphids'], data['ab_bombus'])])
+    print("2. At least one guild measured:")
+    print(cond2.describe())
+
+    # 3. Set temporal threshold (sampling year >= 1992). This removes years 1990, 1991, that show not-very-healthy values of "comparable abundance"
+    refYear = data['sampling_year'].str[:4].astype('int')
+    cond3 = (refYear >= 1992)
+    print("3. Ref year >=1992:")
+    print(cond3.describe())
+
+    # 4. Sampling method != pan trap
+    cond4 = pd.Series([ is_sampling_method_accepted(x) for x in data['sampling_abundance'].astype('str') ])
+    print("4. Sampling method not pan trap:")
+    print(cond4.describe())
+    data.drop(columns=['sampling_abundance'], inplace=True)
+
+    # 5. Total sampled time != NA
+    cond5 = ~data['total_sampled_time'].isna()
+    print("5. Defined sampled time:")
+    print(cond5.describe())
+
+    # Filter by conditions
+    all_cond = (cond1 & cond2 & cond3 & cond4 & cond5)
+    print("ALL:")
+    print(all_cond.describe())
+    return data[ all_cond ]
+
 
 if __name__ == '__main__':
 
@@ -165,9 +168,10 @@ if __name__ == '__main__':
     df_features = get_feature_data()
     df_field    = get_field_data()
     data = df_features.merge(df_field, on=['study_id', 'site_id'])
-    data = apply_minimum_conditions(data)
+    data = apply_conditions(data)
     data = fill_missing_biomes(data)
     data = remap_crops(data)
+    data = fill_missing_abundances(data)
     data = compute_visit_rate(data)
     # data = compute_visit_rate_small(data)
     # data = compute_visit_rate_large(data)
@@ -183,8 +187,17 @@ if __name__ == '__main__':
     #######################################
     # Pipeline
     #######################################
-    # Apply transformations (standardize, one-hot encoding)
-    pred_num = predictors.select_dtypes('number')
+    # Apply transformations (fill values, standardize, one-hot encoding)
+    # First, replace numeric by mean, grouped by study_id (if all sites have NAs, then replace by dataset mean later in the imputer)
+    pred_num     = predictors.select_dtypes('number')
+    n_nas        = pred_num.isna().sum().sum()
+    pred_num['study_id'] = data.study_id
+    pred_num = pred_num.groupby('study_id').transform(lambda x: x.fillna(x.mean()))
+    print("NA'S before transformation: " + str(n_nas))
+    print("Total numeric values: " + str(pred_num.size))
+    print("Percentage: " + str(n_nas*100/pred_num.size))
+
+    # Define pipleline
     numeric_col = list(pred_num)
     onehot_col  = ["biome_num"]
     ordinal_col = ["management"]
@@ -238,7 +251,7 @@ if __name__ == '__main__':
     df_studies_split = df_studies.loc[has_more_one[df_studies.biome_num].reset_index().study_id,]
     strata           = df_studies_split.biome_num.astype('category')
 
-    x_train, x_test, y_train, y_test = train_test_split(df_studies_split, strata, stratify=strata, test_size=0.25, random_state=13)
+    x_train, x_test, y_train, y_test = train_test_split(df_studies_split, strata, stratify=strata, test_size=0.2, random_state=135)
     studies_train   = x_train.study_id
     train_selection = [ (x_train.study_id == x).any() for x in data.study_id ]
     df_train = dataset_prepared[train_selection].reset_index(drop=True)
