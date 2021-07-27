@@ -102,8 +102,8 @@ def is_sampling_method_accepted(x):
     cond2 = x != "nan"
     return (cond1 & cond2)
 
-def is_one_guild_measured(x,y,z):
-    return (~np.isnan(x) | ~np.isnan(y) | ~np.isnan(z))
+def is_one_guild_measured(x,y,z, thresh):
+    return ( (~np.isnan(x) & (x>thresh)) | (~np.isnan(y) & (y>thresh)) | (~np.isnan(z) & (z>thresh)) )
 
 def are_abundances_integer(study_data): # do not exclude NAs (filtered or transformed in other steps)
     tol = 0.05
@@ -121,7 +121,7 @@ def are_abundances_integer(study_data): # do not exclude NAs (filtered or transf
     cond = cond_wb & cond_syr & cond_bmb
     return all(cond)
 
-def apply_conditions(data):
+def apply_conditions(data, thresh_ab=0):
     # 1. Abundances of all sites in the study must be integer numbers (tolerance of 0.05)
     abs_integer = data.groupby('study_id').apply(are_abundances_integer)
     sel_studies = abs_integer.index[abs_integer]
@@ -131,9 +131,9 @@ def apply_conditions(data):
     print("1b: Sites")
     print(cond1.describe())
 
-    # 2. At least one guild measured
-    cond2 = pd.Series([is_one_guild_measured(x,y,z) for (x,y,z) in zip(data['ab_wildbees'], data['ab_syrphids'], data['ab_bombus'])])
-    print("2. At least one guild measured:")
+    # 2. At least one guild measured with abundance > thresh_ab
+    cond2 = pd.Series([is_one_guild_measured(x,y,z,thresh_ab) for (x,y,z) in zip(data['ab_wildbees'], data['ab_syrphids'], data['ab_bombus'])])
+    print("2. At least one guild measured with abundance > "+str(thresh_ab)+":")
     print(cond2.describe())
 
     # 3. Set temporal threshold (sampling year >= 1992). This removes years 1990, 1991, that show not-very-healthy values of "comparable abundance"

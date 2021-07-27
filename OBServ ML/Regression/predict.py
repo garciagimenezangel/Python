@@ -66,8 +66,8 @@ def check_normality(data, column):
     res = stats.probplot(data[column], plot=plt)
 
 if __name__ == '__main__':
-    train_prepared   = get_train_data_reduced(12)
-    test_prepared    = get_test_data_reduced(12)
+    train_prepared   = get_train_data_reduced(6)
+    test_prepared    = get_test_data_reduced(6)
     # train_prepared   = get_train_data_full()
     # test_prepared    = get_test_data_full()
     predictors_train = train_prepared.iloc[:,:-1]
@@ -76,8 +76,8 @@ if __name__ == '__main__':
     labels_test      = np.array(test_prepared.iloc[:,-1:]).flatten()
 
     # Model
-    df_best_models = get_best_models()
-    d = ast.literal_eval(df_best_models.iloc[10].best_params)
+    df_best_models = get_best_models(6)
+    d = ast.literal_eval(df_best_models.iloc[0].best_params)
     model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], nu=d['nu'], kernel=d['kernel'], shrinking=d['shrinking'])
     model.fit(predictors_train, labels_train)
     yhat = model.predict(predictors_test)
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     df_lons = get_lonsdorf_predictions()
     df_lons['source'] = 'Mechanistic'
     df_lons.columns = df_ml.columns
-    ax.scatter(df_lons['pred'], df_lons['obs'],  color='green', alpha=0.5, label="Mechanistic")
+    # ax.scatter(df_lons['pred'], df_lons['obs'],  color='green', alpha=0.5, label="Mechanistic")
     ax.scatter(df_ml['pred'],   df_ml['obs'],    color='red',   alpha=0.5, label="Machine Learning")
     ax.plot(yhat,yhat, alpha=0.5, color='orange',label='y=prediction')
     # ax.set_xlim(-5.5,0)
@@ -145,6 +145,7 @@ if __name__ == '__main__':
     reg.score(X_reg, y_reg)
 
     # Scatter plot organic vs not-organic
+    test_management = get_test_data_full()
     fig, ax = plt.subplots()
     df = pd.DataFrame({'obs':labels_test, 'pred':yhat, 'is_organic':[ x == 3 for x in test_management.management ]})
     df_org     = df[ df.is_organic ]
@@ -181,8 +182,8 @@ if __name__ == '__main__':
     check_data['is_organic'] = is_organic
     df = pd.concat([ check_data, pd.DataFrame(yhat, columns=['predicted']) ], axis=1)
     # fig = px.scatter(df, x="vr_pred", y="vr_obs", hover_data=df.columns, color="is_organic", trendline="ols")
-    fig = px.scatter(df, x="predicted", y="log_visit_rate", hover_data=df.columns, color="is_organic", trendline="ols")
-    # fig = px.scatter(df, x="predicted", y="log_visit_rate", hover_data=df.columns)
+    # fig = px.scatter(df, x="predicted", y="log_visit_rate", hover_data=df.columns, color="is_organic", trendline="ols")
+    fig = px.scatter(df, x="predicted", y="log_visit_rate", hover_data=df.columns, trendline="ols")
     fig.show()
 
     # Stats ( MAE, R2, Mu(obs-pred), Sigma(obs-pred) )

@@ -130,7 +130,7 @@ def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
 
 
 # Load data
-data_prepared = get_data_reduced(5)
+data_prepared = get_data_reduced(6)
 df_best_models = get_best_models()
 predictors = data_prepared.iloc[:, :-1]
 labels = np.array(data_prepared.iloc[:, -1:]).flatten()
@@ -140,7 +140,7 @@ with open('C:/Users/angel/git/Observ_models/data/ML/Regression/train/myCViterato
 
 # Plot learning curve
 title = "Learning Curves"
-d = ast.literal_eval(df_best_models.iloc[0].best_params)
-model = KNeighborsRegressor(weights=d['weights'], p=d['p'], n_neighbors=d['n_neighbors'], leaf_size=10)
+d = ast.literal_eval(df_best_models.iloc[2].best_params)
+model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], nu=d['nu'], kernel=d['kernel'], shrinking=d['shrinking'])
 plot_learning_curve(model, title, predictors, labels, cv=myCViterator, n_jobs=6)
 plt.show()

@@ -74,7 +74,7 @@ if __name__ == '__main__':
     #######################################
     # SequentialFeatureSelector (SFS)
     #######################################
-    d = ast.literal_eval(df_best_models.iloc[10].best_params)
+    d = ast.literal_eval(df_best_models.iloc[2].best_params)
     # model = KNeighborsRegressor(weights=d['weights'], p=d['p'], n_neighbors=d['n_neighbors'], leaf_size=10)
     model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], nu=d['nu'], kernel=d['kernel'], shrinking=d['shrinking'])
     # model = SVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], epsilon=d['epsilon'], kernel=d['kernel'], shrinking=d['shrinking'])
@@ -114,12 +114,12 @@ if __name__ == '__main__':
     pyplot.xlabel('N features', fontsize=16)
     pyplot.legend(loc="best")
     # Select n_features:
-    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=12, cv=myCViterator, direction='forward', n_jobs=6)
+    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=6, cv=myCViterator, direction='forward', n_jobs=6)
     sfs.fit(predictors_train, labels_train)
     data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[sfs.support_]),['log_visit_rate']) ]
     data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[sfs.support_]),['log_visit_rate']) ]
-    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_12.csv', index=False)
-    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_12.csv', index=False)
+    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_6.csv', index=False)
+    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_6.csv', index=False)
 
     # #######################################
     # # Permutation importance
