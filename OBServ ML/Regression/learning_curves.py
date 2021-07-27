@@ -131,7 +131,7 @@ def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
 
 # Load data
 data_prepared = get_data_reduced(6)
-df_best_models = get_best_models()
+df_best_models = get_best_models(6)
 predictors = data_prepared.iloc[:, :-1]
 labels = np.array(data_prepared.iloc[:, -1:]).flatten()
 # Load custom cross validation

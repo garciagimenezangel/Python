@@ -66,6 +66,8 @@ def check_normality(data, column):
     res = stats.probplot(data[column], plot=plt)
 
 if __name__ == '__main__':
+    # TODO: PROBAR A ANADIR EL MODELO COMO PREDICTOR TB
+
     train_prepared   = get_train_data_reduced(6)
     test_prepared    = get_test_data_reduced(6)
     # train_prepared   = get_train_data_full()
@@ -77,7 +79,7 @@ if __name__ == '__main__':
 
     # Model
     df_best_models = get_best_models(6)
-    d = ast.literal_eval(df_best_models.iloc[0].best_params)
+    d = ast.literal_eval(df_best_models.iloc[2].best_params)
     model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], nu=d['nu'], kernel=d['kernel'], shrinking=d['shrinking'])
     model.fit(predictors_train, labels_train)
     yhat = model.predict(predictors_test)

@@ -40,13 +40,13 @@ def get_field_data():
                      'total_sampled_time', 'sampling_year', 'sampling_abundance']]
 
 def compute_visit_rate(data):
-    data['visit_rate_wb_bmb_syr'] = (data['ab_wildbees'] + data['ab_syrphids'] + data['ab_bombus'] + 1) / data['total_sampled_time']
+    data['visit_rate_wb_bmb_syr'] = (data['ab_wildbees'] + data['ab_syrphids'] + data['ab_bombus']) / data['total_sampled_time']
     data['log_visit_rate']        = np.log(data['visit_rate_wb_bmb_syr'])
     data.drop(columns=['ab_wildbees', 'ab_syrphids', 'ab_bombus', 'total_sampled_time', 'visit_rate_wb_bmb_syr'], inplace=True)
     return data
 
 def compute_visit_rate_small(data):
-    data['visit_rate_wb_syr'] = (data['ab_wildbees']+ data['ab_syrphids'] + 1) / data['total_sampled_time']
+    data['visit_rate_wb_syr'] = (data['ab_wildbees']+ data['ab_syrphids']+1) / data['total_sampled_time']
     data['log_vr_small']      = np.log(data['visit_rate_wb_syr'])
     data.drop(columns=['ab_wildbees', 'ab_syrphids', 'visit_rate_wb_syr'], inplace=True)
     return data
@@ -314,3 +314,6 @@ if __name__ == '__main__':
     large = data.copy().sort_values(by=["log_vr_large"])
     large = large.loc[ np.isfinite(large['log_vr_large']), ]
     check_normality(large, 'log_vr_large')
+
+    # Save data quasi-raw
+    data.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/Lonsdorf evaluation/Model predictions/data_raw.csv', index=False)

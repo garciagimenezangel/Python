@@ -63,8 +63,7 @@ if __name__ == '__main__':
     # 2 SVR
     # 3 TweedieRegressor
     # 4 PLSRegression
-    # 5 GradientBoostingRegressor
-    # 6 ElasticNetCV
+    # 5 ElasticNetCV
 
     ########################
     # Hyperparameter tuning
@@ -134,30 +133,6 @@ if __name__ == '__main__':
     cvres = pd.DataFrame(search.cv_results_).sort_values(by=['mean_test_score'], ascending=False)
     for i in range(0,min(10, len(cvres))): results.append({'model': model, 'best_params': cvres.iloc[i].params, 'best_score': cvres.iloc[i].mean_test_score})
 
-    # GradientBoostingRegressor
-    model = GradientBoostingRegressor()
-    # define search space
-    params = dict()
-    params['loss'] = ['ls', 'lad', 'huber', 'quantile']
-    params['learning_rate'] = uniform(loc=0, scale=1)
-    params['n_estimators'] = [50, 100, 200, 400, 600]
-    params['subsample'] = uniform(loc=0, scale=1)
-    params['min_samples_split'] = uniform(loc=0, scale=1)
-    params['min_samples_leaf'] = uniform(loc=0, scale=0.5)
-    params['min_weight_fraction_leaf'] = uniform(loc=0, scale=0.5)
-    params['max_depth'] = [2, 4, 8, 16, 32]
-    params['min_impurity_decrease'] = uniform(loc=0, scale=1)
-    params['max_features'] = uniform(loc=0, scale=1)
-    params['alpha'] = uniform(loc=0, scale=1)
-    params['max_leaf_nodes'] = [8, 16, 32, 64]
-    params['ccp_alpha'] = uniform(loc=0, scale=1)
-    # define the search
-    search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=1000,
-                                verbose=2, random_state=135, n_jobs=6)
-    search.fit(predictors, labels)
-    cvres = pd.DataFrame(search.cv_results_).sort_values(by=['mean_test_score'], ascending=False)
-    for i in range(0,min(10, len(cvres))): results.append({'model': model, 'best_params': cvres.iloc[i].params, 'best_score': cvres.iloc[i].mean_test_score})
-
     # ElasticNetCV
     model = ElasticNetCV(max_iter=10000)
     # define search space
@@ -178,6 +153,31 @@ if __name__ == '__main__':
     df_best_scores = pd.DataFrame(results)
     df_best_scores_sorted = df_best_scores.sort_values(by=['best_score'], ascending=False)
     df_best_scores_sorted.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/best_scores_6.csv', index=False)
+
+    #
+    # # GradientBoostingRegressor
+    # model = GradientBoostingRegressor()
+    # # define search space
+    # params = dict()
+    # params['loss'] = ['ls', 'lad', 'huber', 'quantile']
+    # params['learning_rate'] = uniform(loc=0, scale=1)
+    # params['n_estimators'] = [50, 100, 200, 400, 600]
+    # params['subsample'] = uniform(loc=0, scale=1)
+    # params['min_samples_split'] = uniform(loc=0, scale=1)
+    # params['min_samples_leaf'] = uniform(loc=0, scale=0.5)
+    # params['min_weight_fraction_leaf'] = uniform(loc=0, scale=0.5)
+    # params['max_depth'] = [2, 4, 8, 16, 32]
+    # params['min_impurity_decrease'] = uniform(loc=0, scale=1)
+    # params['max_features'] = uniform(loc=0, scale=1)
+    # params['alpha'] = uniform(loc=0, scale=1)
+    # params['max_leaf_nodes'] = [8, 16, 32, 64]
+    # params['ccp_alpha'] = uniform(loc=0, scale=1)
+    # # define the search
+    # search = RandomizedSearchCV(model, params, cv=myCViterator, scoring='neg_mean_absolute_error', n_iter=1000,
+    #                             verbose=2, random_state=135, n_jobs=6)
+    # search.fit(predictors, labels)
+    # cvres = pd.DataFrame(search.cv_results_).sort_values(by=['mean_test_score'], ascending=False)
+    # for i in range(0,min(10, len(cvres))): results.append({'model': model, 'best_params': cvres.iloc[i].params, 'best_score': cvres.iloc[i].mean_test_score})
 
     # # HistGradientBoostingRegressor
     # model = HistGradientBoostingRegressor(max_iter=1000)
