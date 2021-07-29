@@ -92,7 +92,7 @@ def boxplot(data, x, y, ymin=-5, ymax=2):
     fig = sns.boxplot(x=x, y=y, data=data)
     fig.axis(ymin=ymin, ymax=ymax)
 
-def add_mechanistic_values(data, model_name='Lonsdorf.Delphi_lcCont1_open0_forEd0_crEd0_div0_ins0max_dist0_suitmult'):
+def add_mechanistic_values(data, model_name='Lonsdorf.Delphi_lcCont1_open1_forEd0_crEd0_div0_ins0max_dist0_suitmult'):
     data_dir = "C:/Users/angel/git/Observ_models/data/"
     model_data  = pd.read_csv(data_dir + 'model_data_lite.csv')[['site_id','study_id',model_name]]
     return data.merge(model_data, on=['study_id', 'site_id'])
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     data = df_features.merge(df_field, on=['study_id', 'site_id'])
     data = apply_conditions(data)
     data = fill_missing_biomes(data)
-    data = remap_crops(data)
+    # data = remap_crops(data)
     data = fill_missing_abundances(data)
     data = compute_visit_rate(data)
     # data = compute_visit_rate_small(data)
@@ -199,7 +199,7 @@ if __name__ == '__main__':
 
     # Define pipleline
     numeric_col = list(pred_num)
-    onehot_col  = ["biome_num"]
+    onehot_col  = ["biome_num", "crop"]
     ordinal_col = ["management"]
     dummy_col   = ["study_id","site_id"] # keep this to use later (e.g. create custom cross validation iterator)
     num_pipeline = Pipeline([
@@ -260,10 +260,6 @@ if __name__ == '__main__':
     # Save predictors and labels (train and set), removing study_id
     df_train.drop(columns=['study_id', 'site_id']).to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_prepared.csv', index=False)
     df_test.drop(columns=['study_id', 'site_id']).to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_prepared.csv', index=False)
-
-    # Save predictors and labels including model data (train and set)
-    # df_train.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_prepared_with_mech.csv', index=False)
-    # df_test.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_prepared_with_mech.csv', index=False)
 
     # Save data (not processed by pipeline) including study_id and site_id
     train_withIDs = data[train_selection].copy().reset_index(drop=True)

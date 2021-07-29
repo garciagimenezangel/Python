@@ -74,10 +74,10 @@ if __name__ == '__main__':
     #######################################
     # SequentialFeatureSelector (SFS)
     #######################################
-    d = ast.literal_eval(df_best_models.iloc[1].best_params)
+    d = ast.literal_eval(df_best_models.iloc[4].best_params)
     # model = KNeighborsRegressor(weights=d['weights'], p=d['p'], n_neighbors=d['n_neighbors'], leaf_size=10)
-    model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], nu=d['nu'], kernel=d['kernel'], shrinking=d['shrinking'])
-    # model = SVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], epsilon=d['epsilon'], kernel=d['kernel'], shrinking=d['shrinking'])
+    # model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], nu=d['nu'], kernel=d['kernel'], shrinking=d['shrinking'])
+    model = SVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], epsilon=d['epsilon'], kernel=d['kernel'], shrinking=d['shrinking'])
     # model = MLPRegressor(activation=d['activation'], alpha=d['alpha'], hidden_layer_sizes=d['hidden_layer_sizes'], learning_rate=d['learning_rate'],
     #                      learning_rate_init=d['learning_rate_init'], momentum=d['momentum'], power_t=d['power_t'], max_iter=10000, solver='sgd')
     # Explore number of features
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     df_results_test['mean']        = df_results_test.mean(axis=1)
     df_results_test['n_features']  = range(min_n, max_n+1)
     df_results_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_train_SVR_1-30.csv', index=False)
-    df_results_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_train_SVR_1-30.csv', index=False)
+    df_results_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_test_SVR_1-30.csv', index=False)
     # Plot
     scores_train = df_results_train.iloc[:, 0:5].values.tolist()
     scores_test  = df_results_test.iloc[:, 0:5].values.tolist()
@@ -113,18 +113,19 @@ if __name__ == '__main__':
     pyplot.ylabel('MAE', fontsize=16)
     pyplot.xlabel('N features', fontsize=16)
     pyplot.legend(loc="best")
+    pyplot.savefig('C:/Users/angel/git/Observ_models/report/figures/feature_selection_NuSVR_1-30.tiff', format='tiff')
     # Select n_features:
-    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=6, cv=myCViterator, direction='forward', n_jobs=6)
+    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=3, cv=myCViterator, direction='forward', n_jobs=6)
     sfs.fit(predictors_train, labels_train)
     data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[sfs.support_]),['log_visit_rate']) ]
     data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[sfs.support_]),['log_visit_rate']) ]
-    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_6.csv', index=False)
-    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_6.csv', index=False)
+    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_3.csv', index=False)
+    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_3.csv', index=False)
 
     # #######################################
     # # Permutation importance
     # #######################################
-    model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], degree=d['degree'], kernel=d['kernel'], nu=d['nu'], shrinking=d['shrinking'])
+    model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], kernel=d['kernel'], nu=d['nu'], shrinking=d['shrinking'])
     model.fit(predictors_train, labels_train)
     perm_importance = permutation_importance(model, predictors_train, labels_train, random_state=135, n_jobs=6)
     feature_names = predictors_train.columns
