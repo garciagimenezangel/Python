@@ -34,7 +34,7 @@ def check_normality(array):
 
 def get_lonsdorf_prediction_files():
     path = models_repo + 'data/Lonsdorf evaluation/Model predictions/'
-    return [i for i in os.listdir(path) if os.path.isfile(os.path.join(path,i)) and 'lm_' in i]
+    return [i for i in os.listdir(path) if os.path.isfile(os.path.join(path,i)) and 'lm ' in i]
 
 def get_lonsdorf_predictions(file='lm pred All modules.csv'):
     return pd.read_csv(models_repo+'data/Lonsdorf evaluation/Model predictions/'+file)
@@ -100,7 +100,7 @@ def compute_svr_stats(n_features):
         'slope': slope
     }
 
-def compute_svr_stats(n_features):
+def compute_svr_predictions(n_features):
     train_prepared   = get_train_data_reduced(n_features)
     test_prepared    = get_test_data_reduced(n_features)
     predictors_train = train_prepared.iloc[:,:-1]
@@ -113,6 +113,10 @@ def compute_svr_stats(n_features):
     model = SVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], epsilon=d['epsilon'], kernel=d['kernel'], shrinking=d['shrinking'])
     model.fit(predictors_train, labels_train)
     yhat  = model.predict(predictors_test)
+    return yhat, labels_test
+
+def compute_svr_stats(n_features):
+    yhat, labels_test = compute_svr_predictions(n_features)
     X_reg, y_reg = yhat.reshape(-1, 1), labels_test.reshape(-1, 1)
     mae   = mean_absolute_error(X_reg, y_reg)
     reg   = LinearRegression().fit(X_reg, y_reg)
@@ -180,10 +184,75 @@ def compute_mlp_stats(n_features):
         'slope': slope
     }
 
+def compute_lons_stats():
+    results = []
+    files = get_lonsdorf_prediction_files()
+    for file in files:
+        df_lons = get_lonsdorf_predictions(file)
+        X_reg, y_reg = df_lons.lm_predicted.reshape(-1, 1), df_lons.log_visit_rate.reshape(-1, 1)
+        mae = mean_absolute_error(X_reg, y_reg)
+        reg = LinearRegression().fit(X_reg, y_reg)
+        r2 = reg.score(X_reg, y_reg)
+        slope = reg.coef_
+        model = df_lons.iloc[0].model
+        results.append({'model': model, 'mae': mae, 'r2':r2, 'slope':slope})
+    return results
+
+def compute_combined_stats(file, n_features):
+    df_lons = get_lonsdorf_predictions(file)
+    yhat, labels_test = compute_svr_predictions(n_features)
+    test_withIDs = get_test_data_withIDs()
+    df_ml = pd.DataFrame({'obs':labels_test, 'pred':yhat, 'study_id':test_withIDs.study_id, 'site_id':test_withIDs.site_id})
+    df_combined = pd.merge(df_lons, df_ml, on=['study_id', 'site_id'])
+    df_combined['yhat'] = np.average([df_combined.pred, df_combined.lm_predicted])
+    X_reg, y_reg = df_combined.yhat.reshape(-1, 1), df_combined.log_visit_rate.reshape(-1, 1)
+    mae = mean_absolute_error(X_reg, y_reg)
+    reg = LinearRegression().fit(X_reg, y_reg)
+    r2 = reg.score(X_reg, y_reg)
+    slope = reg.coef_
+    model = df_lons.iloc[0].model + " + ML"
+    return {
+        'model': model,
+        'n_features': n_features,
+        'mae': mae,
+        'r2': r2,
+        'slope': slope
+    }
+
+def get_mechanistic_values(model_name):
+    data_dir = "C:/Users/angel/git/Observ_models/data/"
+    return pd.read_csv(data_dir + 'model_data_lite.csv')[['site_id','study_id',model_name]]
+
+# def compute_ml_with_lons(n_features, model_name='Lonsdorf.Delphi_lcCont1_open0_forEd0_crEd0_div0_ins0max_dist0_suitmult'):
+#     train_prepared   = get_train_data_reduced(n_features)
+#     test_prepared    = get_test_data_reduced(n_features)
+#     predictors_train = train_prepared.iloc[:,:-1]
+#     labels_train     = np.array(train_prepared.iloc[:,-1:]).flatten()
+#     predictors_test  = test_prepared.iloc[:,:-1]
+#     labels_test      = np.array(test_prepared.iloc[:,-1:]).flatten()
+#     train_with_IDs   = get_train_data_withIDs()
+#     train_prepared['study_id'] = train_with_IDs.study_id
+#     train_prepared['site_id']  = train_with_IDs.site_id
+#     train_mech_values= get_mechanistic_values(model_name)
+#     train_prepared   = pd.merge(train_prepared, train_mech_values, on=['study_id','site_id'])
+#     train_prepared.drop(columns=['study_id','site_id'], inplace=True)
+#
+#
+#     return data.merge(model_data, on=['study_id', 'site_id'])
+#
+#
+#     df_best_models   = get_best_models(n_features)
+#     best_model       = df_best_models.loc[df_best_models.model.astype(str) == "SVR()"].iloc[0]
+#     d     = ast.literal_eval(best_model.best_params)
+#     model = SVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], epsilon=d['epsilon'], kernel=d['kernel'], shrinking=d['shrinking'])
+#     model.fit(predictors_train, labels_train)
+#     yhat  = model.predict(predictors_test)
+
+
 if __name__ == '__main__':
 
-    train_prepared   = get_train_data_reduced(3)
-    test_prepared    = get_test_data_reduced(3)
+    train_prepared   = get_train_data_reduced(14)
+    test_prepared    = get_test_data_reduced(14)
     # train_prepared   = get_train_data_full()
     # test_prepared    = get_test_data_full()
     predictors_train = train_prepared.iloc[:,:-1]
@@ -192,10 +261,10 @@ if __name__ == '__main__':
     labels_test      = np.array(test_prepared.iloc[:,-1:]).flatten()
 
     # Model
-    df_best_models = get_best_models(3)
+    df_best_models = get_best_models()
     d = ast.literal_eval(df_best_models.iloc[0].best_params)
-    model = SVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], epsilon=d['epsilon'], kernel=d['kernel'], shrinking=d['shrinking'])
-    # model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], nu=d['nu'], kernel=d['kernel'], shrinking=d['shrinking'])
+    # model = SVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], epsilon=d['epsilon'], kernel=d['kernel'], shrinking=d['shrinking'])
+    model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], nu=d['nu'], kernel=d['kernel'], shrinking=d['shrinking'])
     model.fit(predictors_train, labels_train)
     yhat = model.predict(predictors_test)
 
@@ -225,8 +294,8 @@ if __name__ == '__main__':
     # Stats ( MAE, R2, Slope: for a few ml and all mechanistic configurations )
     # TODO> crear las siguientes funciones:
     #     compute_ml_stats(n_features) -> svr, nusvr, mlp (n_features) DONE
-    #     compute_lons_stats(file)
-    #     compute_combined_stats(file, n_features) -> combine lons y ml, using average for example
+    #     compute_lons_stats() DONE
+    #     compute_combined_stats(file, n_features) -> combine lons y ml, using average for example -> DONE
     #     compute_ml_with_lons(file, n_features) -> compute ml but adding the value of a mech. model as a predictor
 
 

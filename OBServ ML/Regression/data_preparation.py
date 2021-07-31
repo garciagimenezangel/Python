@@ -173,6 +173,7 @@ if __name__ == '__main__':
     # data = remap_crops(data)
     data = fill_missing_abundances(data)
     data = compute_visit_rate(data)
+    data['author_id'] = [study.split("_",2)[0] + study.split("_",2)[1] for study in data.study_id]
     # data = compute_visit_rate_small(data)
     # data = compute_visit_rate_large(data)
     # data = add_mechanistic_values(data)
@@ -201,7 +202,7 @@ if __name__ == '__main__':
     numeric_col = list(pred_num)
     onehot_col  = ["biome_num", "crop"]
     ordinal_col = ["management"]
-    dummy_col   = ["study_id","site_id"] # keep this to use later (e.g. create custom cross validation iterator)
+    dummy_col   = ["study_id","site_id","author_id"] # keep this to use later (e.g. create custom cross validation iterator)
     num_pipeline = Pipeline([
         ('num_imputer', SimpleImputer(strategy="mean")),
         ('std_scaler', StandardScaler())
@@ -230,7 +231,7 @@ if __name__ == '__main__':
 
     # Convert into data frame
     numeric_col = np.array(pred_num.columns)
-    dummy_col = np.array(["study_id","site_id"])
+    dummy_col = np.array(["study_id","site_id","author_id"])
     onehot_col  = np.array(onehot_encoder_names)
     feature_names = np.concatenate( (numeric_col, ordinal_col, dummy_col, onehot_col), axis=0)
     predictors_prepared = pd.DataFrame(x_transformed, columns=feature_names, index=predictors.index)
@@ -244,22 +245,22 @@ if __name__ == '__main__':
     #############################################################
     # Stratified split training and test (split by study_id)
     #############################################################
-    df_studies = data.groupby('study_id', as_index=False).first()[['study_id','biome_num']]
+    df_authors = data.groupby('author_id', as_index=False).first()[['author_id','biome_num']]
     # For the training set, take biomes with more than one count (otherwise I get an error in train_test_split.
     # They are added in the test set later, to keep all data
-    has_more_one     = df_studies.groupby('biome_num').count().study_id > 1
-    df_studies_split = df_studies.loc[has_more_one[df_studies.biome_num].reset_index().study_id,]
-    strata           = df_studies_split.biome_num.astype('category')
+    has_more_one     = df_authors.groupby('biome_num').count().author_id > 1
+    df_authors_split = df_authors.loc[has_more_one[df_authors.biome_num].reset_index().author_id,]
+    strata           = df_authors_split.biome_num.astype('category')
 
-    x_train, x_test, y_train, y_test = train_test_split(df_studies_split, strata, stratify=strata, test_size=0.2, random_state=135)
-    studies_train   = x_train.study_id
-    train_selection = [ (x_train.study_id == x).any() for x in data.study_id ]
+    x_train, x_test, y_train, y_test = train_test_split(df_authors_split, strata, stratify=strata, test_size=0.3, random_state=4)
+    authors_train   = x_train.author_id
+    train_selection = [ (x_train.author_id == x).any() for x in data.author_id ]
     df_train = dataset_prepared[train_selection].reset_index(drop=True)
     df_test  = dataset_prepared[[~x for x in train_selection]].reset_index(drop=True)
 
     # Save predictors and labels (train and set), removing study_id
-    df_train.drop(columns=['study_id', 'site_id']).to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_prepared.csv', index=False)
-    df_test.drop(columns=['study_id', 'site_id']).to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_prepared.csv', index=False)
+    df_train.drop(columns=['study_id', 'site_id', 'author_id']).to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_prepared.csv', index=False)
+    df_test.drop(columns=['study_id', 'site_id', 'author_id']).to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_prepared.csv', index=False)
 
     # Save data (not processed by pipeline) including study_id and site_id
     train_withIDs = data[train_selection].copy().reset_index(drop=True)
@@ -287,6 +288,9 @@ if __name__ == '__main__':
     with open('C:/Users/angel/git/Observ_models/data/ML/Regression/train/myCViterator.pkl', 'wb') as f:
         pickle.dump(myCViterator, f)
 
+    # Save data quasi-raw
+    data.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/Lonsdorf evaluation/Model predictions/data_raw.csv', index=False)
+
     #######################################
     # Explore
     #######################################
@@ -311,5 +315,3 @@ if __name__ == '__main__':
     large = large.loc[ np.isfinite(large['log_vr_large']), ]
     check_normality(large, 'log_vr_large')
 
-    # Save data quasi-raw
-    data.to_csv(path_or_buf='C:/Users/angel/git/Observ_models/data/Lonsdorf evaluation/Model predictions/data_raw.csv', index=False)
