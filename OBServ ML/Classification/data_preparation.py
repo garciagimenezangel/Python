@@ -9,7 +9,7 @@ import seaborn as sns
 from scipy.stats import norm
 from sklearn.model_selection import train_test_split
 from scipy import stats
-import pollinators_dependency as poll_dep
+from utils import pollinators_dependency as poll_dep
 import warnings
 warnings.filterwarnings('ignore')
 

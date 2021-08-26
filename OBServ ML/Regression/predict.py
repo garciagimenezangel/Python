@@ -25,8 +25,8 @@ root_folder = models_repo + "data/ML/Regression/"
 def check_normality(array):
     sns.distplot(array)
     # skewness and kurtosis
-    print("Skewness: %f" % array.skew()) # Skewness: -0.220768
-    print("Kurtosis: %f" % array.kurt()) # Kurtosis: -0.168611
+    print("Skewness: %f" % array.skew())
+    print("Kurtosis: %f" % array.kurt())
     # Check normality log_visit_rate
     sns.distplot(array, fit=norm)
     fig = plt.figure()
@@ -36,7 +36,7 @@ def get_lonsdorf_prediction_files():
     path = models_repo + 'data/Lonsdorf evaluation/Model predictions/'
     return [i for i in os.listdir(path) if os.path.isfile(os.path.join(path,i)) and 'lm ' in i]
 
-def get_lonsdorf_predictions(file='lm pred All modules.csv'):
+def get_lonsdorf_predictions(file='lm pred Open forest.csv'):
     return pd.read_csv(models_repo+'data/Lonsdorf evaluation/Model predictions/'+file)
 
 def get_train_data_reduced(n_features):
@@ -74,32 +74,6 @@ def check_normality(data, column):
     fig = plt.figure()
     res = stats.probplot(data[column], plot=plt)
 
-def compute_svr_stats(n_features):
-    train_prepared   = get_train_data_reduced(n_features)
-    test_prepared    = get_test_data_reduced(n_features)
-    predictors_train = train_prepared.iloc[:,:-1]
-    labels_train     = np.array(train_prepared.iloc[:,-1:]).flatten()
-    predictors_test  = test_prepared.iloc[:,:-1]
-    labels_test      = np.array(test_prepared.iloc[:,-1:]).flatten()
-    df_best_models   = get_best_models(n_features)
-    best_model       = df_best_models.loc[df_best_models.model.astype(str) == "SVR()"].loc[0]
-    d     = ast.literal_eval(best_model.best_params)
-    model = SVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], epsilon=d['epsilon'], kernel=d['kernel'], shrinking=d['shrinking'])
-    model.fit(predictors_train, labels_train)
-    yhat  = model.predict(predictors_test)
-    X_reg, y_reg = yhat.reshape(-1, 1), labels_test.reshape(-1, 1)
-    mae   = mean_absolute_error(X_reg, y_reg)
-    reg   = LinearRegression().fit(X_reg, y_reg)
-    r2    = reg.score(X_reg, y_reg)
-    slope = reg.coef_
-    return {
-        'model': "SVR",
-        'n_features': n_features,
-        'mae': mae,
-        'r2': r2,
-        'slope': slope
-    }
-
 def compute_svr_predictions(n_features):
     train_prepared   = get_train_data_reduced(n_features)
     test_prepared    = get_test_data_reduced(n_features)
@@ -115,20 +89,52 @@ def compute_svr_predictions(n_features):
     yhat  = model.predict(predictors_test)
     return yhat, labels_test
 
+def compute_nusvr_predictions(n_features):
+    train_prepared   = get_train_data_reduced(n_features)
+    test_prepared    = get_test_data_reduced(n_features)
+    predictors_train = train_prepared.iloc[:,:-1]
+    labels_train     = np.array(train_prepared.iloc[:,-1:]).flatten()
+    predictors_test  = test_prepared.iloc[:,:-1]
+    labels_test      = np.array(test_prepared.iloc[:,-1:]).flatten()
+    df_best_models   = get_best_models(n_features)
+    best_model       = df_best_models.loc[df_best_models.model.astype(str) == "NuSVR()"].iloc[0]
+    d     = ast.literal_eval(best_model.best_params)
+    model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], nu=d['nu'], kernel=d['kernel'], shrinking=d['shrinking'])
+    model.fit(predictors_train, labels_train)
+    yhat  = model.predict(predictors_test)
+    return yhat, labels_test
+
+def compute_mlp_predictions(n_features):
+    train_prepared   = get_train_data_reduced(n_features)
+    test_prepared    = get_test_data_reduced(n_features)
+    predictors_train = train_prepared.iloc[:,:-1]
+    labels_train     = np.array(train_prepared.iloc[:,-1:]).flatten()
+    predictors_test  = test_prepared.iloc[:,:-1]
+    labels_test      = np.array(test_prepared.iloc[:,-1:]).flatten()
+    df_best_models   = get_best_models(n_features)
+    best_model       = df_best_models.loc[df_best_models.model.astype(str) == "MLPRegressor(max_iter=10000, solver='sgd')"].iloc[0]
+    d     = ast.literal_eval(best_model.best_params)
+    model = MLPRegressor(activation=d['activation'], alpha=d['alpha'], hidden_layer_sizes=d['hidden_layer_sizes'],
+                         learning_rate=d['learning_rate'], learning_rate_init=d['learning_rate_init'], momentum=d['momentum'],
+                         power_t=d['power_t'], max_iter=10000, solver='sgd', random_state=135)
+    model.fit(predictors_train, labels_train)
+    yhat  = model.predict(predictors_test)
+    return yhat, labels_test
+
 def compute_svr_stats(n_features):
     yhat, labels_test = compute_svr_predictions(n_features)
     X_reg, y_reg = yhat.reshape(-1, 1), labels_test.reshape(-1, 1)
     mae   = mean_absolute_error(X_reg, y_reg)
     reg   = LinearRegression().fit(X_reg, y_reg)
     r2    = reg.score(X_reg, y_reg)
-    slope = reg.coef_
-    return {
+    slope = reg.coef_[0][0]
+    return pd.DataFrame({
         'model': "SVR",
         'n_features': n_features,
         'mae': mae,
         'r2': r2,
         'slope': slope
-    }
+    }, index=[0])
 
 def compute_nusvr_stats(n_features):
     train_prepared   = get_train_data_reduced(n_features)
@@ -147,14 +153,14 @@ def compute_nusvr_stats(n_features):
     mae   = mean_absolute_error(X_reg, y_reg)
     reg   = LinearRegression().fit(X_reg, y_reg)
     r2    = reg.score(X_reg, y_reg)
-    slope = reg.coef_
-    return {
+    slope = reg.coef_[0][0]
+    return pd.DataFrame({
         'model': "NuSVR",
         'n_features': n_features,
         'mae': mae,
         'r2': r2,
         'slope': slope
-    }
+    }, index=[0])
 
 def compute_mlp_stats(n_features):
     train_prepared   = get_train_data_reduced(n_features)
@@ -168,56 +174,57 @@ def compute_mlp_stats(n_features):
     d     = ast.literal_eval(best_model.best_params)
     model = MLPRegressor(activation=d['activation'], alpha=d['alpha'], hidden_layer_sizes=d['hidden_layer_sizes'],
                          learning_rate=d['learning_rate'], learning_rate_init=d['learning_rate_init'], momentum=d['momentum'],
-                         power_t=d['power_t'], max_iter=10000, solver='sgd')
+                         power_t=d['power_t'], max_iter=10000, solver='sgd', random_state=135)
     model.fit(predictors_train, labels_train)
     yhat  = model.predict(predictors_test)
     X_reg, y_reg = yhat.reshape(-1, 1), labels_test.reshape(-1, 1)
     mae   = mean_absolute_error(X_reg, y_reg)
     reg   = LinearRegression().fit(X_reg, y_reg)
     r2    = reg.score(X_reg, y_reg)
-    slope = reg.coef_
-    return {
+    slope = reg.coef_[0][0]
+    return pd.DataFrame({
         'model': "MLP",
         'n_features': n_features,
         'mae': mae,
         'r2': r2,
         'slope': slope
-    }
+    }, index=[0])
 
 def compute_lons_stats():
-    results = []
+    results = pd.DataFrame(columns=['model', 'mae', 'r2', 'slope'])
     files = get_lonsdorf_prediction_files()
     for file in files:
         df_lons = get_lonsdorf_predictions(file)
-        X_reg, y_reg = df_lons.lm_predicted.reshape(-1, 1), df_lons.log_visit_rate.reshape(-1, 1)
+        X_reg, y_reg = np.array(df_lons.lm_predicted), np.array(df_lons.log_visit_rate)
         mae = mean_absolute_error(X_reg, y_reg)
-        reg = LinearRegression().fit(X_reg, y_reg)
-        r2 = reg.score(X_reg, y_reg)
-        slope = reg.coef_
+        reg = LinearRegression().fit(X_reg.reshape(-1, 1), y_reg.reshape(-1, 1))
+        r2 = reg.score(X_reg.reshape(-1, 1), y_reg.reshape(-1, 1))
+        slope = reg.coef_[0][0]
         model = df_lons.iloc[0].model
-        results.append({'model': model, 'mae': mae, 'r2':r2, 'slope':slope})
+        model_res = pd.DataFrame({'model': model, 'mae': mae, 'r2':r2, 'slope':slope}, index=[0])
+        results = pd.concat([results, model_res], axis=0, ignore_index=True)
     return results
 
-def compute_combined_stats(file, n_features):
-    df_lons = get_lonsdorf_predictions(file)
-    yhat, labels_test = compute_svr_predictions(n_features)
+def compute_combined_stats(n_features):
+    df_lons = get_lonsdorf_predictions()
+    yhat, labels_test = compute_nusvr_predictions(n_features)
     test_withIDs = get_test_data_withIDs()
     df_ml = pd.DataFrame({'obs':labels_test, 'pred':yhat, 'study_id':test_withIDs.study_id, 'site_id':test_withIDs.site_id})
     df_combined = pd.merge(df_lons, df_ml, on=['study_id', 'site_id'])
-    df_combined['yhat'] = np.average([df_combined.pred, df_combined.lm_predicted])
-    X_reg, y_reg = df_combined.yhat.reshape(-1, 1), df_combined.log_visit_rate.reshape(-1, 1)
+    df_combined['yhat'] = df_combined[['pred', 'lm_predicted']].mean(axis=1)
+    X_reg, y_reg = np.array(df_combined.yhat), np.array(df_combined.log_visit_rate)
     mae = mean_absolute_error(X_reg, y_reg)
-    reg = LinearRegression().fit(X_reg, y_reg)
-    r2 = reg.score(X_reg, y_reg)
-    slope = reg.coef_
-    model = df_lons.iloc[0].model + " + ML"
-    return {
+    reg = LinearRegression().fit(X_reg.reshape(-1,1), y_reg.reshape(-1,1))
+    r2 = reg.score(X_reg.reshape(-1,1), y_reg.reshape(-1,1))
+    slope = reg.coef_[0][0]
+    model = "Average("+df_lons.iloc[0].model + ", NuSVR)"
+    return pd.DataFrame({
         'model': model,
         'n_features': n_features,
         'mae': mae,
         'r2': r2,
         'slope': slope
-    }
+    }, index=[0])
 
 def get_mechanistic_values(model_name):
     data_dir = "C:/Users/angel/git/Observ_models/data/"
@@ -248,7 +255,6 @@ def get_mechanistic_values(model_name):
 #     model.fit(predictors_train, labels_train)
 #     yhat  = model.predict(predictors_test)
 
-
 if __name__ == '__main__':
 
     train_prepared   = get_train_data_reduced(14)
@@ -260,10 +266,32 @@ if __name__ == '__main__':
     predictors_test  = test_prepared.iloc[:,:-1]
     labels_test      = np.array(test_prepared.iloc[:,-1:]).flatten()
 
-    # Model
-    df_best_models = get_best_models()
-    d = ast.literal_eval(df_best_models.iloc[0].best_params)
-    # model = SVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], epsilon=d['epsilon'], kernel=d['kernel'], shrinking=d['shrinking'])
+    # Stats ( MAE, R2, Slope: for a few ml and all mechanistic configurations )
+    # TODO> crear las siguientes funciones:
+    #     compute_ml_stats(n_features) -> svr, nusvr, mlp (n_features) DONE
+    #     compute_lons_stats() DONE
+    #     compute_combined_stats(file, n_features) -> combine lons y ml, using average for example -> DONE
+    #     compute_ml_with_lons(file, n_features) -> compute ml but adding the value of a mech. model as a predictor
+    svr_stats   = compute_svr_stats(14)
+    svr_stats['type'] = "ML"
+    nusvr_stats = compute_nusvr_stats(14)
+    nusvr_stats['type'] = "ML"
+    mlp_stats   = compute_mlp_stats(14)
+    mlp_stats['type'] = "ML"
+    comb_stats  = compute_combined_stats(14)
+    comb_stats['type'] = "Combination"
+    lons_stats  = compute_lons_stats()
+    lons_stats['type']  = "Mechanistic"
+    all_stats   = pd.concat([svr_stats, nusvr_stats, mlp_stats, lons_stats, comb_stats], axis=0, ignore_index=True).drop(columns=['n_features'])
+    cols = all_stats.columns.tolist()
+    cols = cols[-1:] + cols[:-1]
+    all_stats = all_stats[cols]
+    print(all_stats.to_latex(index=False, float_format='%.2f'))
+
+    # Plots
+    df_best_models = get_best_models(14)
+    best_model       = df_best_models.loc[df_best_models.model.astype(str) == "NuSVR()"].iloc[0]
+    d     = ast.literal_eval(best_model.best_params)
     model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], nu=d['nu'], kernel=d['kernel'], shrinking=d['shrinking'])
     model.fit(predictors_train, labels_train)
     yhat = model.predict(predictors_test)
@@ -290,6 +318,7 @@ if __name__ == '__main__':
     ax.set_ylabel("log(Visitation Rate)", fontsize=16)
     ax.legend(loc='best', fontsize=14)
     plt.show()
+    plt.savefig('C:/Users/angel/git/Observ_models/report/figures/temp/predictions.tiff', format='tiff')
 
     # Stats ( MAE, R2, Slope: for a few ml and all mechanistic configurations )
     # TODO> crear las siguientes funciones:
@@ -297,7 +326,6 @@ if __name__ == '__main__':
     #     compute_lons_stats() DONE
     #     compute_combined_stats(file, n_features) -> combine lons y ml, using average for example -> DONE
     #     compute_ml_with_lons(file, n_features) -> compute ml but adding the value of a mech. model as a predictor
-
 
     mae_ml   = mean_absolute_error(df_ml.pred, df_ml.obs)
     mae_lons = mean_absolute_error(df_lons.pred, df_lons.obs)

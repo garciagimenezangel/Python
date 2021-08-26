@@ -130,8 +130,8 @@ def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
 
 
 # Load data
-data_prepared = get_data_reduced(3)
-df_best_models = get_best_models(3)
+data_prepared = get_data_reduced(14)
+df_best_models = get_best_models(14)
 predictors = data_prepared.iloc[:, :-1]
 labels = np.array(data_prepared.iloc[:, -1:]).flatten()
 # Load custom cross validation
@@ -145,5 +145,6 @@ model = SVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], epsilon=d['epsilon'], 
 # model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], nu=d['nu'], kernel=d['kernel'], shrinking=d['shrinking'])
 plot_learning_curve(model, title, predictors, labels, cv=myCViterator, n_jobs=6)
 plt.show()
+
 
 
