@@ -21,3 +21,15 @@ predictors_meta.columns = ['Group', 'Variable', 'Dataset','Reference']
 predictors_meta =  predictors_meta.replace({'nan': ''}, regex=True)
 with pd.option_context("max_colwidth", 2000):
     print (predictors_meta.to_latex(index=False))
+
+n_features=7
+test_reduced = pd.read_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_'+str(n_features)+'.csv').iloc[:,:-1]
+predictors_meta =  pd.read_csv('C:/Users/angel/git/Observ_models/report/tables/metadata_variables.csv')
+features_selected = pd.DataFrame()
+features_selected['Feature'] = test_reduced.columns
+feature_dict = dict(zip(predictors_meta.Variable, predictors_meta.Description))
+feature_dict['x1_Malus domestica'] = 'Presence of \textit{Malus domestica}'
+feature_dict['x1_Vaccinium macrocarpon'] = 'Presence of \textit{Vaccinium macrocarpon}'
+feature_dict['x1_Trifolium pratense'] = 'Presence of \textit{Trifolium pratense}'
+features_selected = features_selected['Feature'].map(feature_dict)
+print (features_selected.to_latex(index=False))

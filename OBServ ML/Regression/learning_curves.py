@@ -130,8 +130,8 @@ def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
 
 
 # Load data
-data_prepared = get_data_reduced(14)
-df_best_models = get_best_models(14)
+data_prepared = get_data_reduced(7)
+df_best_models = get_best_models(7)
 predictors = data_prepared.iloc[:, :-1]
 labels = np.array(data_prepared.iloc[:, -1:]).flatten()
 # Load custom cross validation
@@ -140,11 +140,11 @@ with open('C:/Users/angel/git/Observ_models/data/ML/Regression/train/myCViterato
 
 # Plot learning curve
 title = "Learning Curves"
-d = ast.literal_eval(df_best_models.iloc[0].best_params)
-model = SVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], epsilon=d['epsilon'], kernel=d['kernel'], shrinking=d['shrinking'])
-# model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], nu=d['nu'], kernel=d['kernel'], shrinking=d['shrinking'])
+d = ast.literal_eval(df_best_models.iloc[3].best_params)
+# model = SVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], epsilon=d['epsilon'], kernel=d['kernel'], shrinking=d['shrinking'])
+model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], nu=d['nu'], kernel=d['kernel'], shrinking=d['shrinking'])
 plot_learning_curve(model, title, predictors, labels, cv=myCViterator, n_jobs=6)
 plt.show()
-
+plt.savefig('C:/Users/angel/git/Observ_models/data/ML/Regression/plots/learning_curve_7feat.tiff', format='tiff')
 
 

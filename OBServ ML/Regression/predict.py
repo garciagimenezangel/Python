@@ -257,8 +257,9 @@ def get_mechanistic_values(model_name):
 
 if __name__ == '__main__':
 
-    train_prepared   = get_train_data_reduced(14)
-    test_prepared    = get_test_data_reduced(14)
+    n_features=81
+    train_prepared   = get_train_data_reduced(n_features)
+    test_prepared    = get_test_data_reduced(n_features)
     # train_prepared   = get_train_data_full()
     # test_prepared    = get_test_data_full()
     predictors_train = train_prepared.iloc[:,:-1]
@@ -272,24 +273,24 @@ if __name__ == '__main__':
     #     compute_lons_stats() DONE
     #     compute_combined_stats(file, n_features) -> combine lons y ml, using average for example -> DONE
     #     compute_ml_with_lons(file, n_features) -> compute ml but adding the value of a mech. model as a predictor
-    svr_stats   = compute_svr_stats(14)
+    svr_stats   = compute_svr_stats(n_features)
     svr_stats['type'] = "ML"
-    nusvr_stats = compute_nusvr_stats(14)
+    nusvr_stats = compute_nusvr_stats(n_features)
     nusvr_stats['type'] = "ML"
-    mlp_stats   = compute_mlp_stats(14)
-    mlp_stats['type'] = "ML"
-    comb_stats  = compute_combined_stats(14)
+    # mlp_stats   = compute_mlp_stats(n_features)
+    # mlp_stats['type'] = "ML"
+    comb_stats  = compute_combined_stats(n_features)
     comb_stats['type'] = "Combination"
     lons_stats  = compute_lons_stats()
     lons_stats['type']  = "Mechanistic"
-    all_stats   = pd.concat([svr_stats, nusvr_stats, mlp_stats, lons_stats, comb_stats], axis=0, ignore_index=True).drop(columns=['n_features'])
+    all_stats   = pd.concat([svr_stats, nusvr_stats, lons_stats, comb_stats], axis=0, ignore_index=True).drop(columns=['n_features'])
     cols = all_stats.columns.tolist()
     cols = cols[-1:] + cols[:-1]
     all_stats = all_stats[cols]
     print(all_stats.to_latex(index=False, float_format='%.2f'))
 
     # Plots
-    df_best_models = get_best_models(14)
+    df_best_models = get_best_models(n_features)
     best_model       = df_best_models.loc[df_best_models.model.astype(str) == "NuSVR()"].iloc[0]
     d     = ast.literal_eval(best_model.best_params)
     model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], nu=d['nu'], kernel=d['kernel'], shrinking=d['shrinking'])
@@ -318,7 +319,7 @@ if __name__ == '__main__':
     ax.set_ylabel("log(Visitation Rate)", fontsize=16)
     ax.legend(loc='best', fontsize=14)
     plt.show()
-    plt.savefig('C:/Users/angel/git/Observ_models/report/figures/temp/predictions.tiff', format='tiff')
+    plt.savefig('C:/Users/angel/git/Observ_models/data/ML/Regression/plots/predictions.tiff', format='tiff')
 
     # Stats ( MAE, R2, Slope: for a few ml and all mechanistic configurations )
     # TODO> crear las siguientes funciones:

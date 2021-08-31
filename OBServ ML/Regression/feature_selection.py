@@ -97,8 +97,10 @@ if __name__ == '__main__':
     df_results_train['n_features'] = range(min_n, max_n+1)
     df_results_test['mean']        = df_results_test.mean(axis=1)
     df_results_test['n_features']  = range(min_n, max_n+1)
-    df_results_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_train_NuSVR_1-30.csv', index=False)
-    df_results_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_test_NuSVR_1-30.csv', index=False)
+    # df_results_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_train_NuSVR_1-30.csv', index=False)
+    # df_results_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_test_NuSVR_1-30.csv', index=False)
+    df_results_train = pd.read_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_train_NuSVR_1-30.csv')
+    df_results_test = pd.read_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/hyperparameters/feature_selection_test_NuSVR_1-30.csv')
     # Plot
     scores_train = df_results_train.iloc[:, 0:5].values.tolist()
     scores_test  = df_results_test.iloc[:, 0:5].values.tolist()
@@ -113,19 +115,20 @@ if __name__ == '__main__':
     pyplot.ylabel('MAE', fontsize=16)
     pyplot.xlabel('N features', fontsize=16)
     pyplot.legend(loc="best")
-    pyplot.savefig('C:/Users/angel/git/Observ_models/report/figures/temp/feature_selection_NuSVR_1-30.tiff', format='tiff')
+    pyplot.savefig('C:/Users/angel/git/Observ_models/data/ML/Regression/plots/feature_selection_NuSVR_1-30.tiff', format='tiff')
     # Select n_features:
-    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=14, cv=myCViterator, direction='forward', n_jobs=6)
+    sfs = SequentialFeatureSelector(estimator=model, n_features_to_select=7, cv=myCViterator, direction='forward', n_jobs=6)
     sfs.fit(predictors_train, labels_train)
     data_reduced_train = train_prepared[ np.append(np.array(predictors_train.columns[sfs.support_]),['log_visit_rate']) ]
     data_reduced_test  = test_prepared[ np.append(np.array(predictors_test.columns[sfs.support_]),['log_visit_rate']) ]
-    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_14.csv', index=False)
-    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_14.csv', index=False)
+    data_reduced_train.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/train/data_reduced_7.csv', index=False)
+    data_reduced_test.to_csv('C:/Users/angel/git/Observ_models/data/ML/Regression/test/data_reduced_7.csv', index=False)
 
     # #######################################
     # # Permutation importance
     # #######################################
-    model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], kernel=d['kernel'], nu=d['nu'], shrinking=d['shrinking'])
+    d = ast.literal_eval(df_best_models.iloc[0].best_params)
+    model = NuSVR(C=d['C'], coef0=d['coef0'], gamma=d['gamma'], nu=d['nu'], kernel=d['kernel'], shrinking=d['shrinking'])
     model.fit(predictors_train, labels_train)
     perm_importance = permutation_importance(model, predictors_train, labels_train, random_state=135, n_jobs=6)
     feature_names = predictors_train.columns
