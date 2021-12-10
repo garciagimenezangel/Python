@@ -17,8 +17,10 @@ layer = "z30"
 #inputFile = home + '\\Documents\\DATA\\OBServ\\LandCover\\ESYRCE\\PROCESSED\\esyrceProcessed_' + layer + '.shp'
 #inputFile = home + '\\Documents\\DATA\\Observ\\LandCover\\ESYRCE\\PROCESSED\\session_esyrceFiltered_z30_epsg23030_selectedCols_addIntenMetrics_addDemand.pkl'
 #inputFile = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\Esyrce2001_2016.gdb'
-inputFile = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\' + layer + '\\tests\\filtered.shp'
-outDir = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\tests\\yearly\\'
+inputFile = home + "\\Downloads\\one_plot.shp"
+# inputFile = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\' + layer + '\\tests\\filtered.shp'
+# outDir = home + '\\Documents\\DATA\\OBServ\\ESYRCE\\PROCESSED\\z30\\tests\\yearly\\'
+outDir = home + '\\Downloads\\'
 
 if layer == 'z28':
     crs = "EPSG:23028"
